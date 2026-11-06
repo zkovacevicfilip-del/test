@@ -169,12 +169,32 @@ $("s-aero").innerHTML = `
 
 <div id="a-pow" class="apane hidden">
   <div class="card">
-    <h2>Test výkonu v pozici</h2>
-    <p class="muted">Na trenažéru jeď stejné intervaly (např. 4 × 8 min) při stejném pocitovém úsilí a pozice střídej v pořadí A, B, B, A, aby únava nezvýhodnila žádnou pozici. Na začátku každého intervalu zmáčkni Lap. Pak nahraj .fit soubor a ke kolům napiš pozici. Pozice, která šetří watty v aerodynamice, ale stojí víc výkonu, není lepší.</p>
-    <label for="pw_file">Vybrat .fit soubory</label><input id="pw_file" type="file" multiple>
-    <div class="grid" style="margin-top:8px">${field("pw_min", "Nejkratší započítané kolo (s)", 120, "10")}</div>
-    <p id="pw_status" class="muted status"></p>
-    <div id="pw_laps" class="scroll"></div>
+    <h2>Test výkonu ve třech pozicích</h2>
+    <p class="muted">Cíl: zjistit, jestli aerodynamičtější pozice nestojí výkon. Porovnáváš tři pozice podle tvé mobility a doporučení z aplikace. Popis si uprav podle svého kola.</p>
+    <div id="pw_pos"></div>
+    <h3>Doporučený protokol</h3>
+    <p class="muted">Na trenažéru jeď 6 intervalů po 8 min při stejném pocitovém úsilí, mezi nimi 4 min lehce. Pořadí <b>1, 2, 3, 3, 2, 1</b> vyrovná vliv únavy: žádná pozice není pořád první ani pořád poslední. Mezi pozicemi měň jen pozici, ne sedlo ani kliky, a před každým intervalem zmáčkni Lap. Další den test klidně zopakuj. Jeden den dává jen orientační výsledek.</p>
+    <p class="muted">Pozice 3 má smysl jen tehdy, když ti aplikace v části mobility ukázala rezervu. Pokud ne, nahraď ji třetí jemnou variantou pozice 2.</p>
+  </div>
+  <div class="card">
+    <h2>Odkud vezmu data</h2>
+    <div class="tabs" id="pw_src">
+      <button class="tab on" data-s="fit">Z .fit souboru</button>
+      <button class="tab" data-s="man">Zadat ručně</button>
+    </div>
+    <div id="pw_fitbox" style="margin-top:10px">
+      <label for="pw_file">Vybrat .fit soubory</label><input id="pw_file" type="file" multiple>
+      <div class="grid" style="margin-top:8px">${field("pw_min", "Nejkratší započítané kolo (s)", 120, "10")}</div>
+      <p id="pw_status" class="muted status"></p>
+      <div id="pw_laps" class="scroll"></div>
+    </div>
+    <div id="pw_manbox" class="hidden" style="margin-top:10px">
+      <p class="muted">Pro každý interval napiš pozici (1, 2 nebo 3), délku a průměry, které ukazuje tvůj cyklopočítač nebo trenažér. Tep a kadence nejsou povinné, ale bez tepu nejde srovnat watty na tep.</p>
+      <div id="pw_man" class="scroll"></div>
+      <div class="row"><button class="btn ghost" id="pw_addrow">Přidat interval</button><button class="btn ghost" id="pw_clearman">Smazat ruční data</button></div>
+    </div>
+  </div>
+  <div class="card">
     <div id="pw_sum"></div>
     <div id="pw_outbox" class="hidden"><h3>Text pro Claude</h3><textarea id="pw_out" readonly></textarea><div class="row"><button class="btn" id="pw_copy">Zkopírovat</button><span class="muted" id="pw_copied"></span></div></div>
   </div>
@@ -430,7 +450,39 @@ $("ar_list").addEventListener("change", e => { if (e.target.name === "arref") { 
 renderAreaList();
 
 // ---------- 3. výkon v pozici ----------
+const POS_DEF = [
+  { id: "1", name: "Pozice 1: současná", desc: "Pozice, ve které teď jezdíš. Slouží jako reference." },
+  { id: "2", name: "Pozice 2: mírně aero", desc: "Trup asi o 3 až 5° níž a lokty o 1 až 2 cm užší, v mezích mobility z testů." },
+  { id: "3", name: "Pozice 3: nejagresivnější", desc: "Nejnižší pozice, kterou ti dovolí mobilita (úhel kyčle nad limitem z mobility). Zkus ji, jen když máš rezervu." }
+];
+if (!S.pos) S.pos = {}; if (!S.pwr) S.pwr = { src: "fit", man: [], comfort: {} };
+if (!S.pwr.comfort) S.pwr.comfort = {}; if (!Array.isArray(S.pwr.man)) S.pwr.man = [];
 const PW = { laps: [] };
+const cz = (n, a, b, c) => n === 1 ? a : (n >= 2 && n <= 4 ? b : c);
+const posName = id => (POS_DEF.find(p => p.id === id) || {}).name || id;
+function renderPosBox() {
+  $("pw_pos").innerHTML = POS_DEF.map(p => `<div class="card" style="margin:8px 0;background:var(--bg)"><b>${esc(p.name)}</b>
+    <label for="pd_${p.id}" style="margin-top:6px">Popis nastavení (výška, úhly, délka nástavců…)</label>
+    <input id="pd_${p.id}" type="text" data-pd="${p.id}" value="${esc(S.pos[p.id] != null ? S.pos[p.id] : p.desc)}">
+    <label for="pc_${p.id}" style="margin-top:6px">Pohodlí v této pozici (1 špatné až 10 výborné)</label>
+    <input id="pc_${p.id}" type="number" inputmode="decimal" min="1" max="10" step="1" data-pc="${p.id}" value="${S.pwr.comfort[p.id] != null ? S.pwr.comfort[p.id] : ""}"></div>`).join("");
+}
+$("pw_pos").addEventListener("input", e => {
+  if (e.target.dataset.pd) { S.pos[e.target.dataset.pd] = e.target.value; save(); }
+  if (e.target.dataset.pc) { const v = parseFloat(String(e.target.value).replace(",", ".")); S.pwr.comfort[e.target.dataset.pc] = isFinite(v) ? v : null; save(); renderPwSum(); }
+});
+renderPosBox();
+
+$("pw_src").onclick = e => {
+  const b = e.target.closest("button"); if (!b) return;
+  S.pwr.src = b.dataset.s; save(); applySrc();
+};
+function applySrc() {
+  [...$("pw_src").children].forEach(x => x.classList.toggle("on", x.dataset.s === S.pwr.src));
+  $("pw_fitbox").classList.toggle("hidden", S.pwr.src !== "fit"); $("pw_manbox").classList.toggle("hidden", S.pwr.src !== "man");
+  renderPwSum();
+}
+
 $("pw_file").onchange = async e => {
   const files = [...e.target.files]; if (!files.length) return;
   PW.laps = []; $("pw_status").textContent = "Načítám…"; $("pw_status").classList.remove("bad");
@@ -451,47 +503,81 @@ $("pw_file").onchange = async e => {
   renderPwLaps();
 };
 $("pw_min").oninput = () => renderPwLaps();
+const posSelect = (cur, attr) => `<select ${attr} style="padding:6px"><option value="">–</option>${POS_DEF.map(p => `<option value="${p.id}"${cur === p.id ? " selected" : ""}>${p.id}</option>`).join("")}</select>`;
 function renderPwLaps() {
   const min = num("pw_min", 120), multi = new Set(PW.laps.map(l => l.file)).size > 1;
   const vis = PW.laps.filter(l => l.dur >= min);
   if (!PW.laps.length) { $("pw_laps").innerHTML = ""; renderPwSum(); return; }
   let h = `<table class="tbl-in wide"><tr><td>Kolo</td><td>Délka</td><td>Ø W</td><td>Ø tep</td><td>Ø kad.</td><td>Pozice</td></tr>`;
-  vis.forEach(l => { const i = PW.laps.indexOf(l); h += `<tr><td>${multi ? esc(l.file) + " · " : ""}${l.n}</td><td>${hms(l.dur)}</td><td>${fmt(l.p, 0)}</td><td>${l.hr != null ? fmt(l.hr, 0) : "–"}</td><td>${l.cad != null ? fmt(l.cad, 0) : "–"}</td><td><input type="text" data-pl="${i}" value="${esc(l.label)}" placeholder="např. A"></td></tr>`; });
+  vis.forEach(l => { const i = PW.laps.indexOf(l); h += `<tr><td>${multi ? esc(l.file) + " · " : ""}${l.n}</td><td>${hms(l.dur)}</td><td>${fmt(l.p, 0)}</td><td>${l.hr != null ? fmt(l.hr, 0) : "–"}</td><td>${l.cad != null ? fmt(l.cad, 0) : "–"}</td><td>${posSelect(l.label, 'data-pl="' + i + '"')}</td></tr>`; });
   h += "</table>";
   if (vis.length < PW.laps.length) h += `<p class="muted">Skryto ${PW.laps.length - vis.length} kratších kol (rozjetí, pauzy).</p>`;
   $("pw_laps").innerHTML = h; renderPwSum();
 }
-$("pw_laps").addEventListener("input", e => { const i = e.target.dataset.pl; if (i == null) return; PW.laps[+i].label = e.target.value.trim(); renderPwSum(); });
+$("pw_laps").addEventListener("change", e => { const i = e.target.dataset.pl; if (i == null) return; PW.laps[+i].label = e.target.value; renderPwSum(); });
+
+// ruční zadání
+function renderMan() {
+  const M = S.pwr.man;
+  if (!M.length) { $("pw_man").innerHTML = "<p class='muted'>Zatím žádný interval. Klepni na Přidat interval.</p>"; return; }
+  let h = `<table class="tbl-in wide"><tr><td>Pozice</td><td>Délka (min)</td><td>Ø W</td><td>Ø tep</td><td>Kadence</td><td></td></tr>`;
+  M.forEach((r, i) => {
+    const inp = (k, ph) => `<input type="number" inputmode="decimal" step="any" data-mi="${i}" data-mk="${k}" value="${r[k] != null ? r[k] : ""}" placeholder="${ph}" style="width:84px">`;
+    h += `<tr><td>${posSelect(r.pos, 'data-mi="' + i + '" data-mk="pos"')}</td><td>${inp("min", "8")}</td><td>${inp("p", "250")}</td><td>${inp("hr", "150")}</td><td>${inp("cad", "90")}</td><td><button class="xbtn" data-mdel="${i}" aria-label="Smazat interval">×</button></td></tr>`;
+  });
+  $("pw_man").innerHTML = h + "</table>";
+}
+$("pw_addrow").onclick = () => { const last = S.pwr.man[S.pwr.man.length - 1]; S.pwr.man.push({ pos: "", min: last ? last.min : 8, p: null, hr: null, cad: null }); save(); renderMan(); renderPwSum(); };
+$("pw_clearman").onclick = () => { S.pwr.man = []; save(); renderMan(); renderPwSum(); };
+$("pw_man").addEventListener("input", e => {
+  const i = e.target.dataset.mi, k = e.target.dataset.mk; if (i == null) return;
+  if (k === "pos") S.pwr.man[+i].pos = e.target.value;
+  else { const v = parseFloat(String(e.target.value).replace(",", ".")); S.pwr.man[+i][k] = isFinite(v) ? v : null; }
+  save(); renderPwSum();
+});
+$("pw_man").addEventListener("change", e => { if (e.target.dataset.mk === "pos") { S.pwr.man[+e.target.dataset.mi].pos = e.target.value; save(); renderPwSum(); } });
+$("pw_man").addEventListener("click", e => { const d = e.target.closest("[data-mdel]"); if (d) { S.pwr.man.splice(+d.dataset.mdel, 1); save(); renderMan(); renderPwSum(); } });
+
+function pwIntervals() {
+  if (S.pwr.src === "man") return S.pwr.man.filter(r => r.pos && r.min > 0 && r.p > 0).map(r => ({ label: r.pos, dur: r.min * 60, p: r.p, hr: r.hr > 0 ? r.hr : null, cad: r.cad > 0 ? r.cad : null }));
+  const min = num("pw_min", 120);
+  return PW.laps.filter(l => l.dur >= min && l.label).map(l => ({ label: l.label, dur: l.dur, p: l.p, hr: l.hr, cad: l.cad }));
+}
 function renderPwSum() {
-  const min = num("pw_min", 120), G2 = new Map();
-  PW.laps.filter(l => l.dur >= min && l.label).forEach(l => {
+  const I = pwIntervals(), G2 = new Map();
+  I.forEach(l => {
     if (!G2.has(l.label)) G2.set(l.label, { t: 0, p: 0, hr: 0, thr: 0, cad: 0, tc: 0, n: 0 });
     const g = G2.get(l.label); g.n++; g.t += l.dur; g.p += (l.p || 0) * l.dur; if (l.hr != null) { g.hr += l.hr * l.dur; g.thr += l.dur; } if (l.cad != null) { g.cad += l.cad * l.dur; g.tc += l.dur; }
   });
-  if (!G2.size) { $("pw_sum").innerHTML = PW.laps.length ? "<p class='muted'>Napiš ke kolům pozici (např. A, B) a objeví se srovnání.</p>" : ""; $("pw_outbox").classList.add("hidden"); return; }
-  const rows = [...G2.entries()].map(([k, g]) => ({ k, n: g.n, t: g.t, p: g.p / g.t, hr: g.thr ? g.hr / g.thr : null, cad: g.tc ? g.cad / g.tc : null }));
+  if (!G2.size) { $("pw_sum").innerHTML = "<h2>Srovnání pozic</h2><p class='muted'>" + (S.pwr.src === "man" ? "Přidej intervaly a vyber u nich pozici." : "Nahraj .fit soubor a ke kolům vyber pozici 1, 2 nebo 3.") + " Pak se tady objeví srovnání.</p>"; $("pw_outbox").classList.add("hidden"); return; }
+  const rows = POS_DEF.filter(p => G2.has(p.id)).map(p => { const g = G2.get(p.id); return { k: p.id, n: g.n, t: g.t, p: g.p / g.t, hr: g.thr ? g.hr / g.thr : null, cad: g.tc ? g.cad / g.tc : null, cf: S.pwr.comfort[p.id] }; });
   rows.forEach(r => { r.wpb = r.hr ? r.p / r.hr : null; });
-  const b = rows[0];
-  let h = `<h3>Srovnání pozic</h3><div class="scroll"><table class="wide"><tr><td>Pozice</td><td>Čas</td><td>Ø W</td><td>Ø tep</td><td>W na tep</td><td>Rozdíl W/tep</td></tr>`;
-  rows.forEach((r, i) => { const d = (r.wpb && b.wpb) ? (r.wpb / b.wpb - 1) * 100 : null; h += `<tr><td>${esc(r.k)}<small>${r.n} ${r.n === 1 ? "kolo" : r.n < 5 ? "kola" : "kol"}${r.cad ? ", " + fmt(r.cad, 0) + " ot/min" : ""}</small></td><td>${hms(r.t)}</td><td>${fmt(r.p, 0)}</td><td>${r.hr ? fmt(r.hr, 0) : "–"}</td><td>${r.wpb ? fmt(r.wpb, 2) : "–"}</td><td${d != null && d < -3 ? " class='flag'" : ""}>${i === 0 ? "reference" : d != null ? sgn(d, 1) + " %" : "–"}</td></tr>`; });
+  const b = rows.find(r => r.k === "1") || rows[0];
+  let h = `<h2>Srovnání pozic</h2><div class="scroll"><table class="wide"><tr><td>Pozice</td><td>Čas</td><td>Ø W</td><td>Ø tep</td><td>W/tep</td><td>Rozdíl W/tep</td><td>Pohodlí</td></tr>`;
+  rows.forEach(r => { const d = (r.wpb && b.wpb) ? (r.wpb / b.wpb - 1) * 100 : null; h += `<tr><td>${esc(posName(r.k))}<small>${r.n} ${cz(r.n, "interval", "intervaly", "intervalů")}${r.cad ? ", " + fmt(r.cad, 0) + " ot/min" : ""}</small></td><td>${hms(r.t)}</td><td>${fmt(r.p, 0)}</td><td>${r.hr ? fmt(r.hr, 0) : "–"}</td><td>${r.wpb ? fmt(r.wpb, 2) : "–"}</td><td${d != null && d < -3 ? " class='flag'" : ""}>${r === b ? "reference" : d != null ? sgn(d, 1) + " %" : "–"}</td><td>${r.cf != null ? fmt(r.cf, 0) + "/10" : "–"}</td></tr>`; });
   h += "</table></div>";
   const notes = [];
-  rows.slice(1).forEach(r => {
+  rows.filter(r => r !== b).forEach(r => {
+    const dP = (r.p / b.p - 1) * 100;
     if (r.wpb && b.wpb) {
       const d = (r.wpb / b.wpb - 1) * 100;
-      notes.push(Math.abs(d) <= 3 ? `Pozice ${esc(r.k)}: rozdíl ${sgn(d, 1)} % je v šumu, výkon pozice zřejmě neomezuje.` : d < 0 ? `Pozice ${esc(r.k)}: o ${fmt(-d, 1)} % méně wattů na tep. Pozice může brzdit výkon, ověř opakováním.` : `Pozice ${esc(r.k)}: o ${fmt(d, 1)} % více wattů na tep než ${esc(b.k)}.`);
-    }
+      notes.push(Math.abs(d) <= 3 ? `${esc(posName(r.k))}: rozdíl ${sgn(d, 1)} % ve wattech na tep je v šumu, výkon pozice zřejmě neomezuje.` : d < 0 ? `${esc(posName(r.k))}: o ${fmt(-d, 1)} % méně wattů na tep než reference. Pozice může brzdit výkon, ověř opakováním.` : `${esc(posName(r.k))}: o ${fmt(d, 1)} % více wattů na tep než reference.`);
+    } else notes.push(`${esc(posName(r.k))}: bez tepu srovnáváš jen výkon (${sgn(dP, 1)} % proti referenci). Interval musí být jeden na jednu pozici při stejném pocitovém úsilí.`);
+    if (r.cf != null && b.cf != null && r.cf <= b.cf - 2) notes.push(`${esc(posName(r.k))}: pohodlí je o ${fmt(b.cf - r.cf, 0)} ${cz(Math.round(b.cf - r.cf), "bod", "body", "bodů")} horší než reference, delší časovku v ní můžeš nezvládnout udržet.`);
   });
-  if (!b.wpb) notes.push("V souboru chybí tep, srovnávej jen výkon při stejném pocitovém úsilí.");
+  if (!rows.some(r => r.k === "1")) notes.push("Chybí pozice 1 (reference), srovnání proto bere jako referenci první dostupnou pozici.");
+  const counts = rows.map(r => r.n); if (Math.min.apply(null, counts) < 2) notes.push("Pozice s jediným intervalem je méně spolehlivá. Protokol 1, 2, 3, 3, 2, 1 dává dva intervaly na pozici.");
   h += `<p class="muted" style="margin-top:8px">${notes.join("<br>")}</p><p class="muted">Tep roste s únavou, teplem a pořadím intervalů. Rozdíl do ~3 % proto ber jako shodu a závěr potvrď opakovaným testem v jiný den.</p>`;
   $("pw_sum").innerHTML = h;
-  $("pw_out").value = "Testoval jsem výkon v různých pozicích na trenažéru (stejné intervaly, stejné pocitové úsilí).\n\n" +
-    rows.map(r => `- Pozice ${r.k}: ${r.n} kol, celkem ${hms(r.t)}, Ø ${fmt(r.p, 0)} W, Ø tep ${r.hr ? fmt(r.hr, 0) : "–"}, ${r.wpb ? fmt(r.wpb, 2) + " W/tep" : "bez tepu"}${r.cad ? ", kadence " + fmt(r.cad, 0) : ""}`).join("\n") +
-    "\n\nJednotlivá kola:\n" + PW.laps.filter(l => l.dur >= min && l.label).map(l => `- ${l.label}: ${hms(l.dur)}, ${fmt(l.p, 0)} W, tep ${l.hr != null ? fmt(l.hr, 0) : "–"}`).join("\n") +
-    "\n\nZhodnoť, jestli některá pozice omezuje výkon, s ohledem na šum měření, únavu a pořadí intervalů. Navrhni, jak test případně zopakovat přesněji.";
+  $("pw_out").value = "Testoval jsem výkon ve třech pozicích na trenažéru (stejné intervaly, stejné pocitové úsilí, pořadí 1, 2, 3, 3, 2, 1).\n\n" +
+    POS_DEF.filter(p => G2.has(p.id)).map(p => `- ${p.name}: ${S.pos[p.id] != null ? S.pos[p.id] : p.desc}`).join("\n") + "\n\nVýsledky:\n" +
+    rows.map(r => `- Pozice ${r.k}: ${r.n} ${cz(r.n, "interval", "intervaly", "intervalů")}, celkem ${hms(r.t)}, Ø ${fmt(r.p, 0)} W, Ø tep ${r.hr ? fmt(r.hr, 0) : "–"}, ${r.wpb ? fmt(r.wpb, 2) + " W/tep" : "bez tepu"}${r.cad ? ", kadence " + fmt(r.cad, 0) : ""}${r.cf != null ? ", pohodlí " + r.cf + "/10" : ""}`).join("\n") +
+    "\n\nJednotlivé intervaly:\n" + I.map(l => `- pozice ${l.label}: ${hms(l.dur)}, ${fmt(l.p, 0)} W, tep ${l.hr != null ? fmt(l.hr, 0) : "–"}`).join("\n") +
+    "\n\nZhodnoť, jestli některá pozice omezuje výkon, s ohledem na šum měření, únavu a pořadí intervalů. Která pozice dává nejlepší poměr aero, výkon a pohodlí pro časovku na 40 km? Navrhni, jak test případně zopakovat přesněji.";
   $("pw_outbox").classList.remove("hidden");
 }
 $("pw_copy").onclick = () => copyFrom("pw_out", "pw_copied");
+renderMan(); applySrc();
 
 // ---------- 4. CdA z jízdy ----------
 const CD = { fit: null, laps: [], fitRes: null };
