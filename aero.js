@@ -170,11 +170,10 @@ $("s-aero").innerHTML = `
 <div id="a-pow" class="apane hidden">
   <div class="card">
     <h2>Test výkonu ve třech pozicích</h2>
-    <p class="muted">Cíl: zjistit, jestli aerodynamičtější pozice nestojí výkon. Porovnáváš tři pozice podle tvé mobility a doporučení z aplikace. Popis si uprav podle svého kola.</p>
+    <p class="muted">Cíl: zjistit, jestli aerodynamičtější pozice nestojí výkon. Porovnáváš až tři pozice. Popis nastavení každé pozice doplň až po měření, ať víš, co přesně jsi jel.</p>
     <div id="pw_pos"></div>
     <h3>Doporučený protokol</h3>
     <p class="muted">Na trenažéru jeď 6 intervalů po 8 min při stejném pocitovém úsilí, mezi nimi 4 min lehce. Pořadí <b>1, 2, 3, 3, 2, 1</b> vyrovná vliv únavy: žádná pozice není pořád první ani pořád poslední. Mezi pozicemi měň jen pozici, ne sedlo ani kliky, a před každým intervalem zmáčkni Lap. Další den test klidně zopakuj. Jeden den dává jen orientační výsledek.</p>
-    <p class="muted">Pozice 3 má smysl jen tehdy, když ti aplikace v části mobility ukázala rezervu. Pokud ne, nahraď ji třetí jemnou variantou pozice 2.</p>
   </div>
   <div class="card">
     <h2>Odkud vezmu data</h2>
@@ -451,9 +450,9 @@ renderAreaList();
 
 // ---------- 3. výkon v pozici ----------
 const POS_DEF = [
-  { id: "1", name: "Pozice 1: současná", desc: "Pozice, ve které teď jezdíš. Slouží jako reference." },
-  { id: "2", name: "Pozice 2: mírně aero", desc: "Trup asi o 3 až 5° níž a lokty o 1 až 2 cm užší, v mezích mobility z testů." },
-  { id: "3", name: "Pozice 3: nejagresivnější", desc: "Nejnižší pozice, kterou ti dovolí mobilita (úhel kyčle nad limitem z mobility). Zkus ji, jen když máš rezervu." }
+  { id: "1", name: "Pozice 1: současná (reference)", desc: "" },
+  { id: "2", name: "Pozice 2", desc: "" },
+  { id: "3", name: "Pozice 3", desc: "" }
 ];
 if (!S.pos) S.pos = {}; if (!S.pwr) S.pwr = { src: "fit", man: [], comfort: {} };
 if (!S.pwr.comfort) S.pwr.comfort = {}; if (!Array.isArray(S.pwr.man)) S.pwr.man = [];
@@ -463,7 +462,7 @@ const posName = id => (POS_DEF.find(p => p.id === id) || {}).name || id;
 function renderPosBox() {
   $("pw_pos").innerHTML = POS_DEF.map(p => `<div class="card" style="margin:8px 0;background:var(--bg)"><b>${esc(p.name)}</b>
     <label for="pd_${p.id}" style="margin-top:6px">Popis nastavení (výška, úhly, délka nástavců…)</label>
-    <input id="pd_${p.id}" type="text" data-pd="${p.id}" value="${esc(S.pos[p.id] != null ? S.pos[p.id] : p.desc)}">
+    <input id="pd_${p.id}" type="text" data-pd="${p.id}" placeholder="Doplníš po měření" value="${esc(S.pos[p.id] != null ? S.pos[p.id] : p.desc)}">
     <label for="pc_${p.id}" style="margin-top:6px">Pohodlí v této pozici (1 špatné až 10 výborné)</label>
     <input id="pc_${p.id}" type="number" inputmode="decimal" min="1" max="10" step="1" data-pc="${p.id}" value="${S.pwr.comfort[p.id] != null ? S.pwr.comfort[p.id] : ""}"></div>`).join("");
 }
@@ -570,7 +569,7 @@ function renderPwSum() {
   h += `<p class="muted" style="margin-top:8px">${notes.join("<br>")}</p><p class="muted">Tep roste s únavou, teplem a pořadím intervalů. Rozdíl do ~3 % proto ber jako shodu a závěr potvrď opakovaným testem v jiný den.</p>`;
   $("pw_sum").innerHTML = h;
   $("pw_out").value = "Testoval jsem výkon ve třech pozicích na trenažéru (stejné intervaly, stejné pocitové úsilí, pořadí 1, 2, 3, 3, 2, 1).\n\n" +
-    POS_DEF.filter(p => G2.has(p.id)).map(p => `- ${p.name}: ${S.pos[p.id] != null ? S.pos[p.id] : p.desc}`).join("\n") + "\n\nVýsledky:\n" +
+    POS_DEF.filter(p => G2.has(p.id)).map(p => `- ${p.name}: ${(S.pos[p.id] != null ? S.pos[p.id] : p.desc) || "bez popisu"}`).join("\n") + "\n\nVýsledky:\n" +
     rows.map(r => `- Pozice ${r.k}: ${r.n} ${cz(r.n, "interval", "intervaly", "intervalů")}, celkem ${hms(r.t)}, Ø ${fmt(r.p, 0)} W, Ø tep ${r.hr ? fmt(r.hr, 0) : "–"}, ${r.wpb ? fmt(r.wpb, 2) + " W/tep" : "bez tepu"}${r.cad ? ", kadence " + fmt(r.cad, 0) : ""}${r.cf != null ? ", pohodlí " + r.cf + "/10" : ""}`).join("\n") +
     "\n\nJednotlivé intervaly:\n" + I.map(l => `- pozice ${l.label}: ${hms(l.dur)}, ${fmt(l.p, 0)} W, tep ${l.hr != null ? fmt(l.hr, 0) : "–"}`).join("\n") +
     "\n\nZhodnoť, jestli některá pozice omezuje výkon, s ohledem na šum měření, únavu a pořadí intervalů. Která pozice dává nejlepší poměr aero, výkon a pohodlí pro časovku na 40 km? Navrhni, jak test případně zopakovat přesněji.";
