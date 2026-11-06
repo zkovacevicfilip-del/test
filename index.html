@@ -28,6 +28,7 @@ button.btn{font:inherit;padding:10px 14px;border-radius:10px;border:0;background
 button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center}
 .tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tgl{font-size:.8rem;color:var(--muted);margin:8px 0 4px}
 .tab{flex:1 1 0;min-width:80px;font:inherit;font-size:.92rem;padding:9px 6px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
 .tab.on{background:var(--accent);color:var(--on);border-color:var(--accent);font-weight:600}
 .step{background:var(--accent);color:var(--on);border-radius:10px;padding:10px 12px;font-weight:600;margin:8px 0;min-height:44px}
@@ -48,7 +49,7 @@ textarea{width:100%;min-height:260px;font:.85rem/1.4 ui-monospace,Menlo,monospac
 </head>
 <body>
 <h1>Aero pozice na časovkářském kole</h1>
-<p class="muted">Měření úhlů ze čtyř pohledů: levá strana, pravá strana, zepředu, zezadu. U každého pohledu můžeš nahrát fotku, nebo video celého cyklu šlapání. Body těla najde automaticky model v prohlížeči. Nic se nikam neodesílá.</p>
+<p class="muted">Měření úhlů ze čtyř pohledů: levá strana, pravá strana, zepředu, zezadu. U každého pohledu můžeš nahrát fotku, nebo video celého cyklu šlapání. Body těla najde automaticky model v prohlížeči. Navíc můžeš nahrát fotky mobilitních testů a aplikace ověří, jestli pozice nepřesahuje tvoji mobilitu. Nic se nikam neodesílá.</p>
 
 <section id="s-mode">
   <p>Jak budeš fotit nebo natáčet?</p>
@@ -76,19 +77,20 @@ textarea{width:100%;min-height:260px;font:.85rem/1.4 ui-monospace,Menlo,monospac
     <input id="o" type="text">
   </div>
 
-  <div class="card"><div class="tabs" id="tabs"></div></div>
+  <div class="card"><div id="tabs"></div></div>
 
   <div class="card" id="photoCard">
     <h2 id="viewTitle"></h2>
     <p class="muted" id="tip"></p>
-    <p class="muted">Fotka, nebo video 5 až 15 s se 3 až 5 otáčkami kliky. Z videa se vyhodnotí celý cyklus šlapání (minimum, maximum, průměr). Video natáčej ze stativu nebo podložky, ne z ruky.</p>
+    <p class="muted" id="vidHint">Fotka, nebo video 5 až 15 s se 3 až 5 otáčkami kliky. Z videa se vyhodnotí celý cyklus šlapání (minimum, maximum, průměr). Video natáčej ze stativu nebo podložky, ne z ruky.</p>
     <label for="file">Vybrat fotku nebo video z galerie</label>
     <input id="file" type="file" accept="image/*,video/*">
     <label for="cam" style="margin-top:8px">Vyfotit fotoaparátem</label>
     <input id="cam" type="file" accept="image/*" capture="environment">
-    <label for="vcam" style="margin-top:8px">Natočit video fotoaparátem</label>
+    <label for="vcam" id="vcamLab" style="margin-top:8px">Natočit video fotoaparátem</label>
     <input id="vcam" type="file" accept="video/*" capture="environment">
     <div id="stepBox" class="step"></div>
+    <div id="mobVal" class="muted warn hidden"></div>
     <canvas id="cv" class="hidden"></canvas>
     <p id="status" class="muted status"></p>
     <div id="ctrl" class="row hidden">
@@ -129,14 +131,26 @@ const TIPS={
   front:"Foť nebo natáčej přesně zepředu ve výšce hrudníku, telefon vodorovně. Levá a pravá strana se v textu myslí levá a pravá strana jezdce.",
   back:"Foť nebo natáčej přesně zezadu ve výšce hrudníku, telefon vodorovně. Levá a pravá strana se v textu myslí levá a pravá strana jezdce."
 };
-const NAMES={left:BODY,right:BODY,front:FB,back:FB};
+const MOB=["m1","m2","m3","m4"],ALL=VIEWS.concat(MOB);
+const isMob=k=>MOB.indexOf(k)>=0;
+const MOBN={m1:["Rameno","Kyčel","Koleno"],m2:["Kyčel","Rameno","Loket"],m3:["Koleno","Kotník"],m4:["Rameno","Kyčel","Koleno"]};
+const MOBIDX={m1:{l:[11,23,25],r:[12,24,26]},m2:{l:[23,11,13],r:[24,12,14]},m3:{l:[25,27],r:[26,28]},m4:{l:[11,23,25],r:[12,24,26]}};
+Object.assign(VN,{m1:"Kyčel – koleno k hrudi",m2:"Rameno – paže nad hlavu",m3:"Kotník – koleno k zdi",m4:"Zadní řetězec – předklon vsedě"});
+Object.assign(TABN,{m1:"Kyčel",m2:"Rameno",m3:"Kotník",m4:"Hamstringy"});
+Object.assign(TIPS,{
+  m1:"Koleno k hrudi ve stoje. Stůj bokem k fotoaparátu, trup svisle (nepředklánět se ani neopírat dozadu). Aktivně zvedni co nejvýš koleno nohy bližší k fotoaparátu a drž. Foť celé tělo z boku, čím víc zvednuté koleno, tím lepší test.",
+  m2:"Paže nad hlavu. Stůj bokem k fotoaparátu, žebra stažená (nevyboulet bedra), paže bližší k fotoaparátu natažená. Aktivně ji zvedni dopředu nahoru co nejvýš vedle ucha a drž. Foť celé tělo z boku.",
+  m3:"Koleno k zdi. Stůj bokem k fotoaparátu, chodidlo celé na zemi (pata se nesmí zvednout). Pokrč koleno dopředu přes špičku co nejdál, pata zůstává dole. Foť od kolen dolů, nebo celé tělo, z boku, telefon vodorovně.",
+  m4:"Předklon vsedě. Sedni na zem bokem k fotoaparátu, nohy natažené před sebou. Předkloň se co nejvíc, záda nedělej záměrně kulatá, ruce natahuj k špičkám. Foť celé tělo z boku."
+});
+const NAMES={left:BODY,right:BODY,front:FB,back:FB,m1:MOBN.m1,m2:MOBN.m2,m3:MOBN.m3,m4:MOBN.m4};
 const SIDEIDX={left:[27,25,23,11,13,15],right:[28,26,24,12,14,16]};
 const FBIDX=[11,12,13,14,15,16,23,24,25,26,27,28];
 const isSide=k=>k==="left"||k==="right";
 const $=id=>document.getElementById(id);
 const cv=$("cv"),ctx=cv.getContext("2d"),dc=document.createElement("canvas"),dctx=dc.getContext("2d");
 let mode=null,cur="left",drag=null;
-const V={};VIEWS.forEach(k=>{V[k]={img:null,w:0,h:0,ref:[],body:[],frames:null,file:null,isVideo:false,manual:false,edited:false,busy:false,det:null,st:{t:"",bad:false}};});
+const V={};ALL.forEach(k=>{V[k]={img:null,w:0,h:0,ref:[],body:[],frames:null,file:null,isVideo:false,manual:false,edited:false,busy:false,det:null,st:{t:"",bad:false}};});
 
 let landmarker=null,loading=null;
 function getLM(){
@@ -166,11 +180,14 @@ async function autoDetect(k){
     const r=lm.detect(dc);
     if(!r.landmarks||!r.landmarks.length)throw new Error("Na fotce nebyl nalezen jezdec. Zkus fotku, na které je vidět celé tělo.");
     const L=r.landmarks[0],vis=i=>L[i].visibility||0;
-    const idx=isSide(k)?SIDEIDX[k]:FBIDX;
+    let idx;
+    if(isMob(k)){const sp=MOBIDX[k],sl=sp.l.reduce((q,i)=>q+vis(i),0),sr=sp.r.reduce((q,i)=>q+vis(i),0);v.side=sl>=sr?"levá":"pravá";idx=sl>=sr?sp.l:sp.r;}
+    else idx=isSide(k)?SIDEIDX[k]:FBIDX;
     v.body=idx.map(i=>({x:L[i].x*v.w,y:L[i].y*v.h,v:vis(i)}));
     const minVis=Math.min.apply(null,v.body.map(b=>b.v));
     v.det={minVis:minVis};
     let m="Body těla nalezeny automaticky (nejnižší jistota "+Math.round(minVis*100)+" %).",bad=false;
+    if(isMob(k))m+=" Strana u fotoaparátu: "+v.side+".";
     if(isSide(k)){
       const o=k==="left"?SIDEIDX.right:SIDEIDX.left;
       const a=idx.reduce((s,i)=>s+vis(i),0)/6,b=o.reduce((s,i)=>s+vis(i),0)/6;
@@ -247,11 +264,12 @@ async function handleVideo(k,f){
 function done(k){const v=V[k];return !!v.img&&!v.busy&&v.body.length===NAMES[k].length&&(!isSide(k)||mode!=="hand"||v.ref.length===6);}
 
 function renderTabs(){
-  $("tabs").innerHTML=VIEWS.concat(["res"]).map(k=>"<button class='tab"+(cur===k?" on":"")+"' data-v='"+k+"'>"+TABN[k]+(k!=="res"&&done(k)?" ✓":"")+"</button>").join("");
+  const tb=k=>"<button class='tab"+(cur===k?" on":"")+"' data-v='"+k+"'>"+TABN[k]+(k!=="res"&&done(k)?" ✓":"")+"</button>";
+  $("tabs").innerHTML="<div class='tgl'>Pozice na kole</div><div class='tabs'>"+VIEWS.map(tb).join("")+"</div><div class='tgl'>Mobilita (maximální rozsah)</div><div class='tabs'>"+MOB.map(tb).join("")+"</div><div class='tabs' style='margin-top:8px'>"+tb("res")+"</div>";
 }
 function go(k){cur=k;$("file").value="";$("cam").value="";$("vcam").value="";drag=null;update();}
 $("tabs").onclick=e=>{const b=e.target.closest("button");if(b)go(b.dataset.v);};
-$("next").onclick=()=>{const i=VIEWS.indexOf(cur);go(i<3?VIEWS[i+1]:"res");window.scrollTo(0,0);};
+$("next").onclick=()=>{const i=ALL.indexOf(cur);go(i>=0&&i<ALL.length-1?ALL[i+1]:"res");window.scrollTo(0,0);};
 
 document.querySelectorAll(".mode").forEach(b=>{b.onclick=()=>{
   mode=b.dataset.mode;
@@ -267,6 +285,7 @@ const onPick=e=>{
   const f=e.target.files[0];if(!f||cur==="res")return;
   const k=cur,v=V[k];
   v.file=f;v.isVideo=(f.type||"").indexOf("video")===0;
+  if(v.isVideo&&isMob(k)){v.isVideo=false;v.st={t:"Pro mobilitu nahraj fotku, ne video.",bad:true};update();return;}
   if(v.isVideo){handleVideo(k,f);return;}
   const im=new Image();
   im.onload=()=>{
@@ -316,11 +335,15 @@ function draw(){
   const line=(ids,col)=>{const p=ids.filter(i=>B[i]);if(p.length<2)return;ctx.strokeStyle=col;ctx.beginPath();p.forEach((i,j)=>j?ctx.lineTo(B[i].x,B[i].y):ctx.moveTo(B[i].x,B[i].y));ctx.stroke();};
   if(isSide(k)&&v.ref.length>=2){ctx.strokeStyle=ac;ctx.beginPath();ctx.moveTo(v.ref[0].x,v.ref[0].y);ctx.lineTo(v.ref[1].x,v.ref[1].y);ctx.stroke();}
   if(isSide(k))line([0,1,2,3,4,5],pt);
+  else if(isMob(k)){
+    line(B.map((_,i)=>i),pt);
+    if(k==="m3"&&B.length>1){ctx.save();ctx.setLineDash([r*1.5,r]);ctx.strokeStyle=ac;ctx.beginPath();ctx.moveTo(B[1].x,B[1].y);ctx.lineTo(B[1].x,B[1].y-Math.hypot(B[0].x-B[1].x,B[0].y-B[1].y));ctx.stroke();ctx.restore();}
+  }
   else{line([0,1],pt);line([6,7],pt);line([0,2,4],pt);line([1,3,5],ac);line([6,8,10],pt);line([7,9,11],ac);}
   const lab=(t,q)=>{ctx.lineWidth=r/3;ctx.strokeStyle="#000";ctx.fillStyle="#fff";ctx.strokeText(t,q.x+r*1.2,q.y-r*1.2);ctx.fillText(t,q.x+r*1.2,q.y-r*1.2);};
   v.ref.forEach((q,i)=>{ctx.fillStyle=ac;ctx.beginPath();ctx.arc(q.x,q.y,r,0,7);ctx.fill();lab(String(i+1),q);});
   B.forEach((q,i)=>{
-    if(isSide(k)){ctx.fillStyle=pt;ctx.beginPath();ctx.arc(q.x,q.y,r,0,7);ctx.fill();lab(BODY[i],q);}
+    if(isSide(k)||isMob(k)){ctx.fillStyle=pt;ctx.beginPath();ctx.arc(q.x,q.y,r,0,7);ctx.fill();lab(NAMES[k][i],q);}
     else{ctx.fillStyle=i%2?ac:pt;ctx.beginPath();ctx.arc(q.x,q.y,r,0,7);ctx.fill();lab(i%2?"P":"L",q);}
   });
 }
@@ -341,7 +364,10 @@ function update(){
   if(res){renderResults();return;}
   $("outBox").classList.add("hidden");
   const k=cur,v=V[k];
-  $("viewTitle").textContent="Pohled: "+VN[k];$("tip").textContent=TIPS[k];
+  $("viewTitle").textContent=(isMob(k)?"Mobilita: ":"Pohled: ")+VN[k];$("tip").textContent=TIPS[k];
+  $("file").accept=isMob(k)?"image/*":"image/*,video/*";
+  ["vidHint","vcamLab","vcam"].forEach(id=>$(id).classList.toggle("hidden",isMob(k)));
+  const mvEl=$("mobVal");if(isMob(k)&&done(k)){mvEl.textContent=mobText(k);mvEl.classList.remove("hidden");}else mvEl.classList.add("hidden");
   $("stepBox").textContent=stepText(k);
   cv.classList.toggle("hidden",!v.img);
   $("ctrl").classList.toggle("hidden",!(v.img||v.file));
@@ -349,7 +375,7 @@ function update(){
   $("manual").checked=v.manual;
   $("resetRef").classList.toggle("hidden",!(mode==="hand"&&isSide(k)));
   const st=$("status");st.textContent=v.st.t;st.classList.toggle("bad",!!v.st.bad);
-  $("next").textContent=k==="back"?"Zobrazit výsledky":"Další pohled";
+  $("next").textContent=k==="m4"?"Zobrazit výsledky":"Další";
   draw();
 }
 
@@ -417,6 +443,81 @@ function fbRows(k,S){
   return rows;
 }
 
+const USE=0.85;
+const MN={m1:"Kyčel – flexe (koleno k hrudi)",m2:"Rameno – flexe (paže nad hlavu)",m3:"Kotník – dorzální flexe (koleno k zdi)",m4:"Zadní řetězec (předklon vsedě)"};
+const MNORM={m1:"orientačně 55–70° = dobrá",m2:"orientačně 165–180° = dobrá",m3:"orientačně od 38° = dobrá",m4:"orientačně do 55° = dobrá"};
+const MDESC={m1:"nejmenší úhel trup–stehno",m2:"úhel paže vůči trupu (max. zvednutí)",m3:"sklon bérce od svislice",m4:"nejmenší úhel trup–stehno vsedě"};
+const BANDS={m1:[70,85,true],m2:[165,150,false],m3:[38,30,false],m4:[55,75,true]};
+const BANDTXT=["dobrá","střední","omezená"];
+const BASESC={m1:[50,80,105],m2:[50,80,105],m3:[30,55,80],m4:[40,70,95]};
+const FIX={hip:"aktivní flexe kyčle v krajní poloze, mobilita kyčle (hluboký dřep, 90/90, kyčelní CARs) a práce s náklonem pánve",shoulder:"mobilita ramen a hrudní páteře (zvedání paží nad hlavu u zdi, hrudní extenze přes válec)",ankle:"mobilita kotníku a lýtka (koleno ke zdi, protahování lýtka)",ham:"mobilita zadní strany stehen a kyčelní předklon (hip hinge, řízené protahování hamstringů)"};
+function bandOf(k,val){const t=BANDS[k];return t[2]?(val<=t[0]?0:(val<=t[1]?1:2)):(val>=t[0]?0:(val>=t[1]?1:2));}
+function mobVal(k){
+  if(!isMob(k)||!done(k))return null;const b=V[k].body;
+  if(k==="m3")return Math.atan2(Math.abs(b[0].x-b[1].x),Math.abs(b[0].y-b[1].y)||1e-6)*180/Math.PI;
+  return angle(b[0],b[1],b[2]);
+}
+function mobText(k){const val=mobVal(k);if(val===null)return "";return "Naměřeno: "+val.toFixed(1)+"° ("+MDESC[k]+"), hodnocení: "+BANDTXT[bandOf(k,val)]+" ("+MNORM[k]+", orientační). Strana u fotoaparátu: "+(V[k].side||"?")+".";}
+function mobAnalysis(SL,SR){
+  const M={};MOB.forEach(k=>{M[k]=mobVal(k);});
+  if(MOB.every(k=>M[k]===null))return null;
+  const sides=[SL,SR].filter(Boolean),vid=sides.some(s=>s.n>1);
+  const hipD=sides.length?Math.min.apply(null,sides.map(s=>s.n>1?s.hip.min:s.hip.mean)):null;
+  const armD=sides.length?Math.max.apply(null,sides.map(s=>s.n>1?s.arm.max:s.arm.mean)):null;
+  const opt=vid?"":" (z fotky s pedálem dole, optimistický odhad)";
+  const stx=u=>u<=USE*100?"v pohodě":(u<=100?"těsné":"překračuje mobilitu");
+  const tb=rows=>"<table>"+rows.map(r=>"<tr><td>"+r[0]+"</td><td>"+r[1]+"</td></tr>").join("")+"</table>";
+  const head=t=>"<p style='margin:10px 0 2px'><b>"+t+"</b></p>";
+  const T=["MOBILITA (nejlepší dosažitelné hodnoty z testů; doporučený limit pro pozici = "+Math.round(USE*100)+" % rozsahu):"],items=[];
+  let h="<h3>Mobilita a pozice</h3><p class='muted'>Limit pro pozici je "+Math.round(USE*100)+" % tvého maximálního rozsahu, aby šla pozice dlouho udržet. Pásma dobrá, střední a omezená jsou orientační pravidla, ne klinické normy.</p>";
+  if(M.m1!==null){
+    const fm=180-M.m1,lim=180-USE*fm,b=bandOf("m1",M.m1);
+    const rows=[["Nejmenší úhel trup–stehno (max. zavření kyčle)<small>"+MNORM.m1+"</small>",f1(M.m1)],["Doporučený limit úhlu kyčle v pozici","≥ "+f1(lim)]];
+    let score=BASESC.m1[b],line="- Kyčel: max zavření "+f1(M.m1)+" (hodnocení "+BANDTXT[b]+"), doporučený limit úhlu kyčle v pozici ≥ "+f1(lim);
+    if(hipD!==null){
+      const util=(180-hipD)/fm*100,mg=hipD-lim;score=util;
+      const adv=mg>=0?"rezerva "+mg.toFixed(1)+"° (trup lze snížit až o ≈ "+Math.round(mg)+"°)":"chybí "+(-mg).toFixed(1)+"° (zvedni trup o ≈ "+Math.ceil(-mg)+"° nebo zlepši mobilitu kyčle)";
+      rows.push(["Úhel kyčle v pozici (nahoře)"+opt,f1(hipD)]);
+      rows.push(["Využití tvého rozsahu",Math.round(util)+" % ("+stx(util)+")"]);
+      rows.push(["Rezerva nebo nedostatek",adv]);
+      line+="; úhel kyčle v pozici "+f1(hipD)+opt+", využití "+Math.round(util)+" % ("+stx(util)+"), "+adv;
+    }
+    h+=head(MN.m1)+tb(rows);T.push(line);items.push({area:"kyčel (flexe)",score:score,fix:FIX.hip});
+  }
+  if(M.m2!==null){
+    const lim=USE*M.m2,b=bandOf("m2",M.m2);
+    const rows=[["Největší zvednutí paže (úhel paže vůči trupu)<small>"+MNORM.m2+"</small>",f1(M.m2)],["Doporučený limit úhlu ramene v pozici","≤ "+f1(lim)]];
+    let score=BASESC.m2[b],line="- Rameno: max zvednutí "+f1(M.m2)+" (hodnocení "+BANDTXT[b]+"), doporučený limit úhlu ramene v pozici ≤ "+f1(lim);
+    if(armD!==null){
+      const util=armD/M.m2*100,mg=lim-armD;score=util;
+      const adv=mg>=0?"rezerva "+mg.toFixed(1)+"° (lokty lze předsunout o ≈ "+Math.round(mg)+"°)":"chybí "+(-mg).toFixed(1)+"° (sniž předsunutí loktů nebo zlepši mobilitu ramen)";
+      rows.push(["Úhel ramene v pozici (trup–paže)"+opt,f1(armD)]);
+      rows.push(["Využití tvého rozsahu",Math.round(util)+" % ("+stx(util)+")"]);
+      rows.push(["Rezerva nebo nedostatek",adv]);
+      line+="; úhel ramene v pozici "+f1(armD)+opt+", využití "+Math.round(util)+" % ("+stx(util)+"), "+adv;
+    }
+    h+=head(MN.m2)+tb(rows);T.push(line);items.push({area:"rameno (flexe)",score:score,fix:FIX.shoulder});
+  }
+  if(M.m3!==null){
+    const b=bandOf("m3",M.m3);
+    h+=head(MN.m3)+tb([["Sklon bérce od svislice<small>"+MNORM.m3+"</small>",f1(M.m3)],["Hodnocení",BANDTXT[b]]])+(b>0?"<p class='muted'>Omezená dorzální flexe kotníku může ovlivnit polohu kufrů (cleat) a výšku sedla. Aplikace to zatím nepočítá s pozicí, jen s normou.</p>":"");
+    T.push("- Kotník: sklon bérce "+f1(M.m3)+" (hodnocení "+BANDTXT[b]+", porovnáno jen s normou, ne s pozicí)");
+    items.push({area:"kotník (dorzální flexe)",score:BASESC.m3[b],fix:FIX.ankle});
+  }
+  if(M.m4!==null){
+    const b=bandOf("m4",M.m4);
+    h+=head(MN.m4)+tb([["Nejmenší úhel trup–stehno vsedě<small>"+MNORM.m4+"</small>",f1(M.m4)],["Hodnocení",BANDTXT[b]]])+(b>0?"<p class='muted'>Omezená zadní strana stehen a bedra ztěžují předklon pánve a držení rovných zad v nízké poloze.</p>":"");
+    T.push("- Zadní řetězec (předklon vsedě): "+f1(M.m4)+" (hodnocení "+BANDTXT[b]+", porovnáno jen s normou)");
+    items.push({area:"zadní strana stehen a bedra (předklon)",score:BASESC.m4[b],fix:FIX.ham});
+  }
+  items.sort((a,b)=>b.score-a.score);const top=items[0];
+  h+="<p style='margin-top:12px'><b>"+(top.score>=USE*100?"Nejlepší oblast ke zlepšení: ":"Aktuálně nic pozici neomezuje. Největší potenciál pro další snížení pozice má: ")+top.area+"</b><br>"+top.fix+"</p>";
+  const miss=MOB.filter(k=>M[k]===null).map(k=>MN[k]);
+  if(miss.length)h+="<p class='muted'>Chybí testy: "+miss.join(", ")+". Doporučení se opírá jen o hotové testy.</p>";
+  h+="<p class='muted'>Při dlouhodobé bolesti nebo zjevném omezení pohybu to nech vyšetřit u fyzioterapeuta. Krk a hrudní páteř (držení hlavy při pohledu dopředu) aplikace neměří, pokud tě tam pozice tlačí, ber to jako další omezení.</p>";
+  T.push("Nejlepší oblast ke zlepšení podle aplikace: "+top.area+" (skóre "+Math.round(top.score)+").");
+  return{h:h,T:T};
+}
 const SR_PHOTO=[["Koleno (spodní poloha)","knee","mean","orientačně 145–155°"],["Kyčel (trup–stehno)","hip","mean","nižší = větší omezení výkonu a komfortu"],["Sklon trupu k vodorovné","trunk","mean","nižší = menší čelní plocha"],["Loket","elbow","mean","kloub opřený v podložkách"],["Rameno (trup–paže)","arm","mean",""]];
 const SR_VID=[["Koleno – natažené (dole)","knee","max","orientačně 145–155°"],["Koleno – pokrčené (nahoře)","knee","min",""],["Kyčel – nejvíc zavřená (nahoře)","hip","min","nižší = větší omezení výkonu a komfortu"],["Kyčel – otevřená (dole)","hip","max",""],["Sklon trupu (průměr)","trunk","mean","nižší = menší čelní plocha"],["Sklon trupu – rozkmit","trunk","range","vyšší = méně stabilní trup"],["Loket (průměr)","elbow","mean","kloub opřený v podložkách"],["Rameno (průměr)","arm","mean",""]];
 const f1=x=>x.toFixed(1)+"°";
@@ -424,14 +525,15 @@ const getv=(st,s)=>s==="range"?st.max-st.min:st[s];
 
 function renderResults(){
   const SL=sideStats("left"),SR=sideStats("right"),F=fbStats("front"),Bk=fbStats("back");
-  if(!SL&&!SR&&!F&&!Bk){
+  const MA=mobAnalysis(SL,SR);
+  if(!SL&&!SR&&!F&&!Bk&&!MA){
     $("resOut").innerHTML="<p class='muted'>Zatím není zpracovaný žádný pohled. Přepni na záložku s pohledem a nahraj fotku nebo video.</p>";
     $("outBox").classList.add("hidden");return;
   }
   const miss=VIEWS.filter(k=>!done(k)).map(k=>VN[k]);
   const vids=VIEWS.filter(k=>done(k)&&V[k].frames).map(k=>VN[k]);
   let h="";const T=[];
-  if(miss.length)h+="<p class='muted warn'>Chybí nebo nejsou hotové pohledy: "+miss.join(", ")+". Výsledky jsou jen z dokončených pohledů.</p>";
+  if(miss.length&&miss.length<4)h+="<p class='muted warn'>Chybí nebo nejsou hotové pohledy: "+miss.join(", ")+". Výsledky jsou jen z dokončených pohledů.</p>";
   if(SL||SR){
     const rows=(vids.length&&((SL&&SL.n>1)||(SR&&SR.n>1)))?SR_VID:SR_PHOTO;
     h+="<h3>Z boku</h3><table><tr><td></td><td>Levá</td><td>Pravá</td><td>Rozdíl</td></tr>";
@@ -451,12 +553,13 @@ function renderResults(){
     h+="<h3>"+x[1]+"</h3><table>"+rows.map(r=>"<tr><td>"+r[0]+(r[2]?"<small>"+r[2]+"</small>":"")+"</td><td>"+r[1]+"</td></tr>").join("")+"</table>";
     T.push("");T.push(x[1]+":");rows.forEach(r=>T.push("- "+r[0]+": "+r[1]));
   });
+  if(MA){h+=MA.h;T.push("");MA.T.forEach(x=>T.push(x));}
   $("resOut").innerHTML=h;
   const src=VIEWS.filter(k=>done(k)).map(k=>VN[k]+": "+(V[k].frames?"video, "+V[k].frames.length+" snímků, průměrná jistota "+Math.round((V[k].det?V[k].det.minVis:0)*100)+" %":(V[k].edited?"fotka, body označeny nebo upraveny ručně":"fotka, automaticky, jistota od "+Math.round((V[k].det?V[k].det.minVis:0)*100)+" %"))).join("; ");
   const txt="Jsem časovkář, zlepšuji aerodynamickou pozici na TT kole. Mám změřené úhly ("+(mode==="fixed"?"pevné stanoviště":"z ruky, boční pohledy s korekcí perspektivy")+"). Zdroj: "+src+"."+(vids.length?" U videí jsou hodnoty počítány přes celý cyklus šlapání (minimum, maximum nebo průměr podle popisku, rozkmit = rozdíl maxima a minima).":" U fotek je měřená noha dole.")+"\n\n"+
   "Jezdec: výška "+($("v").value||"?")+" cm, hmotnost "+($("h").value||"?")+" kg, pas "+($("p").value||"?")+" cm, délka nohy "+($("n").value||"?")+" cm.\n"+
   "Poznámky: "+($("o").value||"žádné")+"\n"+(miss.length?"Chybějící pohledy: "+miss.join(", ")+"\n":"")+"\n"+T.join("\n")+
-  "\n\nPoraď malé úpravy pozice a vybavení pro nižší CdA. Hlídej komfort a to, aby pozice neomezovala výkon z nohou (úhel v kyčli). Všimni si případných asymetrií mezi levou a pravou stranou a řekni, které mohou být skutečné a které spíš chyba měření. U každé rady uveď, o kolik a proč, a co si mám při změně hlídat. Pokud je měření nejisté, řekni to.";
+  "\n\nPoraď malé úpravy pozice a vybavení pro nižší CdA. Hlídej komfort a to, aby pozice neomezovala výkon z nohou (úhel v kyčli). Všimni si případných asymetrií mezi levou a pravou stranou a řekni, které mohou být skutečné a které spíš chyba měření. U každé rady uveď, o kolik a proč, a co si mám při změně hlídat. Pokud je měření nejisté, řekni to."+(MA?" Navrhovanou pozici přizpůsob limitům mojí mobility uvedeným výše a řekni, kterou oblast mobility mám zlepšit, aby šla pozice dál zlepšit, a jak (konkrétní cviky a jak dlouho).":"");
   $("out").value=txt;$("outBox").classList.remove("hidden");
 }
 
