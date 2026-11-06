@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aero pozice – měření z fotek a videí</title>
+<style>
+:root{--bg:#eef2f4;--surface:#fff;--ink:#12202b;--muted:#5a6b78;--line:#cfd9df;--accent:#0e7c86;--pt:#e8590c;--on:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a22;--surface:#17252f;--ink:#e6eef2;--muted:#93a6b2;--line:#2b3d49;--accent:#4cc3cf;--pt:#ff8a4c;--on:#0f1a22}}
+:root[data-theme="dark"]{--bg:#0f1a22;--surface:#17252f;--ink:#e6eef2;--muted:#93a6b2;--line:#2b3d49;--accent:#4cc3cf;--pt:#ff8a4c;--on:#0f1a22}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 "Avenir Next","Segoe UI",Roboto,sans-serif;padding:16px;max-width:820px;margin:0 auto}
+h1{font-size:1.6rem;line-height:1.2;margin:8px 0 4px;letter-spacing:-.01em}
+h2{font-size:1.1rem;margin:0 0 8px}
+h3{font-size:1rem;margin:14px 0 6px}
+p{margin:0 0 10px}
+.muted{color:var(--muted);font-size:.92rem}
+.modes{display:grid;gap:12px;margin-top:16px}
+.mode{display:block;width:100%;text-align:left;background:var(--surface);color:var(--ink);border:2px solid var(--line);border-radius:14px;padding:16px;font:inherit;cursor:pointer}
+.mode:hover,.mode:focus-visible{border-color:var(--accent);outline:none}
+.mode b{display:block;font-size:1.05rem;margin-bottom:4px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:.88rem;color:var(--muted)}
+input[type=number],input[type=text]{width:100%;font:inherit;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+button.btn{font:inherit;padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:var(--on);font-weight:600;cursor:pointer}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{flex:1 1 0;min-width:80px;font:inherit;font-size:.92rem;padding:9px 6px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.tab.on{background:var(--accent);color:var(--on);border-color:var(--accent);font-weight:600}
+.step{background:var(--accent);color:var(--on);border-radius:10px;padding:10px 12px;font-weight:600;margin:8px 0;min-height:44px}
+.status{margin:6px 0}
+.status.bad{border-left:4px solid var(--pt);padding-left:10px;color:var(--ink)}
+canvas{display:block;width:100%;height:auto;border-radius:10px;touch-action:none;background:var(--line)}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+td+td{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+td small{display:block;color:var(--muted);font-weight:400}
+td.flag{color:var(--pt)}
+textarea{width:100%;min-height:260px;font:.85rem/1.4 ui-monospace,Menlo,monospace;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.hidden{display:none}
+.warn{border-left:4px solid var(--pt);padding-left:10px}
+.chk{display:flex;gap:8px;align-items:flex-start;color:var(--ink);font-size:.92rem;margin-top:10px}
+.chk input{margin-top:4px}
+</style>
+</head>
+<body>
+<h1>Aero pozice na časovkářském kole</h1>
+<p class="muted">Měření úhlů ze čtyř pohledů: levá strana, pravá strana, zepředu, zezadu. U každého pohledu můžeš nahrát fotku, nebo video celého cyklu šlapání. Body těla najde automaticky model v prohlížeči. Nic se nikam neodesílá.</p>
+
+<section id="s-mode">
+  <p>Jak budeš fotit nebo natáčet?</p>
+  <div class="modes">
+    <button class="mode" data-mode="fixed"><b>Pevné stanoviště</b>Telefon na stativu nebo podložce, vždy stejná výška a vzdálenost, kolmo na kolo. Žádná korekce, měření je přímé. Nejlepší volba pro videa.</button>
+    <button class="mode" data-mode="hand"><b>Z ruky, s korekcí perspektivy</b>Fotíš volně. U bočních pohledů označíš osy a okraje předního kola, aplikace srovná náklon a zkreslení.</button>
+  </div>
+</section>
+
+<section id="s-work" class="hidden">
+  <div class="card">
+    <h2 id="modeTitle"></h2>
+    <div id="handTips" class="muted warn hidden">Z ruky: stůj alespoň 3 m od kola, drž telefon ve výšce středu kliky a miř kolmo na rám. Korekce platí jen pro boční pohledy a u videa se počítá z jednoho snímku. Zepředu a zezadu drž telefon přesně vodorovně, jinak se zkreslí sklony ramen a pánve.</div>
+  </div>
+
+  <div class="card">
+    <h2>Údaje o jezdci</h2>
+    <div class="grid">
+      <div><label for="v">Výška (cm)</label><input id="v" type="number" inputmode="decimal"></div>
+      <div><label for="h">Hmotnost (kg)</label><input id="h" type="number" inputmode="decimal"></div>
+      <div><label for="p">Pas (cm)</label><input id="p" type="number" inputmode="decimal"></div>
+      <div><label for="n">Délka nohy po rozkrok (cm)</label><input id="n" type="number" inputmode="decimal"></div>
+    </div>
+    <label style="margin-top:8px" for="o">Poznámky (bolesti, výkon, vybavení)</label>
+    <input id="o" type="text">
+  </div>
+
+  <div class="card"><div class="tabs" id="tabs"></div></div>
+
+  <div class="card" id="photoCard">
+    <h2 id="viewTitle"></h2>
+    <p class="muted" id="tip"></p>
+    <p class="muted">Fotka, nebo video 5 až 15 s se 3 až 5 otáčkami kliky. Z videa se vyhodnotí celý cyklus šlapání (minimum, maximum, průměr). Video natáčej ze stativu nebo podložky, ne z ruky.</p>
+    <label for="file">Vybrat fotku nebo video z galerie</label>
+    <input id="file" type="file" accept="image/*,video/*">
+    <label for="cam" style="margin-top:8px">Vyfotit fotoaparátem</label>
+    <input id="cam" type="file" accept="image/*" capture="environment">
+    <label for="vcam" style="margin-top:8px">Natočit video fotoaparátem</label>
+    <input id="vcam" type="file" accept="video/*" capture="environment">
+    <div id="stepBox" class="step"></div>
+    <canvas id="cv" class="hidden"></canvas>
+    <p id="status" class="muted status"></p>
+    <div id="ctrl" class="row hidden">
+      <button class="btn ghost" id="undo">Zpět o bod</button>
+      <button class="btn ghost" id="redo">Znovu detekovat</button>
+      <button class="btn ghost" id="resetRef">Smazat osy a okraje kola</button>
+    </div>
+    <label class="chk hidden" id="manualBox"><input type="checkbox" id="manual"><span>Povolit ruční označení a opravu bodů (jen když je detekce zjevně špatně). V textu pro Claude se to uvede.</span></label>
+    <div class="row"><button class="btn" id="next">Další pohled</button></div>
+  </div>
+
+  <div class="card hidden" id="resCard">
+    <h2>Výsledky</h2>
+    <div id="resOut"></div>
+  </div>
+
+  <div class="card hidden" id="outBox">
+    <h2>Text pro Claude</h2>
+    <textarea id="out" readonly></textarea>
+    <div class="row"><button class="btn" id="copy">Zkopírovat</button><span class="muted" id="copied"></span></div>
+  </div>
+  <div class="row"><button class="btn ghost" id="back">Změnit režim</button></div>
+</section>
+
+<script type="module">
+const VER="0.10.14";
+const BASE="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@"+VER;
+const MODEL="https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
+const REF=["Osa zadního kola","Osa předního kola","Přední kolo – levý okraj","Přední kolo – pravý okraj","Přední kolo – horní okraj","Přední kolo – dolní okraj"];
+const BODY=["Kotník","Koleno","Kyčel","Rameno","Loket","Zápěstí"];
+const FB=["Levé rameno","Pravé rameno","Levý loket","Pravý loket","Levé zápěstí","Pravé zápěstí","Levá kyčel","Pravá kyčel","Levé koleno","Pravé koleno","Levý kotník","Pravý kotník"];
+const VIEWS=["left","right","front","back"];
+const VN={left:"Levá strana",right:"Pravá strana",front:"Zepředu",back:"Zezadu"};
+const TABN={left:"Levá",right:"Pravá",front:"Zepředu",back:"Zezadu",res:"Výsledky"};
+const TIPS={
+  left:"Foť nebo natáčej jezdce z jeho levé strany (levá strana jezdce je u fotoaparátu), kolmo na rám, celý jezdec i kolo v záběru. U fotky levý pedál dole (6 hodin).",
+  right:"Foť nebo natáčej jezdce z jeho pravé strany (pravá strana jezdce je u fotoaparátu), kolmo na rám, celý jezdec i kolo v záběru. U fotky pravý pedál dole (6 hodin).",
+  front:"Foť nebo natáčej přesně zepředu ve výšce hrudníku, telefon vodorovně. Levá a pravá strana se v textu myslí levá a pravá strana jezdce.",
+  back:"Foť nebo natáčej přesně zezadu ve výšce hrudníku, telefon vodorovně. Levá a pravá strana se v textu myslí levá a pravá strana jezdce."
+};
+const NAMES={left:BODY,right:BODY,front:FB,back:FB};
+const SIDEIDX={left:[27,25,23,11,13,15],right:[28,26,24,12,14,16]};
+const FBIDX=[11,12,13,14,15,16,23,24,25,26,27,28];
+const isSide=k=>k==="left"||k==="right";
+const $=id=>document.getElementById(id);
+const cv=$("cv"),ctx=cv.getContext("2d"),dc=document.createElement("canvas"),dctx=dc.getContext("2d");
+let mode=null,cur="left",drag=null;
+const V={};VIEWS.forEach(k=>{V[k]={img:null,w:0,h:0,ref:[],body:[],frames:null,file:null,isVideo:false,manual:false,edited:false,busy:false,det:null,st:{t:"",bad:false}};});
+
+let landmarker=null,loading=null;
+function getLM(){
+  if(landmarker)return Promise.resolve(landmarker);
+  if(!loading)loading=(async()=>{
+    const m=await import(BASE+"/vision_bundle.mjs");
+    const fs=await m.FilesetResolver.forVisionTasks(BASE+"/wasm");
+    const opt=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:"IMAGE",numPoses:1});
+    try{landmarker=await m.PoseLandmarker.createFromOptions(fs,opt("GPU"));}
+    catch(e){landmarker=await m.PoseLandmarker.createFromOptions(fs,opt("CPU"));}
+    return landmarker;
+  })().catch(e=>{loading=null;throw e;});
+  return loading;
+}
+function angle(a,b,c){const v1={x:a.x-b.x,y:a.y-b.y},v2={x:c.x-b.x,y:c.y-b.y};
+  const d=(v1.x*v2.x+v1.y*v2.y)/(Math.hypot(v1.x,v1.y)*Math.hypot(v2.x,v2.y));return Math.acos(Math.max(-1,Math.min(1,d)))*180/Math.PI;}
+
+async function autoDetect(k){
+  const v=V[k];if(!v.img)return;
+  v.busy=true;v.body=[];v.frames=null;v.edited=false;v.det=null;
+  v.st={t:"Načítám model a hledám body těla… (poprvé se stahuje asi 9 MB)",bad:false};update();
+  try{
+    const lm=await getLM();
+    const sc=Math.min(1,1280/Math.max(v.img.naturalWidth,v.img.naturalHeight));
+    dc.width=Math.round(v.img.naturalWidth*sc);dc.height=Math.round(v.img.naturalHeight*sc);
+    dctx.drawImage(v.img,0,0,dc.width,dc.height);
+    const r=lm.detect(dc);
+    if(!r.landmarks||!r.landmarks.length)throw new Error("Na fotce nebyl nalezen jezdec. Zkus fotku, na které je vidět celé tělo.");
+    const L=r.landmarks[0],vis=i=>L[i].visibility||0;
+    const idx=isSide(k)?SIDEIDX[k]:FBIDX;
+    v.body=idx.map(i=>({x:L[i].x*v.w,y:L[i].y*v.h,v:vis(i)}));
+    const minVis=Math.min.apply(null,v.body.map(b=>b.v));
+    v.det={minVis:minVis};
+    let m="Body těla nalezeny automaticky (nejnižší jistota "+Math.round(minVis*100)+" %).",bad=false;
+    if(isSide(k)){
+      const o=k==="left"?SIDEIDX.right:SIDEIDX.left;
+      const a=idx.reduce((s,i)=>s+vis(i),0)/6,b=o.reduce((s,i)=>s+vis(i),0)/6;
+      if(b>a+0.15){m+=" Pozor: lépe viditelná je opačná strana těla. Fotka je možná z druhé strany, nebo model strany zaměnil.";bad=true;}
+    }
+    if(minVis<0.5){m+=" Jistota je nízká, zkontroluj, jestli body sedí na kloubech.";bad=true;}
+    v.st={t:m,bad:bad};
+  }catch(e){
+    v.manual=true;
+    v.st={t:"Automatická detekce selhala: "+(e&&e.message?e.message:e)+" Zapnul jsem ruční označení, klepni body postupně na fotku.",bad:true};
+  }
+  v.busy=false;update();
+}
+
+function seek(vid,t){return new Promise((res,rej)=>{
+  if(Math.abs(vid.currentTime-t)<0.002){res();return;}
+  const to=setTimeout(()=>rej(new Error("Video se nepodařilo přetočit.")),10000);
+  vid.onseeked=()=>{clearTimeout(to);res();};vid.currentTime=t;});}
+
+async function handleVideo(k,f){
+  const v=V[k];
+  v.busy=true;v.body=[];v.frames=null;v.ref=[];v.manual=false;v.edited=false;v.img=null;v.det=null;
+  v.st={t:"Načítám video…",bad:false};update();
+  let vid=null;
+  try{
+    vid=document.createElement("video");vid.muted=true;vid.playsInline=true;vid.preload="auto";
+    await new Promise((res,rej)=>{vid.onloadeddata=res;vid.onerror=()=>rej(new Error("Video se nepodařilo načíst."));vid.src=URL.createObjectURL(f);});
+    const W=vid.videoWidth,H=vid.videoHeight,dur=vid.duration;
+    if(!W||!H||!isFinite(dur)||dur<=0)throw new Error("Nepodařilo se zjistit rozměry nebo délku videa.");
+    const sc=Math.min(1,1600/Math.max(W,H));v.w=Math.round(W*sc);v.h=Math.round(H*sc);
+    v.st={t:"Načítám model… (poprvé se stahuje asi 9 MB)",bad:false};if(cur===k)$("status").textContent=v.st.t;
+    const lm=await getLM();
+    const sd=Math.min(1,1280/Math.max(W,H));dc.width=Math.round(W*sd);dc.height=Math.round(H*sd);
+    const N=Math.max(8,Math.min(90,Math.floor(dur*8))),idx=isSide(k)?SIDEIDX[k]:FBIDX,frames=[];
+    for(let i=0;i<N;i++){
+      const t=Math.min(Math.max(dur-0.05,0),(i+0.5)*dur/N);
+      await seek(vid,t);dctx.drawImage(vid,0,0,dc.width,dc.height);
+      const r=lm.detect(dc);
+      if(r.landmarks&&r.landmarks.length){
+        const L=r.landmarks[0];
+        const body=idx.map(j=>({x:L[j].x*v.w,y:L[j].y*v.h,v:L[j].visibility||0}));
+        const mv=body.reduce((s,b)=>s+b.v,0)/body.length;
+        if(mv>=0.35)frames.push({t:t,body:body,mv:mv});
+      }
+      v.st={t:"Zpracovávám video: "+(i+1)+"/"+N+" (použitelných snímků: "+frames.length+")",bad:false};
+      if(cur===k)$("status").textContent=v.st.t;
+      await new Promise(r=>setTimeout(r,0));
+    }
+    if(frames.length<5)throw new Error("Jezdec byl nalezen jen v "+frames.length+" snímcích videa.");
+    let key=0;
+    if(isSide(k)){let best=-1;frames.forEach((fr,i)=>{const b=fr.body,a=angle(b[2],b[1],b[0]);if(a>best){best=a;key=i;}});}
+    else key=frames.length>>1;
+    await seek(vid,frames[key].t);
+    const kc=document.createElement("canvas");kc.width=v.w;kc.height=v.h;kc.getContext("2d").drawImage(vid,0,0,v.w,v.h);
+    v.img=kc;v.frames=frames;v.body=frames[key].body.map(p=>({x:p.x,y:p.y,v:p.v}));
+    const avg=frames.reduce((s,fr)=>s+fr.mv,0)/frames.length;
+    v.det={minVis:avg};
+    let m="Video zpracováno: "+frames.length+" z "+N+" snímků. Zobrazený snímek: "+(isSide(k)?"pedál dole (nejvíc natažené koleno)":"prostřední snímek")+". Statistiky se počítají přes celý cyklus. Průměrná jistota "+Math.round(avg*100)+" %.";
+    let bad=false;
+    if(frames.length<N*0.6){m+=" Jezdec byl nalezen jen v části snímků, výsledky jsou méně spolehlivé.";bad=true;}
+    v.st={t:m,bad:bad};
+  }catch(e){
+    v.frames=null;
+    if(vid&&vid.videoWidth&&v.w){
+      try{await seek(vid,Math.max(0,(vid.duration||0)/2));
+        const kc=document.createElement("canvas");kc.width=v.w;kc.height=v.h;kc.getContext("2d").drawImage(vid,0,0,v.w,v.h);v.img=kc;}catch(_){}
+    }
+    v.manual=!!v.img;
+    v.st={t:"Zpracování videa selhalo: "+(e&&e.message?e.message:e)+(v.img?" Označ body ručně na zobrazeném snímku, vyhodnotí se jako jedna fotka.":""),bad:true};
+  }
+  v.busy=false;update();
+}
+
+function done(k){const v=V[k];return !!v.img&&!v.busy&&v.body.length===NAMES[k].length&&(!isSide(k)||mode!=="hand"||v.ref.length===6);}
+
+function renderTabs(){
+  $("tabs").innerHTML=VIEWS.concat(["res"]).map(k=>"<button class='tab"+(cur===k?" on":"")+"' data-v='"+k+"'>"+TABN[k]+(k!=="res"&&done(k)?" ✓":"")+"</button>").join("");
+}
+function go(k){cur=k;$("file").value="";$("cam").value="";$("vcam").value="";drag=null;update();}
+$("tabs").onclick=e=>{const b=e.target.closest("button");if(b)go(b.dataset.v);};
+$("next").onclick=()=>{const i=VIEWS.indexOf(cur);go(i<3?VIEWS[i+1]:"res");window.scrollTo(0,0);};
+
+document.querySelectorAll(".mode").forEach(b=>{b.onclick=()=>{
+  mode=b.dataset.mode;
+  $("s-mode").classList.add("hidden");$("s-work").classList.remove("hidden");
+  $("modeTitle").textContent=mode==="fixed"?"Režim: pevné stanoviště":"Režim: z ruky s korekcí";
+  $("handTips").classList.toggle("hidden",mode!=="hand");
+  VIEWS.forEach(k=>{V[k].ref=[];});
+  go("left");
+};});
+$("back").onclick=()=>{$("s-work").classList.add("hidden");$("s-mode").classList.remove("hidden");};
+
+const onPick=e=>{
+  const f=e.target.files[0];if(!f||cur==="res")return;
+  const k=cur,v=V[k];
+  v.file=f;v.isVideo=(f.type||"").indexOf("video")===0;
+  if(v.isVideo){handleVideo(k,f);return;}
+  const im=new Image();
+  im.onload=()=>{
+    v.img=im;
+    const sc=Math.min(1,1600/Math.max(im.naturalWidth,im.naturalHeight));
+    v.w=Math.round(im.naturalWidth*sc);v.h=Math.round(im.naturalHeight*sc);
+    v.ref=[];v.manual=false;v.frames=null;autoDetect(k);
+  };
+  im.src=URL.createObjectURL(f);
+};
+$("file").onchange=onPick;$("cam").onchange=onPick;$("vcam").onchange=onPick;
+$("redo").onclick=()=>{if(cur==="res")return;const v=V[cur];if(!v.img&&!v.file)return;v.manual=false;if(v.isVideo&&v.file)handleVideo(cur,v.file);else autoDetect(cur);};
+$("resetRef").onclick=()=>{if(cur==="res")return;V[cur].ref=[];update();};
+$("undo").onclick=()=>{if(cur==="res")return;const v=V[cur];if(v.manual&&v.body.length)v.body.pop();else if(v.ref.length)v.ref.pop();update();};
+$("manual").onchange=e=>{if(cur==="res")return;V[cur].manual=e.target.checked;update();};
+
+function pos(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*cv.width/r.width,y:(e.clientY-r.top)*cv.height/r.height,s:cv.width/r.width};}
+cv.addEventListener("pointerdown",e=>{
+  if(cur==="res")return;const k=cur,v=V[k];if(!v.img||v.busy)return;
+  const p=pos(e);
+  const needRef=mode==="hand"&&isSide(k)&&v.ref.length<6;
+  const needBody=v.manual&&v.body.length<NAMES[k].length;
+  const rad=((needRef||needBody)?12:36)*p.s;
+  let best=null,bd=rad;const cand=[];
+  v.ref.forEach((q,i)=>cand.push([v.ref,i,q]));
+  if(v.manual)v.body.forEach((q,i)=>cand.push([v.body,i,q]));
+  cand.forEach(c=>{const d=Math.hypot(c[2].x-p.x,c[2].y-p.y);if(d<bd){bd=d;best=c;}});
+  if(best){drag={a:best[0],i:best[1],k:k};cv.setPointerCapture(e.pointerId);}
+  else if(needRef){v.ref.push({x:p.x,y:p.y});drag={a:v.ref,i:v.ref.length-1,k:k};cv.setPointerCapture(e.pointerId);update();}
+  else if(needBody){v.body.push({x:p.x,y:p.y,v:1});v.edited=true;drag={a:v.body,i:v.body.length-1,k:k};cv.setPointerCapture(e.pointerId);update();}
+});
+cv.addEventListener("pointermove",e=>{
+  if(!drag)return;const p=pos(e),v=V[drag.k];
+  drag.a[drag.i]={x:p.x,y:p.y,v:drag.a[drag.i].v};
+  if(drag.a===v.body)v.edited=true;update();
+});
+const endDrag=()=>{drag=null;};
+cv.addEventListener("pointerup",endDrag);cv.addEventListener("pointercancel",endDrag);
+
+function draw(){
+  const k=cur;if(k==="res")return;const v=V[k];if(!v.img)return;
+  if(cv.width!==v.w||cv.height!==v.h){cv.width=v.w;cv.height=v.h;}
+  ctx.drawImage(v.img,0,0,v.w,v.h);
+  const r=Math.max(6,v.w/110),css=getComputedStyle(document.documentElement);
+  const pt=css.getPropertyValue("--pt").trim(),ac=css.getPropertyValue("--accent").trim(),B=v.body;
+  ctx.lineWidth=r/2.2;ctx.font="bold "+(r*2.1)+"px sans-serif";
+  const line=(ids,col)=>{const p=ids.filter(i=>B[i]);if(p.length<2)return;ctx.strokeStyle=col;ctx.beginPath();p.forEach((i,j)=>j?ctx.lineTo(B[i].x,B[i].y):ctx.moveTo(B[i].x,B[i].y));ctx.stroke();};
+  if(isSide(k)&&v.ref.length>=2){ctx.strokeStyle=ac;ctx.beginPath();ctx.moveTo(v.ref[0].x,v.ref[0].y);ctx.lineTo(v.ref[1].x,v.ref[1].y);ctx.stroke();}
+  if(isSide(k))line([0,1,2,3,4,5],pt);
+  else{line([0,1],pt);line([6,7],pt);line([0,2,4],pt);line([1,3,5],ac);line([6,8,10],pt);line([7,9,11],ac);}
+  const lab=(t,q)=>{ctx.lineWidth=r/3;ctx.strokeStyle="#000";ctx.fillStyle="#fff";ctx.strokeText(t,q.x+r*1.2,q.y-r*1.2);ctx.fillText(t,q.x+r*1.2,q.y-r*1.2);};
+  v.ref.forEach((q,i)=>{ctx.fillStyle=ac;ctx.beginPath();ctx.arc(q.x,q.y,r,0,7);ctx.fill();lab(String(i+1),q);});
+  B.forEach((q,i)=>{
+    if(isSide(k)){ctx.fillStyle=pt;ctx.beginPath();ctx.arc(q.x,q.y,r,0,7);ctx.fill();lab(BODY[i],q);}
+    else{ctx.fillStyle=i%2?ac:pt;ctx.beginPath();ctx.arc(q.x,q.y,r,0,7);ctx.fill();lab(i%2?"P":"L",q);}
+  });
+}
+
+function stepText(k){
+  const v=V[k],n=NAMES[k].length;
+  if(!v.img&&!v.busy)return "Nahraj fotku nebo video: "+VN[k];
+  if(v.busy)return v.isVideo?"Zpracovávám video…":"Hledám body těla…";
+  if(mode==="hand"&&isSide(k)&&v.ref.length<6)return "Klepni na: "+(v.ref.length+1)+". "+REF[v.ref.length]+" ("+(v.ref.length+1)+"/6)";
+  if(v.body.length<n)return v.manual?"Klepni na: "+NAMES[k][v.body.length]+" ("+(v.body.length+1)+"/"+n+")":"Body těla chybí, klepni na Znovu detekovat.";
+  return "Hotovo"+(v.frames?" (video, "+v.frames.length+" snímků)":"")+". Pokračuj dalším pohledem."+(v.manual?" Body lze přetáhnout.":"");
+}
+
+function update(){
+  renderTabs();
+  const res=cur==="res";
+  $("photoCard").classList.toggle("hidden",res);$("resCard").classList.toggle("hidden",!res);
+  if(res){renderResults();return;}
+  $("outBox").classList.add("hidden");
+  const k=cur,v=V[k];
+  $("viewTitle").textContent="Pohled: "+VN[k];$("tip").textContent=TIPS[k];
+  $("stepBox").textContent=stepText(k);
+  cv.classList.toggle("hidden",!v.img);
+  $("ctrl").classList.toggle("hidden",!(v.img||v.file));
+  $("manualBox").classList.toggle("hidden",!v.img||!!v.frames);
+  $("manual").checked=v.manual;
+  $("resetRef").classList.toggle("hidden",!(mode==="hand"&&isSide(k)));
+  const st=$("status");st.textContent=v.st.t;st.classList.toggle("bad",!!v.st.bad);
+  $("next").textContent=k==="back"?"Zobrazit výsledky":"Další pohled";
+  draw();
+}
+
+function sideNums(b,ref){
+  let all=(mode==="hand"?ref:[]).concat(b).map(p=>({x:p.x,y:p.y})),info="Bez korekce (pevné stanoviště).";
+  if(mode==="hand"){
+    const a=Math.atan2(all[1].y-all[0].y,all[1].x-all[0].x),c=Math.cos(a),s=Math.sin(a);
+    all=all.map(p=>({x:p.x*c+p.y*s,y:-p.x*s+p.y*c}));
+    const w=Math.abs(all[3].x-all[2].x),h=Math.abs(all[5].y-all[4].y);
+    let kk=w>0?h/w:1;kk=Math.min(1.5,Math.max(0.5,kk));
+    all=all.map(p=>({x:p.x*kk,y:p.y}));
+    let deg=((a*180/Math.PI)%180+180)%180;if(deg>90)deg-=180;
+    info="Korekce: srovnáno o "+Math.abs(deg).toFixed(1)+"° podle os kol, vodorovné natažení ×"+kk.toFixed(2)+" podle předního kola.";
+    if(Math.abs(kk-1)>0.25)info+=" Pozor: velké zkreslení, fotka byla pořízena hodně šikmo, výsledky jsou méně přesné.";
+  }
+  const P=all.slice(mode==="hand"?6:0),A=P[0],K=P[1],Ky=P[2],R=P[3],L=P[4],Z=P[5];
+  return{knee:angle(Ky,K,A),hip:angle(R,Ky,K),elbow:angle(R,L,Z),arm:angle(Ky,R,L),
+    trunk:Math.atan2(Math.abs(R.y-Ky.y),Math.abs(R.x-Ky.x))*180/Math.PI,info:info};
+}
+function fbNums(k,b){
+  const d=(a,c)=>Math.hypot(a.x-c.x,a.y-c.y);
+  const tl=(a,c)=>Math.atan2(c.y-a.y,Math.abs(c.x-a.x)||1e-6)*180/Math.PI;
+  const ms={x:(b[0].x+b[1].x)/2,y:(b[0].y+b[1].y)/2},mh={x:(b[6].x+b[7].x)/2,y:(b[6].y+b[7].y)/2};
+  const leanDeg=Math.atan(Math.abs(ms.x-mh.x)/(Math.abs(ms.y-mh.y)||1e-6))*180/Math.PI;
+  const toLeft=k==="back"?ms.x<mh.x:ms.x>mh.x;
+  const kn=(h,kk,an)=>{
+    const H=b[h],K=b[kk],A=b[an],t=(K.y-H.y)/((A.y-H.y)||1e-6),xl=H.x+t*(A.x-H.x),off=K.x-xl;
+    const dev=Math.atan(Math.abs(off)/(Math.abs(K.y-H.y)||1e-6))*180/Math.PI;
+    return((mh.x-H.x)*off>0?1:-1)*dev;
+  };
+  const sw=d(b[0],b[1])||1e-6,hw=d(b[6],b[7])||1e-6;
+  return{shT:tl(b[0],b[1]),hipT:tl(b[6],b[7]),lean:toLeft?leanDeg:-leanDeg,elbW:d(b[2],b[3])/sw,kneeW:d(b[8],b[9])/hw,ankW:d(b[10],b[11])/hw,kL:kn(6,8,10),kR:kn(7,9,11)};
+}
+const stat=a=>({mean:a.reduce((s,x)=>s+x,0)/a.length,min:Math.min.apply(null,a),max:Math.max.apply(null,a)});
+const framesOf=k=>V[k].frames?V[k].frames.map(f=>f.body):[V[k].body];
+
+function sideStats(k){
+  if(!done(k))return null;const v=V[k],arr=framesOf(k).map(b=>sideNums(b,v.ref));
+  const S={n:arr.length,info:arr[0].info};
+  ["knee","hip","elbow","arm","trunk"].forEach(key=>{S[key]=stat(arr.map(x=>x[key]));});
+  return S;
+}
+function fbStats(k){
+  if(!done(k))return null;const arr=framesOf(k).map(b=>fbNums(k,b));
+  const S={n:arr.length};
+  ["shT","hipT","lean","elbW","kneeW","ankW","kL","kR"].forEach(key=>{S[key]=stat(arr.map(x=>x[key]));});
+  return S;
+}
+function fbRows(k,S){
+  const sgn=(st,pos,neg)=>{const m=st.mean,a=Math.abs(m);return a<0.5?a.toFixed(1)+"° (vyrovnané)":a.toFixed(1)+"° ("+(m>0?pos:neg)+")";};
+  const rng=st=>S.n>1?"; rozkmit "+(st.max-st.min).toFixed(1)+"°":"";
+  const ratio=st=>S.n>1?st.mean.toFixed(2)+" (rozsah "+st.min.toFixed(2)+"–"+st.max.toFixed(2)+")":st.mean.toFixed(2);
+  const rows=[
+    ["Sklon ramen",sgn(S.shT,"pravé rameno níž","levé rameno níž")+rng(S.shT),"závisí na vodorovném držení telefonu"],
+    ["Sklon pánve",sgn(S.hipT,"pravá kyčel níž","levá kyčel níž")+rng(S.hipT),S.n>1?"velký rozkmit pánve při šlapání naznačuje příliš vysoké sedlo":"rozdíl může značit výšku sedla nebo asymetrii"],
+    ["Boční náklon trupu",sgn(S.lean,"k levé straně jezdce","k pravé straně jezdce")+rng(S.lean),"ramena vůči středu pánve"]
+  ];
+  if(k==="front"){
+    rows.push(["Šířka loktů / šířka ramen",ratio(S.elbW),"nižší = užší postoj paží, menší čelní plocha"]);
+    rows.push(["Šířka kolen / šířka kyčlí",ratio(S.kneeW),""]);
+    rows.push(["Šířka kotníků / šířka kyčlí",ratio(S.ankW),""]);
+  }
+  rows.push(["Koleno levé: vybočení",sgn(S.kL,"dovnitř","ven")+rng(S.kL),"odchylka od osy kyčel–kotník, závisí na poloze kliky"]);
+  rows.push(["Koleno pravé: vybočení",sgn(S.kR,"dovnitř","ven")+rng(S.kR),""]);
+  return rows;
+}
+
+const SR_PHOTO=[["Koleno (spodní poloha)","knee","mean","orientačně 145–155°"],["Kyčel (trup–stehno)","hip","mean","nižší = větší omezení výkonu a komfortu"],["Sklon trupu k vodorovné","trunk","mean","nižší = menší čelní plocha"],["Loket","elbow","mean","kloub opřený v podložkách"],["Rameno (trup–paže)","arm","mean",""]];
+const SR_VID=[["Koleno – natažené (dole)","knee","max","orientačně 145–155°"],["Koleno – pokrčené (nahoře)","knee","min",""],["Kyčel – nejvíc zavřená (nahoře)","hip","min","nižší = větší omezení výkonu a komfortu"],["Kyčel – otevřená (dole)","hip","max",""],["Sklon trupu (průměr)","trunk","mean","nižší = menší čelní plocha"],["Sklon trupu – rozkmit","trunk","range","vyšší = méně stabilní trup"],["Loket (průměr)","elbow","mean","kloub opřený v podložkách"],["Rameno (průměr)","arm","mean",""]];
+const f1=x=>x.toFixed(1)+"°";
+const getv=(st,s)=>s==="range"?st.max-st.min:st[s];
+
+function renderResults(){
+  const SL=sideStats("left"),SR=sideStats("right"),F=fbStats("front"),Bk=fbStats("back");
+  if(!SL&&!SR&&!F&&!Bk){
+    $("resOut").innerHTML="<p class='muted'>Zatím není zpracovaný žádný pohled. Přepni na záložku s pohledem a nahraj fotku nebo video.</p>";
+    $("outBox").classList.add("hidden");return;
+  }
+  const miss=VIEWS.filter(k=>!done(k)).map(k=>VN[k]);
+  const vids=VIEWS.filter(k=>done(k)&&V[k].frames).map(k=>VN[k]);
+  let h="";const T=[];
+  if(miss.length)h+="<p class='muted warn'>Chybí nebo nejsou hotové pohledy: "+miss.join(", ")+". Výsledky jsou jen z dokončených pohledů.</p>";
+  if(SL||SR){
+    const rows=(vids.length&&((SL&&SL.n>1)||(SR&&SR.n>1)))?SR_VID:SR_PHOTO;
+    h+="<h3>Z boku</h3><table><tr><td></td><td>Levá</td><td>Pravá</td><td>Rozdíl</td></tr>";
+    T.push("Z boku (levá / pravá / rozdíl):");
+    rows.forEach(r=>{
+      const l=SL?getv(SL[r[1]],r[2]):null,p=SR?getv(SR[r[1]],r[2]):null,df=(l!==null&&p!==null)?Math.abs(l-p):null;
+      h+="<tr><td>"+r[0]+(r[3]?"<small>"+r[3]+"</small>":"")+"</td><td>"+(l!==null?f1(l):"–")+"</td><td>"+(p!==null?f1(p):"–")+"</td><td"+(df!==null&&df>5?" class='flag'":"")+">"+(df!==null?f1(df):"–")+"</td></tr>";
+      T.push("- "+r[0]+": L "+(l!==null?f1(l):"–")+" / P "+(p!==null?f1(p):"–")+(df!==null?" / rozdíl "+f1(df):""));
+    });
+    h+="</table><p class='muted'>Rozdíl nad 5° je zvýrazněn. Může jít o asymetrii, ale také o jinou polohu kliky nebo chybu měření.</p>";
+    if(SL)h+="<p class='muted'>Levá: "+SL.info+"</p>";
+    if(SR)h+="<p class='muted'>Pravá: "+SR.info+"</p>";
+    T.push((SL?"Levá: "+SL.info:"")+(SR?" Pravá: "+SR.info:""));
+  }
+  [["front","Zepředu",F],["back","Zezadu",Bk]].forEach(x=>{
+    if(!x[2])return;const rows=fbRows(x[0],x[2]);
+    h+="<h3>"+x[1]+"</h3><table>"+rows.map(r=>"<tr><td>"+r[0]+(r[2]?"<small>"+r[2]+"</small>":"")+"</td><td>"+r[1]+"</td></tr>").join("")+"</table>";
+    T.push("");T.push(x[1]+":");rows.forEach(r=>T.push("- "+r[0]+": "+r[1]));
+  });
+  $("resOut").innerHTML=h;
+  const src=VIEWS.filter(k=>done(k)).map(k=>VN[k]+": "+(V[k].frames?"video, "+V[k].frames.length+" snímků, průměrná jistota "+Math.round((V[k].det?V[k].det.minVis:0)*100)+" %":(V[k].edited?"fotka, body označeny nebo upraveny ručně":"fotka, automaticky, jistota od "+Math.round((V[k].det?V[k].det.minVis:0)*100)+" %"))).join("; ");
+  const txt="Jsem časovkář, zlepšuji aerodynamickou pozici na TT kole. Mám změřené úhly ("+(mode==="fixed"?"pevné stanoviště":"z ruky, boční pohledy s korekcí perspektivy")+"). Zdroj: "+src+"."+(vids.length?" U videí jsou hodnoty počítány přes celý cyklus šlapání (minimum, maximum nebo průměr podle popisku, rozkmit = rozdíl maxima a minima).":" U fotek je měřená noha dole.")+"\n\n"+
+  "Jezdec: výška "+($("v").value||"?")+" cm, hmotnost "+($("h").value||"?")+" kg, pas "+($("p").value||"?")+" cm, délka nohy "+($("n").value||"?")+" cm.\n"+
+  "Poznámky: "+($("o").value||"žádné")+"\n"+(miss.length?"Chybějící pohledy: "+miss.join(", ")+"\n":"")+"\n"+T.join("\n")+
+  "\n\nPoraď malé úpravy pozice a vybavení pro nižší CdA. Hlídej komfort a to, aby pozice neomezovala výkon z nohou (úhel v kyčli). Všimni si případných asymetrií mezi levou a pravou stranou a řekni, které mohou být skutečné a které spíš chyba měření. U každé rady uveď, o kolik a proč, a co si mám při změně hlídat. Pokud je měření nejisté, řekni to.";
+  $("out").value=txt;$("outBox").classList.remove("hidden");
+}
+
+$("copy").onclick=()=>{const ta=$("out");ta.focus();ta.select();let ok=false;
+  try{ok=document.execCommand("copy");}catch(e){}
+  if(!ok&&navigator.clipboard){navigator.clipboard.writeText(ta.value).then(()=>{$("copied").textContent="Zkopírováno";},()=>{$("copied").textContent="Označ text a zkopíruj ručně";});return;}
+  $("copied").textContent=ok?"Zkopírováno":"Označ text a zkopíruj ručně";};
+["v","h","p","n","o"].forEach(i=>{$(i).oninput=()=>{if(cur==="res")renderResults();};});
+</script>
+</body>
+</html>
