@@ -9,6 +9,17 @@ const LS = "aero.v1";
 const num = (id, d) => { const el = $(id); if (!el) return d; const x = parseFloat(String(el.value).replace(",", ".")); return isFinite(x) ? x : d; };
 const fmt = (x, d) => (isFinite(x) ? x.toFixed(d) : "–").replace(".", ",");
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// Statistika: průměr, směrodatná odchylka a 95% interval rozdílu dvou skupin (t-test se společným rozptylem)
+const meanSd = a => { const n = a.length, m = n ? a.reduce((x, y) => x + y, 0) / n : NaN, sd = n > 1 ? Math.sqrt(a.reduce((x, y) => x + (y - m) * (y - m), 0) / (n - 1)) : NaN; return { n, m, sd }; };
+const tq = df => { const T = [[1, 12.71], [2, 4.30], [3, 3.18], [4, 2.78], [5, 2.57], [6, 2.45], [7, 2.36], [8, 2.31], [9, 2.26], [10, 2.23], [12, 2.18], [15, 2.13], [20, 2.09], [30, 2.04], [60, 2.00]]; for (const [d, t] of T) if (df <= d) return t; return 1.96; };
+function tTest(a, b) {
+  const A = meanSd(a), B = meanSd(b); if (A.n < 2 || B.n < 2) return null;
+  const df = A.n + B.n - 2, sp = Math.sqrt(((A.n - 1) * A.sd * A.sd + (B.n - 1) * B.sd * B.sd) / df);
+  const d = A.m - B.m, half = tq(df) * sp * Math.sqrt(1 / A.n + 1 / B.n);
+  // nejmenší počet opakování v každé skupině, při kterém by rozdíl této velikosti vyšel průkazný
+  let need = Infinity; for (let n = 2; n <= 30; n++) if (tq(2 * n - 2) * sp * Math.sqrt(2 / n) < Math.abs(d)) { need = n; break; }
+  return { d, half, sig: Math.abs(d) > half, need };
+}
 const hms = s => { if (!isFinite(s) || s < 0) return "–"; s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0"); };
 const sgn = (x, d) => (x > 0 ? "+" : x < 0 ? "−" : "") + fmt(Math.abs(x), d);
 function load() { try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch (e) { return {}; } }
@@ -556,9 +567,14 @@ function renderPwSum() {
   rows.forEach(r => { const d = (r.wpb && b.wpb) ? (r.wpb / b.wpb - 1) * 100 : null; h += `<tr><td>${esc(posName(r.k))}<small>${r.n} ${cz(r.n, "interval", "intervaly", "intervalů")}${r.cad ? ", " + fmt(r.cad, 0) + " ot/min" : ""}</small></td><td>${hms(r.t)}</td><td>${fmt(r.p, 0)}</td><td>${r.hr ? fmt(r.hr, 0) : "–"}</td><td>${r.wpb ? fmt(r.wpb, 2) : "–"}</td><td${d != null && d < -3 ? " class='flag'" : ""}>${r === b ? "reference" : d != null ? sgn(d, 1) + " %" : "–"}</td><td>${r.cf != null ? fmt(r.cf, 0) + "/10" : "–"}</td></tr>`; });
   h += "</table></div>";
   const notes = [];
+  const ivals = (k, useHr) => I.filter(l => l.label === k && l.p > 0 && (!useHr || l.hr > 0)).map(l => useHr ? l.p / l.hr : l.p);
   rows.filter(r => r !== b).forEach(r => {
-    const dP = (r.p / b.p - 1) * 100;
-    if (r.wpb && b.wpb) {
+    const dP = (r.p / b.p - 1) * 100, useHr = !!(r.wpb && b.wpb), t = tTest(ivals(r.k, useHr), ivals(b.k, useHr));
+    if (t) {
+      const base = meanSd(ivals(b.k, useHr)).m, d = t.d / base * 100, hp = t.half / base * 100, what = useHr ? "wattech na tep" : "wattech (bez tepu, platí jen při stejném pocitovém úsilí)";
+      notes.push(t.sig ? `${esc(posName(r.k))}: ${sgn(d, 1)} ± ${fmt(hp, 1)} % ve ${what}. Rozdíl je průkazný, ${d < 0 ? "pozice zřejmě brzdí výkon. Ověř opakovaným testem v jiný den." : "v této pozici šlapeš efektivněji."}`
+        : `${esc(posName(r.k))}: ${sgn(d, 1)} ± ${fmt(hp, 1)} % ve ${what}. Rozdíl není průkazný, je v šumu měření.` + (Math.abs(d) >= 2 ? (t.need <= 8 ? ` Pro jistotu by bylo potřeba asi ${t.need} ${cz(t.need, "interval", "intervaly", "intervalů")} v každé pozici.` : " Na průkazný výsledek by bylo potřeba mnohem víc intervalů, pozice ber jako srovnatelné.") : " Výkon pozice zřejmě neomezuje."));
+    } else if (r.wpb && b.wpb) {
       const d = (r.wpb / b.wpb - 1) * 100;
       notes.push(Math.abs(d) <= 3 ? `${esc(posName(r.k))}: rozdíl ${sgn(d, 1)} % ve wattech na tep je v šumu, výkon pozice zřejmě neomezuje.` : d < 0 ? `${esc(posName(r.k))}: o ${fmt(-d, 1)} % méně wattů na tep než reference. Pozice může brzdit výkon, ověř opakováním.` : `${esc(posName(r.k))}: o ${fmt(d, 1)} % více wattů na tep než reference.`);
     } else notes.push(`${esc(posName(r.k))}: bez tepu srovnáváš jen výkon (${sgn(dP, 1)} % proti referenci). Interval musí být jeden na jednu pozici při stejném pocitovém úsilí.`);
@@ -566,11 +582,12 @@ function renderPwSum() {
   });
   if (!rows.some(r => r.k === "1")) notes.push("Chybí pozice 1 (reference), srovnání proto bere jako referenci první dostupnou pozici.");
   const counts = rows.map(r => r.n); if (Math.min.apply(null, counts) < 2) notes.push("Pozice s jediným intervalem je méně spolehlivá. Protokol 1, 2, 3, 3, 2, 1 dává dva intervaly na pozici.");
-  h += `<p class="muted" style="margin-top:8px">${notes.join("<br>")}</p><p class="muted">Tep roste s únavou, teplem a pořadím intervalů. Rozdíl do ~3 % proto ber jako shodu a závěr potvrď opakovaným testem v jiný den.</p>`;
+  h += `<h3>Je rozdíl skutečný?</h3><p style="margin-top:4px">${notes.join("<br>")}</p><p class="muted">± je 95% nejistota spočítaná z rozptylu jednotlivých intervalů, potřebuješ aspoň 2 intervaly v každé pozici. Tep roste s únavou, teplem a pořadím intervalů, proto dodrž pořadí 1, 2, 3, 3, 2, 1 a závěr potvrď opakovaným testem v jiný den.</p>`;
   $("pw_sum").innerHTML = h;
   $("pw_out").value = "Testoval jsem výkon ve třech pozicích na trenažéru (stejné intervaly, stejné pocitové úsilí, pořadí 1, 2, 3, 3, 2, 1).\n\n" +
     POS_DEF.filter(p => G2.has(p.id)).map(p => `- ${p.name}: ${(S.pos[p.id] != null ? S.pos[p.id] : p.desc) || "bez popisu"}`).join("\n") + "\n\nVýsledky:\n" +
     rows.map(r => `- Pozice ${r.k}: ${r.n} ${cz(r.n, "interval", "intervaly", "intervalů")}, celkem ${hms(r.t)}, Ø ${fmt(r.p, 0)} W, Ø tep ${r.hr ? fmt(r.hr, 0) : "–"}, ${r.wpb ? fmt(r.wpb, 2) + " W/tep" : "bez tepu"}${r.cad ? ", kadence " + fmt(r.cad, 0) : ""}${r.cf != null ? ", pohodlí " + r.cf + "/10" : ""}`).join("\n") +
+    "\n\nVyhodnocení aplikace (95% nejistota z rozptylu intervalů):\n" + notes.map(n => "- " + n.replace(/&[a-z#0-9]+;/g, m => ({ "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'" }[m] || m))).join("\n") +
     "\n\nJednotlivé intervaly:\n" + I.map(l => `- pozice ${l.label}: ${hms(l.dur)}, ${fmt(l.p, 0)} W, tep ${l.hr != null ? fmt(l.hr, 0) : "–"}`).join("\n") +
     "\n\nZhodnoť, jestli některá pozice omezuje výkon, s ohledem na šum měření, únavu a pořadí intervalů. Která pozice dává nejlepší poměr aero, výkon a pohodlí pro časovku na 40 km? Navrhni, jak test případně zopakovat přesněji.";
   $("pw_outbox").classList.remove("hidden");
@@ -694,17 +711,26 @@ function renderCdRes() {
   const perLab = R.labels.map((lab, i) => {
     const v = CD.laps.filter(l => l.inc && l.label === lab && l.cda != null).map(l => l.cda);
     const mean = v.length ? v.reduce((a, b) => a + b, 0) / v.length : null, sd = v.length > 1 ? Math.sqrt(v.reduce((a, b) => a + (b - mean) * (b - mean), 0) / (v.length - 1)) : null;
-    return { lab, cda: R.cda[i], n: v.length, sd, w: wattsAt(Object.assign({}, c, { crr: R.crr }), R.cda[i]) };
+    return { lab, cda: R.cda[i], n: v.length, sd, v, w: wattsAt(Object.assign({}, c, { crr: R.crr }), R.cda[i]) };
+  });
+  const cw = Object.assign({}, c, { crr: R.crr }), b0 = perLab[0], verdicts = [];
+  perLab.slice(1).forEach(x => {
+    const t = tTest(x.v, b0.v), d = x.cda - b0.cda, pct = d / b0.cda * 100;
+    if (!t) { x.vd = "–"; verdicts.push(`${x.lab} proti ${b0.lab}: ${sgn(d, 3)} m² (${sgn(pct, 1)} %). Průkaznost nejde posoudit, potřebuješ aspoň 2 kola v každé pozici.`); return; }
+    const hp = t.half / b0.cda * 100, dw = wattsAt(cw, b0.cda + d) - b0.w, hw = wattsAt(cw, b0.cda + Math.abs(d) + t.half) - wattsAt(cw, b0.cda + Math.abs(d));
+    x.vd = t.sig ? "průkazný" : "v šumu";
+    if (t.sig) verdicts.push(`${x.lab} proti ${b0.lab}: ${sgn(d, 3)} ± ${fmt(t.half, 3)} m² (${sgn(pct, 1)} ± ${fmt(hp, 1)} %, ${sgn(dw, 0)} ± ${fmt(hw, 0)} W). Rozdíl je průkazný: ${d < 0 ? x.lab + " je rychlejší." : x.lab + " je pomalejší."}`);
+    else verdicts.push(`${x.lab} proti ${b0.lab}: ${sgn(d, 3)} ± ${fmt(t.half, 3)} m² (${sgn(pct, 1)} ± ${fmt(hp, 1)} %). Rozdíl není průkazný, je menší než rozptyl měření. ` + (t.need <= 12 ? `Pro průkazný výsledek jeď asi ${t.need} ${cz(t.need, "kolo", "kola", "kol")} v každé pozici.` : `Takhle malý rozdíl se měřením z jízdy prakticky prokázat nedá, pozice ber jako rovnocenné.`));
   });
   if (R.crrFixed == null && (R.crr < 0.002 || R.crr > 0.008)) warns.push("Odhad Crr " + fmt(R.crr, 4) + " je mimo rozumný rozsah 0,002 až 0,008. Kola se asi málo liší rychlostí. Zvol pevnou hodnotu Crr (např. 0,004) a spočítej znovu.");
   perLab.forEach(x => { if (x.cda < 0.15 || x.cda > 0.45) warns.push("CdA pozice " + x.lab + " = " + fmt(x.cda, 3) + " je mimo obvyklý rozsah 0,15 až 0,45. Zkontroluj hmotnost, teplotu, snímač rychlosti a vítr."); });
   if (R.rmse > 1) warns.push("Virtuální výška se od skutečné liší v průměru o " + fmt(R.rmse, 2) + " m. To bývá vítr, brzdění nebo rychlost z GPS. Výsledek ber s rezervou.");
   if (CD.laps.filter(l => l.inc).length < 3) warns.push("Méně než 3 kola. Pro spolehlivý výsledek jeď aspoň 4 až 6 kol.");
   const b = perLab[0];
-  let h = `<h3>Výsledek</h3><div class="scroll"><table class="wide"><tr><td>Pozice</td><td>CdA</td><td>Rozptyl kol</td><td>W při ${fmt(c.spd, 0)} km/h</td><td>Rozdíl</td></tr>`;
-  perLab.forEach((x, i) => { h += `<tr><td>${esc(x.lab)}<small>${x.n} ${x.n === 1 ? "kolo" : x.n < 5 ? "kola" : "kol"}</small></td><td>${fmt(x.cda, 3)} m²</td><td>${x.sd != null ? "± " + fmt(x.sd, 3) : "–"}</td><td>${fmt(x.w, 0)}</td><td>${i === 0 ? "reference" : sgn(x.w - b.w, 0) + " W"}</td></tr>`; });
+  let h = `<h3>Výsledek</h3><div class="scroll"><table class="wide"><tr><td>Pozice</td><td>CdA</td><td>Rozptyl kol</td><td>W při ${fmt(c.spd, 0)} km/h</td><td>Rozdíl</td><td>Rozdíl je</td></tr>`;
+  perLab.forEach((x, i) => { h += `<tr><td>${esc(x.lab)}<small>${x.n} ${x.n === 1 ? "kolo" : x.n < 5 ? "kola" : "kol"}</small></td><td>${fmt(x.cda, 3)} m²</td><td>${x.sd != null ? "± " + fmt(x.sd, 3) + "<small>" + fmt(x.sd / x.cda * 100, 1) + " %</small>" : "–"}</td><td>${fmt(x.w, 0)}</td><td>${i === 0 ? "reference" : sgn(x.w - b.w, 0) + " W"}</td><td${x.vd === "průkazný" ? "" : " class='flag'"}>${i === 0 ? "–" : x.vd}</td></tr>`; });
   h += `</table></div><table style="margin-top:8px"><tr><td>Valivý odpor Crr<small>${R.crrFixed == null ? "odhadnuto z dat" : "pevná hodnota"}</small></td><td>${fmt(R.crr, 4)}</td></tr><tr><td>Hustota vzduchu<small>${fmt(R.tC, 1)} °C, ${fmt(R.alt, 0)} m n. m.</small></td><td>${fmt(R.rho, 3)} kg/m³</td></tr><tr><td>Průměrná odchylka výšky<small>čím menší, tím lépe sedí model</small></td><td>${fmt(R.rmse, 2)} m</td></tr></table>`;
-  if (perLab.length > 1) h += `<p class="muted" style="margin-top:8px">Rozdíl mezi pozicemi ber jako skutečný, jen když je větší než rozptyl jednotlivých kol. Watty jsou přepočtené na podmínky z kalkulačky.</p>`;
+  if (perLab.length > 1) h += `<h3>Je rozdíl skutečný?</h3><p style="margin-top:4px">${verdicts.map(esc).join("<br>")}</p><p class="muted">± je 95% nejistota spočítaná z rozptylu jednotlivých kol. Rozdíl je průkazný, když je větší než nejistota. Rozptyl kol v % ukazuje opakovatelnost: pro srovnání ve větrném tunelu dosahují nejlepší testeři asi 0,5 až 1 %, zkušení jezdci 2 %, začátečníci 3 %. Pozice jezdi střídavě (A, B, A, B), ať je změna větru nezkreslí. Watty jsou přepočtené na podmínky z kalkulačky.</p>`;
   if (warns.length) h += `<p class="muted warn">${warns.map(esc).join("<br>")}</p>`;
   h += `<div class="row"><select id="cd_pick" style="width:auto">${perLab.map((x, i) => `<option value="${i}">${esc(x.lab)}: ${fmt(x.cda, 3)}</option>`).join("")}</select><button class="btn ghost" id="cd_tocalc">Použít v kalkulačce</button><button class="btn ghost" id="cd_toref">Použít jako referenci pro čelní plochu</button></div><p class="muted" id="cd_msg"></p>`;
   $("cd_res").innerHTML = h;
@@ -715,6 +741,7 @@ function renderCdRes() {
     "Crr " + fmt(R.crr, 4) + (R.crrFixed == null ? " (odhad)" : " (pevné)") + ", průměrná odchylka výšky " + fmt(R.rmse, 2) + " m.\n\n" +
     perLab.map(x => `- Pozice ${x.lab}: CdA ${fmt(x.cda, 3)} m² (${x.n} kol${x.sd != null ? ", rozptyl ± " + fmt(x.sd, 3) : ""}), ${fmt(x.w, 0)} W při ${fmt(c.spd, 0)} km/h`).join("\n") +
     "\n\nJednotlivá kola:\n" + CD.laps.filter(l => l.inc).map(l => `- kolo ${l.n} (${l.label}): ${hms(l.dur)}, ${fmt(l.v * 3.6, 1)} km/h, ${fmt(l.p, 0)} W, CdA ${l.cda != null ? fmt(l.cda, 3) : "–"}`).join("\n") +
+    (verdicts.length ? "\n\nPrůkaznost rozdílů (95% nejistota z rozptylu kol):\n" + verdicts.map(v => "- " + v).join("\n") : "") +
     (warns.length ? "\n\nUpozornění aplikace:\n" + warns.map(w => "- " + w).join("\n") : "") +
     "\n\nZhodnoť, jestli je měření spolehlivé a jestli je rozdíl mezi pozicemi skutečný. Poraď, co v pozici zkusit dál a jak test zpřesnit.";
   $("cd_outbox").classList.remove("hidden");
