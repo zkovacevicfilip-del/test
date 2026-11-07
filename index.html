@@ -146,6 +146,7 @@ select{width:100%;font:inherit;padding:9px;border:1px solid var(--line);border-r
     <h2>Text pro Claude</h2>
     <textarea id="out" readonly></textarea>
     <div class="row"><button class="btn" id="copy">Zkopírovat</button><span class="muted" id="copied"></span></div>
+    <div id="shPos"></div>
   </div>
   <div class="row"><button class="btn ghost" id="back">Změnit režim</button></div>
 </section>
@@ -596,6 +597,18 @@ function renderResults(){
   "Poznámky: "+($("o").value||"žádné")+"\n"+(miss.length?"Chybějící pohledy: "+miss.join(", ")+"\n":"")+"\n"+T.join("\n")+
   "\n\nPoraď malé úpravy pozice a vybavení pro nižší CdA. Hlídej komfort a to, aby pozice neomezovala výkon z nohou (úhel v kyčli). Všimni si případných asymetrií mezi levou a pravou stranou a řekni, které mohou být skutečné a které spíš chyba měření. U každé rady uveď, o kolik a proč, a co si mám při změně hlídat. Pokud je měření nejisté, řekni to."+(MA?" Navrhovanou pozici přizpůsob limitům mojí mobility uvedeným výše a řekni, kterou oblast mobility mám zlepšit, aby šla pozice dál zlepšit, a jak (konkrétní cviky a jak dlouho).":"");
   $("out").value=txt;$("outBox").classList.remove("hidden");
+  // Anonymní čísla pro výzkum (bez fotek a bez poznámek)
+  const r2=x=>x==null||!isFinite(x)?null:Math.round(x*100)/100;
+  const st=s=>s?{mean:r2(s.mean),min:r2(s.min),max:r2(s.max)}:null;
+  const pick=(S,keys)=>{if(!S)return null;const o={n:S.n};keys.forEach(k=>{o[k]=st(S[k]);});return o;};
+  const numIn=id=>{const x=parseFloat(String($(id).value).replace(",","."));return isFinite(x)?x:null;};
+  const SIDEK=["knee","hip","elbow","arm","trunk"],FBK=["shT","hipT","lean","elbW","kneeW","ankW","kL","kR"];
+  const shareData={mode:mode,
+    views:VIEWS.filter(k=>done(k)).map(k=>({view:k,video:!!V[k].frames,frames:V[k].frames?V[k].frames.length:1,edited:!!V[k].edited})),
+    rider:{height_cm:numIn("v"),mass_kg:numIn("h"),waist_cm:numIn("p"),leg_cm:numIn("n")},
+    side:{left:pick(SL,SIDEK),right:pick(SR,SIDEK)},front:pick(F,FBK),back:pick(Bk,FBK),
+    mobility:MOB.reduce((o,k)=>{o[k]=r2(mobVal(k));return o;},{})};
+  if(window.aeroShare)window.aeroShare.attach("shPos","position",()=>shareData);
 }
 
 $("copy").onclick=()=>{const ta=$("out");ta.focus();ta.select();let ok=false;
@@ -605,6 +618,7 @@ $("copy").onclick=()=>{const ta=$("out");ta.focus();ta.select();let ok=false;
 ["v","h","p","n","o"].forEach(i=>{$(i).oninput=()=>{if(cur==="res")renderResults();};});
 </script>
 <script type="module" src="aero.js"></script>
+<script src="share.js"></script>
 <script src="pwa.js"></script>
 </body>
 </html>

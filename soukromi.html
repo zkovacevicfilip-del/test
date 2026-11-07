@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ochrana soukromí – Aero pozice</title>
+<meta name="theme-color" content="#0e7c86">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<style>
+:root{--bg:#eef2f4;--surface:#fff;--ink:#12202b;--muted:#5a6b78;--line:#cfd9df;--accent:#0e7c86}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a22;--surface:#17252f;--ink:#e6eef2;--muted:#93a6b2;--line:#2b3d49;--accent:#4cc3cf}}
+:root[data-theme="dark"]{--bg:#0f1a22;--surface:#17252f;--ink:#e6eef2;--muted:#93a6b2;--line:#2b3d49;--accent:#4cc3cf}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 "Avenir Next","Segoe UI",Roboto,sans-serif;padding:16px;max-width:760px;margin:0 auto}
+h1{font-size:1.5rem;line-height:1.2;margin:8px 0 4px}
+h2{font-size:1.08rem;margin:0 0 6px}
+p,ul{margin:0 0 10px}
+ul{padding-left:20px}
+li{margin:3px 0}
+a{color:var(--accent)}
+.muted{color:var(--muted);font-size:.92rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
+code{font-family:ui-monospace,Menlo,monospace;font-size:.88rem;word-break:break-all}
+</style>
+</head>
+<body>
+<h1>Ochrana soukromí</h1>
+<p class="muted">Aplikace Aero pozice · platí od 7. 11. 2026</p>
+
+<div class="card">
+  <h2>Stručně</h2>
+  <ul>
+    <li>Aplikace běží v prohlížeči. Fotky, videa a výsledky zůstávají ve tvém zařízení.</li>
+    <li>Do výzkumné databáze se odešle něco <b>jen když</b> zaškrtneš souhlas a klepneš na <b>Odeslat anonymně</b>.</li>
+    <li>Odesílají se jen čísla (úhly, plochy, CdA, výkon). <b>Nikdy</b> fotky, videa, poznámky, popisy pozic, názvy variant, jméno ani e-mail.</li>
+    <li>Souhlas můžeš kdykoli odškrtnout a požádat o smazání odeslaných dat.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>Kdo data spravuje</h2>
+  <p>Autor aplikace Aero pozice (soukromá osoba, nekomerční projekt). Kontakt: <a href="https://github.com/zkovacevicfilip-del/test/issues" target="_blank" rel="noopener">GitHub projektu</a>.</p>
+</div>
+
+<div class="card">
+  <h2>Co se odesílá</h2>
+  <ul>
+    <li><b>Pozice:</b> úhly z boku (koleno, kyčel, loket, rameno, sklon trupu), údaje zepředu a zezadu (sklony, poměry šířek, vybočení kolen), výsledky testů mobility, režim měření a typ zdroje (fotka, video, ručně upravené body). Výška, hmotnost, obvod pasu a délka nohy, pokud je vyplníš.</li>
+    <li><b>CdA z jízdy:</b> CdA pozic a jednotlivých kol, Crr, hustota a teplota vzduchu, nadmořská výška, hmotnost, údaje o větru. Pozice jsou označené jen P1, P2… Neodesílá se poloha GPS ani .fit soubor.</li>
+    <li><b>Výkon v pozici:</b> průměrný výkon, tep, kadence, délka intervalů a hodnocení pohodlí pro pozice P1 až P3.</li>
+    <li><b>Čelní plocha:</b> plochy variant, změřené CdA a způsob měření (s kolem nebo bez, měřítko).</li>
+    <li><b>Anonymní ID zařízení:</b> náhodné číslo vytvořené v prohlížeči, aby šlo tvá data najít a smazat. Není spojené s tvým jménem ani účtem.</li>
+  </ul>
+  <p class="muted">Server poskytovatele databáze může krátce evidovat technické údaje o spojení (např. IP adresu) v provozních záznamech. Do databáze se neukládají a nepoužívají se.</p>
+</div>
+
+<div class="card">
+  <h2>Proč a na jakém základě</h2>
+  <p>Data slouží k výzkumu vztahu mezi pozicí na kole, mobilitou a aerodynamikou a ke zlepšení aplikace. Zpracovávají se statisticky. Zveřejněné mohou být jen souhrnné výsledky, ze kterých nejde poznat jednotlivce.</p>
+  <p>Základem je tvůj výslovný souhlas (čl. 6 odst. 1 písm. a) a čl. 9 odst. 2 písm. a) GDPR, protože výsledky mobility se mohou týkat zdraví). Souhlas je dobrovolný a aplikace funguje stejně i bez něj.</p>
+</div>
+
+<div class="card">
+  <h2>Kde a jak dlouho</h2>
+  <p>Data jsou uložená v databázi Supabase v datacentru ve Frankfurtu (EU). Aplikace do databáze může jen zapisovat, číst a mazat může jen správce. Data se uchovávají po dobu trvání projektu, nejdéle 5 let, nebo do odvolání souhlasu.</p>
+</div>
+
+<div class="card">
+  <h2>Tvoje práva</h2>
+  <p>Máš právo na přístup ke svým datům, jejich smazání a odvolání souhlasu. Napiš přes kontakt výše a uveď své anonymní ID:</p>
+  <p><code id="devid">ID se vytvoří, až se v aplikaci poprvé zobrazí nabídka sdílení.</code></p>
+  <p class="muted">Pokud máš pocit, že s daty není zacházeno správně, můžeš se obrátit na Úřad pro ochranu osobních údajů (<a href="https://uoou.gov.cz" target="_blank" rel="noopener">uoou.gov.cz</a>).</p>
+</div>
+
+<p><a href="./">← Zpět do aplikace</a></p>
+<script>
+try { const d = localStorage.getItem("aero.device"); if (d) document.getElementById("devid").textContent = d; } catch (e) { }
+</script>
+</body>
+</html>
