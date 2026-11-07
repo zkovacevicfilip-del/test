@@ -4,6 +4,7 @@ Webová aplikace pro zlepšení aerodynamické pozice na časovkářském kole. 
 
 - Web: https://zkovacevicfilip-del.github.io/test/ (GitHub Pages z větve `main`, složka root)
 - Soubory: `index.html` (stránka, část Pozice a mobilita, styly), `aero.js` (část Aero a výkon)
+- PWA: `manifest.webmanifest`, `sw.js` (service worker, offline a cache), `pwa.js` (instalace, aktualizace, stažení modelů pro offline), `icons/`
 
 > Toto README je předávací shrnutí dosavadního vývoje, aby nový chat s Claude přesně věděl, v jaké fázi projekt je.
 
@@ -29,6 +30,13 @@ Z fotek a videí ze čtyř pohledů (levá strana, pravá strana, zepředu, zeza
 - Zepředu a zezadu: sklon ramen, sklon pánve, boční náklon trupu, vybočení kolen, poměry šířek (jen zepředu).
 - **Mobilita:** čtyři testy z boku (kyčel koleno k hrudi, rameno paže nad hlavu, kotník koleno k zdi, předklon vsedě). Limit pro pozici je 85 % maxima. Aplikace ukáže rezervu nebo nedostatek v ° a určí oblast, kterou má smysl zlepšit.
 - Výstup: hotový text s údaji, výsledky a prosbou o rady, který se zkopíruje do Claude.
+
+### Instalace a offline (PWA)
+- Na Androidu v Chrome tlačítko **Nainstalovat aplikaci** nahoře (nebo menu ⋮ → Přidat na plochu / Nainstalovat). Pak se spouští jako samostatná aplikace s ikonou.
+- Tlačítko **Stáhnout modely pro offline** uloží knihovnu MediaPipe a oba modely (asi 21 MB, jednou). Pak funguje detekce těla i čelní plocha bez internetu. Modely se uloží i samy při prvním použití.
+- Stránka se načítá nejdřív ze sítě (vždy nejnovější verze), bez internetu nebo při pomalé síti (víc než 4 s) z uložené kopie.
+- **Při každé změně `index.html`, `aero.js` nebo `pwa.js` zvýšit `APP_VER` v `sw.js`.** Aplikace pak nahoře nabídne „Je k dispozici nová verze – Obnovit“. Stará kopie se smaže, modely a data v `localStorage` zůstávají.
+- Otestováno v Playwrightu (Chromium): instalovatelnost bez chyb, stažení pro offline, načtení stránky a modelu detekce těla bez sítě, aktualizace verze se zachováním dat. Na skutečném tabletu zatím neověřeno.
 
 ### Část Aero a výkon (`aero.js`)
 1. **Kalkulačka:** z CdA, hmotnosti, Crr, teploty, nadmořské výšky a účinnosti spočítá watty při zvolené rychlosti (výchozí 40 km/h), rozpad na aero, valivý odpor a ztráty, čas na zadanou vzdálenost a tabulku citlivosti na změnu CdA. Pro orientaci: 0,01 m² CdA ≈ 8 W při 40 km/h.
@@ -73,7 +81,7 @@ Chybové hlášky se zobrazují přímo pod náhledem. Když se objeví, je nejl
 
 ## Další kroky (v pořadí priority)
 
-1. **Instalovatelná PWA pro Android:** manifest, ikony, service worker s offline režimem a cache modelu MediaPipe z CDN (verzování cache, aby se nová verze projevila, a zachování dat v `localStorage`). Otestovat v Playwrightu včetně offline režimu.
+1. ~~Instalovatelná PWA pro Android~~ (hotovo, viz Instalace a offline). Zbývá vyzkoušet instalaci a offline režim na tabletu.
 2. **Web Bluetooth pro wattmetr** (BLE Cycling Power) a případně tepový pás: záznam výkonu a kadence přímo v záložce Výkon v pozici, tlačítka Interval start a stop, automatické přiřazení k pozici. ANT+ z webu nejde. Nativní ANT+ vyžaduje zařízení s ANT rádiem nebo USB klíč s OTG, takže se řešit zatím nebude. Nejdřív zjistit, jestli wattmetr a trenažér vysílají přes Bluetooth.
 3. Otestovat aplikaci na skutečných fotkách, videích a `.fit` souborech a podle chybových hlášek opravit.
 4. Ukládání výsledků pozic a mobility v čase (srovnání před a po úpravě).
