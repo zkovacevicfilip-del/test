@@ -80,7 +80,8 @@ function parseFIT(buf) {
     if (def.g === 20) {
       const sp = vals[73] != null ? vals[73] / 1000 : (vals[6] != null ? vals[6] / 1000 : null);
       const al = vals[78] != null ? vals[78] / 5 - 500 : (vals[2] != null ? vals[2] / 5 - 500 : null);
-      records.push({ t: vals[253], alt: al, hr: vals[3], cad: vals[4], dist: vals[5] != null ? vals[5] / 100 : null, spd: sp, pwr: vals[7], temp: vals[13] });
+      const SC = 180 / 2147483648;
+      records.push({ t: vals[253], lat: vals[0] != null ? vals[0] * SC : null, lon: vals[1] != null ? vals[1] * SC : null, alt: al, hr: vals[3], cad: vals[4], dist: vals[5] != null ? vals[5] / 100 : null, spd: sp, pwr: vals[7], temp: vals[13] });
     } else if (def.g === 19) {
       laps.push({ start: vals[2], end: vals[253], elapsed: vals[7] != null ? vals[7] / 1000 : null });
     }
@@ -219,7 +220,11 @@ $("s-aero").innerHTML = `
       ${field("cd_crr", "Crr (při pevné hodnotě)", 0.004, "0.0001")}
       ${field("cd_temp", "Teplota vzduchu (°C)", "", "0.5")}
       ${field("cd_alt", "Nadmořská výška (m)", "", "10")}
+      <div><label for="cd_wdir">Vítr fouká od</label><select id="cd_wdir"><option value="">Bez korekce větru</option><option value="0">severu (S)</option><option value="45">severovýchodu (SV)</option><option value="90">východu (V)</option><option value="135">jihovýchodu (JV)</option><option value="180">jihu (J)</option><option value="225">jihozápadu (JZ)</option><option value="270">západu (Z)</option><option value="315">severozápadu (SZ)</option></select></div>
+      ${field("cd_wspd", "Rychlost větru (m/s, km/h ÷ 3,6)", "", "0.1")}
+      <div><label for="cd_wsrc">Odkud je údaj o větru</label><select id="cd_wsrc"><option value="0.65">Předpověď nebo meteostanice (10 m nad zemí)</option><option value="1">Změřeno ve výšce jezdce (ruční anemometr)</option></select></div>
     </div>
+    <p class="muted" style="margin-top:6px">Korekce větru potřebuje GPS polohu v .fit souboru (z ní se počítá směr jízdy). Údaj z předpovědi platí pro 10 m nad zemí, ve výšce jezdce fouká slaběji, proto ho aplikace vynásobí 0,65. Korekce počítá s ustáleným větrem. Nárazy, závětří a vliv bočního větru na CdA nezachytí, nejlepší je pořád jezdit za bezvětří.</p>
     <p id="cd_status" class="muted status"></p>
     <div id="cd_laps" class="scroll"></div>
     <div class="row hidden" id="cd_ctrl"><button class="btn" id="cd_run">Spočítat CdA</button></div>
@@ -672,10 +677,26 @@ function solve(A, b) {
   return M.map((r, i) => r[n] / r[i]);
 }
 // Rozdělí kolo na souvislé úseky a spočítá kumulované členy virtuální výšky.
-function buildSegs(laps, eff, m, rho) {
-  const segs = [];
+// Směr jízdy (0° = sever, 90° = východ) z GPS, vyhlazený přes ±2 záznamy
+function lapHeadings(recs) {
+  const out = new Array(recs.length).fill(null); let last = null;
+  for (let i = 0; i < recs.length; i++) {
+    const a = recs[Math.max(0, i - 2)], b = recs[Math.min(recs.length - 1, i + 2)];
+    if (a.lat != null && b.lat != null && a.lon != null && b.lon != null) {
+      const dy = (b.lat - a.lat) * 110540, dx = (b.lon - a.lon) * 111320 * Math.cos(a.lat * Math.PI / 180);
+      if (Math.hypot(dx, dy) > 2) last = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
+    }
+    out[i] = last;
+  }
+  return out;
+}
+function buildSegs(laps, eff, m, rho, wind) {
+  const segs = []; segs.noGps = 0;
   laps.forEach(l => {
     let cur = null;
+    const hd = wind ? lapHeadings(l.recs) : null;
+    // rychlost vůči vzduchu: rychlost jízdy + složka větru proti směru jízdy
+    const va = (i, v) => { if (!wind) return v; if (hd[i] == null) { segs.noGps++; return v; } return v + wind.w * Math.cos((wind.from - hd[i]) * Math.PI / 180); };
     for (let i = 0; i < l.recs.length; i++) {
       const r = l.recs[i], ok = r.spd != null && r.pwr != null && r.alt != null;
       const prev = i ? l.recs[i - 1] : null, dt = prev ? r.t - prev.t : 0;
@@ -687,7 +708,8 @@ function buildSegs(laps, eff, m, rho) {
       const k = cur.h.length - 1;
       cur.X0.push(cur.X0[k] + r.pwr * eff * dt / (m * G) - (v1 * v1 - v0 * v0) / (2 * G));
       cur.X1.push(cur.X1[k] + d);
-      cur.X2.push(cur.X2[k] + rho * (v0 * v0 + v1 * v1) / 2 * d / (2 * m * G));
+      const a0 = va(i - 1, v0), a1 = va(i, v1);
+      cur.X2.push(cur.X2[k] + rho * (a0 * Math.abs(a0) + a1 * Math.abs(a1)) / 2 * d / (2 * m * G));
       cur.h.push(r.alt); cur.t.push(r.t);
     }
     if (cur && cur.h.length > 5) segs.push(cur);
@@ -725,14 +747,21 @@ $("cd_run").onclick = () => {
   if (!isFinite(tC)) { st.textContent = "Zadej teplotu vzduchu."; st.classList.add("bad"); return; }
   const rho = rhoOf(tC, alt), crrFixed = $("cd_crrm").value === "fix" ? num("cd_crr", 0.004) : null;
   const labels = [...new Set(inc.map(l => l.label))];
-  const segs = buildSegs(inc, eff, m, rho);
+  const wdir = $("cd_wdir").value, wspd = num("cd_wspd", NaN), wsrc = parseFloat($("cd_wsrc").value);
+  let wind = null;
+  if (wdir !== "") {
+    if (!(wspd >= 0)) { st.textContent = "Zadej rychlost větru, nebo vyber Bez korekce větru."; st.classList.add("bad"); return; }
+    wind = { from: +wdir, w: wspd * wsrc, raw: wspd, src: wsrc };
+    if (!inc.some(l => l.recs.some(r => r.lat != null))) { st.textContent = "Soubor nemá GPS polohu, korekci větru nejde použít. Vyber Bez korekce větru."; st.classList.add("bad"); return; }
+  }
+  const segs = buildSegs(inc, eff, m, rho, wind);
   if (!segs.length) { st.textContent = "Ve vybraných kolech nejsou souvislá data (výkon, rychlost, výška).";  st.classList.add("bad"); return; }
   const R = fitVE(segs, labels, crrFixed);
   if (!R) { st.textContent = "Výpočet nejde vyřešit. Přidej kola s různou rychlostí nebo zvol pevnou hodnotu Crr."; st.classList.add("bad"); return; }
   // CdA jednotlivých kol při pevném Crr z celkového fitu
   CD.laps.forEach(l => { l.cda = null; });
   inc.forEach(l => { const sg = segs.filter(s => s.lap === l); if (!sg.length) return; const r1 = fitVE(sg, [l.label], R.crr); if (r1) l.cda = r1.cda[0]; });
-  CD.fitRes = Object.assign(R, { labels, rho, m, eff, tC, alt, crrFixed });
+  CD.fitRes = Object.assign(R, { labels, rho, m, eff, tC, alt, crrFixed, wind, noGps: segs.noGps });
   st.textContent = "Spočítáno z " + R.n + " sekund jízdy.";
   renderCdLaps(); renderCdRes(); $("cd_chartbox").classList.remove("hidden"); drawChart();
 };
@@ -755,11 +784,15 @@ function renderCdRes() {
   if (R.crrFixed == null && (R.crr < 0.002 || R.crr > 0.008)) warns.push("Odhad Crr " + fmt(R.crr, 4) + " je mimo rozumný rozsah 0,002 až 0,008. Kola se asi málo liší rychlostí. Zvol pevnou hodnotu Crr (např. 0,004) a spočítej znovu.");
   perLab.forEach(x => { if (x.cda < 0.15 || x.cda > 0.45) warns.push("CdA pozice " + x.lab + " = " + fmt(x.cda, 3) + " je mimo obvyklý rozsah 0,15 až 0,45. Zkontroluj hmotnost, teplotu, snímač rychlosti a vítr."); });
   if (R.rmse > 1) warns.push("Virtuální výška se od skutečné liší v průměru o " + fmt(R.rmse, 2) + " m. To bývá vítr, brzdění nebo rychlost z GPS. Výsledek ber s rezervou.");
+  const WN = { 0: "severu", 45: "severovýchodu", 90: "východu", 135: "jihovýchodu", 180: "jihu", 225: "jihozápadu", 270: "západu", 315: "severozápadu" };
+  const windTxt = R.wind ? `${fmt(R.wind.raw, 1)} m/s od ${WN[R.wind.from]}${R.wind.src !== 1 ? " (předpověď, u jezdce " + fmt(R.wind.w, 1) + " m/s)" : " (ve výšce jezdce)"}` : "bez korekce";
+  if (R.wind && R.noGps) warns.push("Část záznamů nemá GPS polohu, u nich korekce větru chybí (" + R.noGps + " s).");
+  if (R.wind && R.wind.w > 4) warns.push("Vítr " + fmt(R.wind.w, 1) + " m/s ve výšce jezdce je silný. Korekce je jen přibližná, výsledek ber s rezervou a test raději zopakuj za klidnějšího počasí.");
   if (CD.laps.filter(l => l.inc).length < 3) warns.push("Méně než 3 kola. Pro spolehlivý výsledek jeď aspoň 4 až 6 kol.");
   const b = perLab[0];
   let h = `<h3>Výsledek</h3><div class="scroll"><table class="wide"><tr><td>Pozice</td><td>CdA</td><td>Rozptyl kol</td><td>W při ${fmt(c.spd, 0)} km/h</td><td>Rozdíl</td><td>Rozdíl je</td></tr>`;
   perLab.forEach((x, i) => { h += `<tr><td>${esc(x.lab)}<small>${x.n} ${x.n === 1 ? "kolo" : x.n < 5 ? "kola" : "kol"}</small></td><td>${fmt(x.cda, 3)} m²</td><td>${x.sd != null ? "± " + fmt(x.sd, 3) + "<small>" + fmt(x.sd / x.cda * 100, 1) + " %</small>" : "–"}</td><td>${fmt(x.w, 0)}</td><td>${i === 0 ? "reference" : sgn(x.w - b.w, 0) + " W"}</td><td${x.vd === "průkazný" ? "" : " class='flag'"}>${i === 0 ? "–" : x.vd}</td></tr>`; });
-  h += `</table></div><table style="margin-top:8px"><tr><td>Valivý odpor Crr<small>${R.crrFixed == null ? "odhadnuto z dat" : "pevná hodnota"}</small></td><td>${fmt(R.crr, 4)}</td></tr><tr><td>Hustota vzduchu<small>${fmt(R.tC, 1)} °C, ${fmt(R.alt, 0)} m n. m.</small></td><td>${fmt(R.rho, 3)} kg/m³</td></tr><tr><td>Průměrná odchylka výšky<small>čím menší, tím lépe sedí model</small></td><td>${fmt(R.rmse, 2)} m</td></tr></table>`;
+  h += `</table></div><table style="margin-top:8px"><tr><td>Valivý odpor Crr<small>${R.crrFixed == null ? "odhadnuto z dat" : "pevná hodnota"}</small></td><td>${fmt(R.crr, 4)}</td></tr><tr><td>Hustota vzduchu<small>${fmt(R.tC, 1)} °C, ${fmt(R.alt, 0)} m n. m.</small></td><td>${fmt(R.rho, 3)} kg/m³</td></tr><tr><td>Vítr<small>${R.wind ? "korekce podle zadání" : "výpočet předpokládá bezvětří"}</small></td><td>${esc(windTxt)}</td></tr><tr><td>Průměrná odchylka výšky<small>čím menší, tím lépe sedí model</small></td><td>${fmt(R.rmse, 2)} m</td></tr></table>`;
   if (perLab.length > 1) h += `<h3>Je rozdíl skutečný?</h3><p style="margin-top:4px">${verdicts.map(esc).join("<br>")}</p><p class="muted">± je 95% nejistota spočítaná z rozptylu jednotlivých kol. Rozdíl je průkazný, když je větší než nejistota. Rozptyl kol v % ukazuje opakovatelnost: pro srovnání ve větrném tunelu dosahují nejlepší testeři asi 0,5 až 1 %, zkušení jezdci 2 %, začátečníci 3 %. Pozice jezdi střídavě (A, B, A, B), ať je změna větru nezkreslí. Watty jsou přepočtené na podmínky z kalkulačky.</p>`;
   if (warns.length) h += `<p class="muted warn">${warns.map(esc).join("<br>")}</p>`;
   h += `<div class="row"><select id="cd_pick" style="width:auto">${perLab.map((x, i) => `<option value="${i}">${esc(x.lab)}: ${fmt(x.cda, 3)}</option>`).join("")}</select><button class="btn ghost" id="cd_tocalc">Použít v kalkulačce</button><button class="btn ghost" id="cd_toref">Zapsat k referenční variantě čelní plochy</button></div><p class="muted" id="cd_msg"></p>`;
@@ -768,7 +801,7 @@ function renderCdRes() {
   $("cd_toref").onclick = () => { const x = perLab[+$("cd_pick").value]; const r = S.areas[S.refIdx]; if (!r) { $("cd_msg").textContent = "V záložce Čelní plocha zatím není uložená žádná varianta. Ulož ji a zapiš k ní CdA " + fmt(x.cda, 3) + "."; return; } r.mcda = Math.round(x.cda * 1000) / 1000; save(); renderAreaList(); $("cd_msg").textContent = "CdA " + fmt(x.cda, 3) + " je zapsané k variantě „" + r.name + "“ (reference) v záložce Čelní plocha. Když patří k jiné variantě, přepiš ho tam."; };
   $("cd_out").value = "Změřil jsem CdA z jízdy metodou virtual elevation (okruh, " + CD.laps.filter(l => l.inc).length + " kol).\n" +
     "Podmínky: " + fmt(R.tC, 1) + " °C, " + fmt(R.alt, 0) + " m n. m., hustota vzduchu " + fmt(R.rho, 3) + ", hmotnost " + fmt(R.m, 1) + " kg, účinnost " + fmt(R.eff * 100, 1) + " %.\n" +
-    "Crr " + fmt(R.crr, 4) + (R.crrFixed == null ? " (odhad)" : " (pevné)") + ", průměrná odchylka výšky " + fmt(R.rmse, 2) + " m.\n\n" +
+    "Crr " + fmt(R.crr, 4) + (R.crrFixed == null ? " (odhad)" : " (pevné)") + ", průměrná odchylka výšky " + fmt(R.rmse, 2) + " m.\nVítr: " + windTxt + ".\n\n" +
     perLab.map(x => `- Pozice ${x.lab}: CdA ${fmt(x.cda, 3)} m² (${x.n} kol${x.sd != null ? ", rozptyl ± " + fmt(x.sd, 3) : ""}), ${fmt(x.w, 0)} W při ${fmt(c.spd, 0)} km/h`).join("\n") +
     "\n\nJednotlivá kola:\n" + CD.laps.filter(l => l.inc).map(l => `- kolo ${l.n} (${l.label}): ${hms(l.dur)}, ${fmt(l.v * 3.6, 1)} km/h, ${fmt(l.p, 0)} W, CdA ${l.cda != null ? fmt(l.cda, 3) : "–"}`).join("\n") +
     (verdicts.length ? "\n\nPrůkaznost rozdílů (95% nejistota z rozptylu kol):\n" + verdicts.map(v => "- " + v).join("\n") : "") +
