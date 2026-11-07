@@ -1,6 +1,6 @@
 // Service worker: offline režim a cache modelů MediaPipe.
 // Při každé změně index.html, aero.js nebo pwa.js zvyš APP_VER, aby se stáhla nová verze.
-const APP_VER = "2";
+const APP_VER = "3";
 const APP_CACHE = "aero-app-v" + APP_VER;
 // Soubory z CDN mají verzi v adrese, proto mají vlastní cache, která se při aktualizaci aplikace nemaže.
 const CDN_CACHE = "aero-cdn-v1";
