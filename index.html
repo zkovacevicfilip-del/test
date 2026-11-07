@@ -64,6 +64,9 @@ select{width:100%;font:inherit;padding:9px;border:1px solid var(--line);border-r
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.88rem;color:var(--ink);margin-top:8px}
 .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
 .tip{position:absolute;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:.82rem;line-height:1.35;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.hchips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.hchip{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.85rem}
+.lbtn{display:inline-block;font:inherit;padding:10px 14px;border-radius:10px;border:1px solid var(--line);color:var(--ink);font-weight:600;cursor:pointer;margin:0}
 .xbtn{font:inherit;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:8px;padding:4px 9px;cursor:pointer}
 </style>
 </head>
@@ -83,8 +86,10 @@ select{width:100%;font:inherit;padding:9px;border:1px solid var(--line);border-r
 <div class="topnav tabs" id="topnav">
   <button class="tab on" data-top="pos">Pozice a mobilita</button>
   <button class="tab" data-top="aero">Aero a výkon</button>
+  <button class="tab" data-top="hist">Moje pozice</button>
 </div>
 <section id="s-aero" class="hidden"></section>
+<section id="s-hist" class="hidden"><div id="histRoot"></div><div id="shHist"></div></section>
 
 <section id="s-mode">
   <p>Jak budeš fotit nebo natáčet?</p>
@@ -140,6 +145,7 @@ select{width:100%;font:inherit;padding:9px;border:1px solid var(--line);border-r
   <div class="card hidden" id="resCard">
     <h2>Výsledky</h2>
     <div id="resOut"></div>
+    <div id="savePos"></div>
   </div>
 
   <div class="card hidden" id="outBox">
@@ -564,7 +570,7 @@ function renderResults(){
   const MA=mobAnalysis(SL,SR);
   if(!SL&&!SR&&!F&&!Bk&&!MA){
     $("resOut").innerHTML="<p class='muted'>Zatím není zpracovaný žádný pohled. Přepni na záložku s pohledem a nahraj fotku nebo video.</p>";
-    $("outBox").classList.add("hidden");return;
+    $("outBox").classList.add("hidden");if(window.aeroHist)window.aeroHist.clearSaveBox("savePos");return;
   }
   const miss=VIEWS.filter(k=>!done(k)).map(k=>VN[k]);
   const vids=VIEWS.filter(k=>done(k)&&V[k].frames).map(k=>VN[k]);
@@ -609,6 +615,7 @@ function renderResults(){
     side:{left:pick(SL,SIDEK),right:pick(SR,SIDEK)},front:pick(F,FBK),back:pick(Bk,FBK),
     mobility:MOB.reduce((o,k)=>{o[k]=r2(mobVal(k));return o;},{})};
   if(window.aeroShare)window.aeroShare.attach("shPos","position",()=>shareData);
+  if(window.aeroHist)window.aeroHist.saveBox("savePos",()=>shareData);
 }
 
 $("copy").onclick=()=>{const ta=$("out");ta.focus();ta.select();let ok=false;
@@ -619,6 +626,7 @@ $("copy").onclick=()=>{const ta=$("out");ta.focus();ta.select();let ok=false;
 </script>
 <script type="module" src="aero.js"></script>
 <script src="share.js"></script>
+<script src="history.js"></script>
 <script src="pwa.js"></script>
 </body>
 </html>

@@ -15,8 +15,9 @@
     document.querySelectorAll('[data-sh="ok"]').forEach(c => { c.checked = on; });
     document.querySelectorAll('[data-sh="send"]').forEach(btn => { if (btn.dataset.busy !== "1") btn.disabled = !on; });
   }
-  // Vloží do kontejneru souhlas a tlačítko. getData() vrací objekt s čísly, nebo null.
-  function attach(boxId, kind, getData) {
+  // Vloží do kontejneru souhlas a tlačítko. getData() vrací objekt s čísly (nebo pole objektů = víc řádků), nebo null.
+  // opts: schema (verze dat), key (klíč proti dvojímu odeslání), emptyMsg, onSent(data)
+  function attach(boxId, kind, getData, opts) {
     const box = document.getElementById(boxId); if (!box) return;
     if (!box.dataset.ready) {
       box.dataset.ready = "1";
@@ -28,16 +29,19 @@
       const ok = box.querySelector('[data-sh="ok"]'), btn = box.querySelector('[data-sh="send"]'), msg = box.querySelector('[data-sh="msg"]');
       ok.onchange = () => { ls.set("aero.share.ok", ok.checked ? "1" : "0"); sync(); msg.textContent = ""; };
       btn.onclick = async () => {
-        const data = box._get && box._get();
-        if (!data) { msg.textContent = "Není co odeslat."; return; }
-        const body = JSON.stringify({ device_id: device(), kind, schema_ver: SCHEMA, data });
-        const key = "aero.share.last." + kind, hb = hash(JSON.stringify(data));
+        const o = box._opts || {}, data = box._get && box._get();
+        if (!data) { msg.textContent = o.emptyMsg || "Není co odeslat."; return; }
+        const row = d => ({ device_id: device(), kind, schema_ver: o.schema || SCHEMA, data: d });
+        const body = JSON.stringify(Array.isArray(data) ? data.map(row) : row(data));
+        const key = "aero.share.last." + (o.key || kind), hb = hash(JSON.stringify(data));
         if (ls.get(key) === hb) { msg.textContent = "Tento výsledek už jsi odeslal."; return; }
         btn.disabled = true; btn.dataset.busy = "1"; msg.textContent = "Odesílám…";
         try {
           const r = await fetch(API, { method: "POST", headers: { apikey: KEY, Authorization: "Bearer " + KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body });
           if (!r.ok) throw new Error("server odpověděl " + r.status);
-          ls.set(key, hb); msg.textContent = "Odesláno, díky!";
+          ls.set(key, hb);
+          try { if (o.onSent) o.onSent(data); } catch (e) { }
+          msg.textContent = Array.isArray(data) ? "Odesláno (" + data.length + " " + (data.length === 1 ? "záznam" : data.length < 5 ? "záznamy" : "záznamů") + "), díky!" : "Odesláno, díky!";
         } catch (e) {
           msg.textContent = navigator.onLine === false ? "Jsi offline, zkus to později." : "Odeslání se nepovedlo (" + e.message + ").";
         }
@@ -45,7 +49,7 @@
       };
     }
     sync();
-    box._get = getData;
+    box._get = getData; box._opts = opts || {};
     box.querySelector('[data-sh="id"]').textContent = device();
     box.querySelector('[data-sh="msg"]').textContent = "";
   }

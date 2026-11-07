@@ -245,15 +245,15 @@ let prevPos = null;
 $("topnav").onclick = e => {
   const b = e.target.closest("button"); if (!b) return;
   [...$("topnav").children].forEach(x => x.classList.toggle("on", x === b));
-  const aero = b.dataset.top === "aero";
-  if (aero) {
+  const t = b.dataset.top;
+  $("s-aero").classList.toggle("hidden", t !== "aero");
+  $("s-hist").classList.toggle("hidden", t !== "hist");
+  if (t !== "pos") {
     if (!prevPos) prevPos = { mode: $("s-mode").classList.contains("hidden"), work: $("s-work").classList.contains("hidden") };
-    $("s-mode").classList.add("hidden"); $("s-work").classList.add("hidden"); $("s-aero").classList.remove("hidden");
-    if (curPane === "calc") renderCalc(); if (curPane === "area") renderAreaList(); if (curPane === "cda" && CD.fitRes) drawChart();
-  } else {
-    $("s-aero").classList.add("hidden");
-    if (prevPos) { $("s-mode").classList.toggle("hidden", prevPos.mode); $("s-work").classList.toggle("hidden", prevPos.work); prevPos = null; }
-  }
+    $("s-mode").classList.add("hidden"); $("s-work").classList.add("hidden");
+  } else if (prevPos) { $("s-mode").classList.toggle("hidden", prevPos.mode); $("s-work").classList.toggle("hidden", prevPos.work); prevPos = null; }
+  if (t === "aero") { if (curPane === "calc") renderCalc(); if (curPane === "area") renderAreaList(); if (curPane === "cda" && CD.fitRes) drawChart(); }
+  if (t === "hist" && window.aeroHist) window.aeroHist.render();
 };
 let curPane = "calc";
 $("aTabs").onclick = e => {
@@ -813,8 +813,16 @@ function renderCdRes() {
   h += `</table></div><table style="margin-top:8px"><tr><td>Valivý odpor Crr<small>${R.crrFixed == null ? "odhadnuto z dat" : "pevná hodnota"}</small></td><td>${fmt(R.crr, 4)}</td></tr><tr><td>Hustota vzduchu<small>${fmt(R.tC, 1)} °C, ${fmt(R.alt, 0)} m n. m.</small></td><td>${fmt(R.rho, 3)} kg/m³</td></tr><tr><td>Vítr<small>${R.wind ? "korekce podle zadání" : "výpočet předpokládá bezvětří"}</small></td><td>${esc(windTxt)}</td></tr><tr><td>Průměrná odchylka výšky<small>čím menší, tím lépe sedí model</small></td><td>${fmt(R.rmse, 2)} m</td></tr></table>`;
   if (perLab.length > 1) h += `<h3>Je rozdíl skutečný?</h3><p style="margin-top:4px">${verdicts.map(esc).join("<br>")}</p><p class="muted">± je 95% nejistota spočítaná z rozptylu jednotlivých kol. Rozdíl je průkazný, když je větší než nejistota. Rozptyl kol v % ukazuje opakovatelnost: pro srovnání ve větrném tunelu dosahují nejlepší testeři asi 0,5 až 1 %, zkušení jezdci 2 %, začátečníci 3 %. Pozice jezdi střídavě (A, B, A, B), ať je změna větru nezkreslí. Watty jsou přepočtené na podmínky z kalkulačky.</p>`;
   if (warns.length) h += `<p class="muted warn">${warns.map(esc).join("<br>")}</p>`;
-  h += `<div class="row"><select id="cd_pick" style="width:auto">${perLab.map((x, i) => `<option value="${i}">${esc(x.lab)}: ${fmt(x.cda, 3)}</option>`).join("")}</select><button class="btn ghost" id="cd_tocalc">Použít v kalkulačce</button><button class="btn ghost" id="cd_toref">Zapsat k referenční variantě čelní plochy</button></div><p class="muted" id="cd_msg"></p>`;
+  h += `<div class="row"><select id="cd_pick" style="width:auto">${perLab.map((x, i) => `<option value="${i}">${esc(x.lab)}: ${fmt(x.cda, 3)}</option>`).join("")}</select><button class="btn ghost" id="cd_tocalc">Použít v kalkulačce</button><button class="btn ghost" id="cd_toref">Zapsat k referenční variantě čelní plochy</button></div><div class="row"><select id="cd_hpick" style="width:auto"></select><button class="btn ghost" id="cd_tohist">Zapsat k pozici v Moje pozice</button></div><p class="muted" id="cd_msg"></p>`;
   $("cd_res").innerHTML = h;
+  const fillH = () => { const L = window.aeroHist ? window.aeroHist.list() : []; const cur = $("cd_hpick").value; $("cd_hpick").innerHTML = L.length ? L.map(x => `<option value="${esc(x.id)}">${esc(x.label)}${x.cda ? " – už má CdA " + fmt(x.cda, 3) : ""}</option>`).join("") : `<option value="">Žádná uložená pozice</option>`; if (cur && L.some(x => x.id === cur)) $("cd_hpick").value = cur; };
+  fillH(); $("cd_hpick").addEventListener("focus", fillH); $("cd_hpick").addEventListener("pointerdown", fillH);
+  $("cd_tohist").onclick = () => {
+    const x = perLab[+$("cd_pick").value], id = $("cd_hpick").value;
+    if (!id) { $("cd_msg").textContent = "Nejdřív ulož pozici: Pozice a mobilita → Výsledky → Uložit pozici. Pak k ní tady zapíšeš CdA."; return; }
+    window.aeroHist.setCdA(id, { value: Math.round(x.cda * 10000) / 10000, sd: x.sd != null ? Math.round(x.sd * 10000) / 10000 : null, laps: x.n, source: "jízda", wind: !!R.wind, date: new Date().toISOString().slice(0, 10) });
+    fillH(); $("cd_msg").textContent = "CdA " + fmt(x.cda, 3) + " pozice " + x.lab + " je zapsané k vybrané pozici v záložce Moje pozice.";
+  };
   $("cd_tocalc").onclick = () => { const x = perLab[+$("cd_pick").value]; $("c_cda").value = Math.round(x.cda * 1000) / 1000; S.calc.c_cda = $("c_cda").value; save(); renderCalc(); $("cd_msg").textContent = "CdA " + fmt(x.cda, 3) + " je v kalkulačce."; };
   $("cd_toref").onclick = () => { const x = perLab[+$("cd_pick").value]; const r = S.areas[S.refIdx]; if (!r) { $("cd_msg").textContent = "V záložce Čelní plocha zatím není uložená žádná varianta. Ulož ji a zapiš k ní CdA " + fmt(x.cda, 3) + "."; return; } r.mcda = Math.round(x.cda * 1000) / 1000; save(); renderAreaList(); $("cd_msg").textContent = "CdA " + fmt(x.cda, 3) + " je zapsané k variantě „" + r.name + "“ (reference) v záložce Čelní plocha. Když patří k jiné variantě, přepiš ho tam."; };
   $("cd_out").value = "Změřil jsem CdA z jízdy metodou virtual elevation (okruh, " + CD.laps.filter(l => l.inc).length + " kol).\n" +
