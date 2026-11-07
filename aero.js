@@ -173,6 +173,7 @@ $("s-aero").innerHTML = `
     <h2>Uložené varianty</h2>
     <p class="muted">Ke variantám, které máš změřené z jízdy (záložka CdA z jízdy), zapiš změřené CdA. S jedním měřením aplikace počítá přímou úměru CdA a plochy. Se dvěma a více měřeními různých ploch proloží přímku CdA = a + b × plocha, která je přesnější, protože část odporu (kolo, tvar těla) se s plochou nemění. Od tří měření ukáže i nejistotu. Platí jen pro stejnou helmu a kombinézu.</p>
     <div id="ar_list"></div>
+    <div id="shAr"></div>
   </div>
 </div>
 
@@ -204,7 +205,7 @@ $("s-aero").innerHTML = `
   </div>
   <div class="card">
     <div id="pw_sum"></div>
-    <div id="pw_outbox" class="hidden"><h3>Text pro Claude</h3><textarea id="pw_out" readonly></textarea><div class="row"><button class="btn" id="pw_copy">Zkopírovat</button><span class="muted" id="pw_copied"></span></div></div>
+    <div id="pw_outbox" class="hidden"><h3>Text pro Claude</h3><textarea id="pw_out" readonly></textarea><div class="row"><button class="btn" id="pw_copy">Zkopírovat</button><span class="muted" id="pw_copied"></span></div><div id="shPw"></div></div>
   </div>
 </div>
 
@@ -235,7 +236,7 @@ $("s-aero").innerHTML = `
       <div class="legend"><span><i style="background:var(--c1)"></i>Skutečná výška</span><span><i style="background:var(--c2)"></i>Virtuální výška</span></div>
       <div class="chartwrap" id="cd_wrap"><canvas id="cd_chart"></canvas><div class="tip hidden" id="cd_tip"></div></div>
     </div>
-    <div id="cd_outbox" class="hidden"><h3>Text pro Claude</h3><textarea id="cd_out" readonly></textarea><div class="row"><button class="btn" id="cd_copy">Zkopírovat</button><span class="muted" id="cd_copied"></span></div></div>
+    <div id="cd_outbox" class="hidden"><h3>Text pro Claude</h3><textarea id="cd_out" readonly></textarea><div class="row"><button class="btn" id="cd_copy">Zkopírovat</button><span class="muted" id="cd_copied"></span></div><div id="shCd"></div></div>
   </div>
 </div>`;
 
@@ -456,7 +457,7 @@ function areaModel(P) {
 }
 function renderAreaList() {
   const L = S.areas;
-  if (!L.length) { $("ar_list").innerHTML = "<p class='muted'>Zatím žádná uložená varianta.</p>"; return; }
+  if (!L.length) { $("ar_list").innerHTML = "<p class='muted'>Zatím žádná uložená varianta.</p>"; if (window.aeroShare) window.aeroShare.detach("shAr"); return; }
   if (S.refIdx >= L.length) S.refIdx = 0;
   const ref = L[S.refIdx], c = calcParams(), same = x => x.bike === ref.bike && x.scale === ref.scale;
   const M = areaModel(L.filter(x => same(x) && x.mcda > 0)), mixed = L.some(x => !same(x));
@@ -480,6 +481,15 @@ function renderAreaList() {
   } else h += `<p class="muted" style="margin-top:6px">Radiem vyber referenční variantu. Rozdíl plochy v % zhruba odpovídá rozdílu CdA v %, pokud se nemění tvar (helma, kombinéza). Pro odhad CdA a wattů zapiš u varianty změřené CdA.</p>`;
   if (mixed) h += `<p class="muted warn">Varianty jsou měřené různě (s kolem a bez, nebo jiným měřítkem). Srovnávej jen stejně měřené, odhad CdA se počítá jen pro varianty měřené stejně jako reference.</p>`;
   $("ar_list").innerHTML = h;
+  // Sdílet má smysl jen varianty se změřeným CdA (bez názvů variant)
+  const meas = L.filter(x => same(x) && x.mcda > 0);
+  if (window.aeroShare) {
+    if (!meas.length) window.aeroShare.detach("shAr");
+    else window.aeroShare.attach("shAr", "area", () => ({
+      variants: L.filter(same).map(x => ({ area_m2: +x.area.toFixed(4), bike: !!x.bike, scale: x.scale, measured_cda: x.mcda > 0 ? x.mcda : null, reference: x === ref })),
+      model: M && M.kind === "lin" ? { a: +M.a.toFixed(4), b: +M.b.toFixed(4), n: M.n } : null
+    }));
+  }
 }
 $("ar_list").addEventListener("click", e => {
   const del = e.target.closest("[data-del]"); if (del) { S.areas.splice(+del.dataset.del, 1); if (S.refIdx >= S.areas.length) S.refIdx = 0; save(); renderAreaList(); return; }
@@ -626,6 +636,14 @@ function renderPwSum() {
     "\n\nJednotlivé intervaly:\n" + I.map(l => `- pozice ${l.label}: ${hms(l.dur)}, ${fmt(l.p, 0)} W, tep ${l.hr != null ? fmt(l.hr, 0) : "–"}`).join("\n") +
     "\n\nZhodnoť, jestli některá pozice omezuje výkon, s ohledem na šum měření, únavu a pořadí intervalů. Která pozice dává nejlepší poměr aero, výkon a pohodlí pro časovku na 40 km? Navrhni, jak test případně zopakovat přesněji.";
   $("pw_outbox").classList.remove("hidden");
+  // Anonymní čísla pro výzkum (bez popisů pozic)
+  const rr = (x, d) => x == null || !isFinite(x) ? null : +x.toFixed(d);
+  const sharePw = {
+    source: S.pwr.src,
+    positions: rows.map(r => ({ pos: "P" + r.k, intervals: r.n, dur_s: Math.round(r.t), power_w: rr(r.p, 1), hr: rr(r.hr, 1), w_per_hr: rr(r.wpb, 3), cad: rr(r.cad, 0), comfort: r.cf != null ? r.cf : null })),
+    intervals: I.map(l => ({ pos: "P" + l.label, dur_s: Math.round(l.dur), power_w: rr(l.p, 1), hr: rr(l.hr, 1) }))
+  };
+  if (window.aeroShare) window.aeroShare.attach("shPw", "power", () => sharePw);
 }
 $("pw_copy").onclick = () => copyFrom("pw_out", "pw_copied");
 renderMan(); applySrc();
@@ -808,6 +826,15 @@ function renderCdRes() {
     (warns.length ? "\n\nUpozornění aplikace:\n" + warns.map(w => "- " + w).join("\n") : "") +
     "\n\nZhodnoť, jestli je měření spolehlivé a jestli je rozdíl mezi pozicemi skutečný. Poraď, co v pozici zkusit dál a jak test zpřesnit.";
   $("cd_outbox").classList.remove("hidden");
+  // Anonymní čísla pro výzkum. Názvy pozic se nahradí P1, P2… (může v nich být volný text).
+  const pid = lab => "P" + (R.labels.indexOf(lab) + 1), rr = (x, d) => x == null || !isFinite(x) ? null : +x.toFixed(d);
+  const shareCd = {
+    positions: perLab.map(x => ({ pos: pid(x.lab), cda: rr(x.cda, 4), sd: rr(x.sd, 4), laps: x.n })),
+    crr: rr(R.crr, 5), crr_fixed: R.crrFixed != null, rho: rr(R.rho, 4), temp_c: rr(R.tC, 1), alt_m: rr(R.alt, 0), mass_kg: rr(R.m, 1), eff: R.eff, rmse_m: rr(R.rmse, 3),
+    wind: R.wind ? { from_deg: R.wind.from, rider_ms: rr(R.wind.w, 2), source: R.wind.src === 1 ? "anemometr" : "predpoved" } : null,
+    laps: CD.laps.filter(l => l.inc).map(l => ({ pos: pid(l.label), dur_s: l.dur, speed_kmh: rr(l.v * 3.6, 1), power_w: rr(l.p, 0), cda: rr(l.cda, 4) }))
+  };
+  if (window.aeroShare) window.aeroShare.attach("shCd", "cda", () => shareCd);
 }
 $("cd_copy").onclick = () => copyFrom("cd_out", "cd_copied");
 

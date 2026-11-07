@@ -44,6 +44,17 @@ Z fotek a videí ze čtyř pohledů (levá strana, pravá strana, zepředu, zeza
 3. **Výkon v pozici:** tři pevné pozice (1 současná jako reference, 2 a 3 s popisem, který se doplňuje až po měření). Doporučený protokol: 6 intervalů po 8 min v pořadí 1, 2, 3, 3, 2, 1. Data buď z `.fit` (vlastní parser FIT), nebo ručně. Srovnání výkonu, tepu, W/tep, kadence a subjektivního pohodlí (1 až 10). Data se ukládají v `localStorage`. U každé pozice aplikace spočítá rozdíl proti referenci s 95% nejistotou z rozptylu intervalů a napíše, jestli je rozdíl průkazný.
 4. **CdA z jízdy (virtual elevation):** z venkovního `.fit` souboru (okruh, kola oddělená tlačítkem Lap) metodou nejmenších čtverců odhadne CdA pro každou pozici a Crr, ukáže graf virtuální vs. skutečné výšky a umí CdA přenést do kalkulačky nebo jako referenci k čelní ploše. Rozdíl mezi pozicemi ukazuje s 95% nejistotou z rozptylu jednotlivých kol (t-test se společným rozptylem), označí ho jako průkazný nebo v šumu a odhadne, kolik kol by bylo potřeba. Rozptyl kol v % srovná s opakovatelností ve větrném tunelu (inspirováno benchmarkem AiRO). **Korekce větru:** ruční zadání směru (odkud fouká, 8 směrů) a rychlosti v m/s. Údaj z předpovědi (10 m nad zemí) se násobí 0,65 na výšku jezdce, údaj z ručního anemometru se bere přímo. Směr jízdy se počítá z GPS v .fit souboru a odpor vzduchu z rychlosti vůči vzduchu. Na simulované jízdě s větrem 4 m/s vrátila korekce přesné CdA (bez korekce o 25 % vyšší). Nezachytí nárazy, závětří ani vliv bočního větru na CdA.
 
+### Sdílení dat do výzkumné databáze (`share.js`, `soukromi.html`, `supabase/schema.sql`)
+- Dobrovolné: pod výsledky (Pozice, CdA z jízdy, Výkon v pozici, Čelní plocha u variant se změřeným CdA) je zaškrtávátko souhlasu a tlačítko **Odeslat anonymně**. Souhlas platí pro všechna místa najednou a pamatuje se.
+- Odesílají se jen čísla. Nikdy fotky, videa, poznámky, popisy pozic, názvy variant ani GPS. Vlastní názvy pozic se nahradí P1, P2…
+- Každé zařízení má náhodné anonymní ID (`aero.device` v `localStorage`), podle kterého jde data na žádost smazat. Stejný výsledek se podruhé neodešle.
+- Databáze: Supabase projekt `aero-pozice`, region Frankfurt (EU), tabulka `submissions` (device_id, kind = position / cda / power / area, schema_ver, data jako JSON). Tabulku vytváří `supabase/schema.sql` (vložit do SQL Editoru a spustit, jde spustit i opakovaně).
+- Pravidla: aplikace (role anon) smí jen zapisovat, číst a mazat jen vlastník v Supabase. Databáze odmítne neplatná data a víc než 50 odeslání za den z jednoho zařízení. Ověřeno na PostgreSQL 16.
+- V `share.js` je **publishable** klíč (veřejný, určený do webu). Secret / service_role klíč ani heslo databáze nikdy do kódu ani do chatu.
+- Data najdeš v Supabase → Table Editor → `submissions` (jde exportovat do CSV). Smazání na žádost: SQL Editor → `delete from public.submissions where device_id = 'ID';`
+- Zásady ochrany soukromí: `soukromi.html`. Kontakt je zatím GitHub projektu, pro GDPR je vhodné doplnit jméno a e-mail správce.
+- Free tarif Supabase uspí projekt po týdnu bez aktivity, pak ho je potřeba v Supabase probudit (Restore).
+
 ## Důležitá rozhodnutí a proč
 
 - **Webová aplikace, ne nativní Android:** na tabletu nejde Android Studio a nativní vývoj by začátečníka zastavil. Web se navíc nahrává jedním souborem.
