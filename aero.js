@@ -24,7 +24,7 @@ const hms = s => { if (!isFinite(s) || s < 0) return "–"; s = Math.round(s); c
 const sgn = (x, d) => (x > 0 ? "+" : x < 0 ? "−" : "") + fmt(Math.abs(x), d);
 function load() { try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch (e) { return {}; } }
 function save() { try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) { } }
-const S = load(); if (!S.calc) S.calc = {}; if (!Array.isArray(S.areas)) S.areas = []; if (typeof S.refIdx !== "number") S.refIdx = 0;
+const S = load(); if (S.refCdA > 0 && Array.isArray(S.areas) && S.areas[S.refIdx || 0] && !(S.areas[S.refIdx || 0].mcda > 0)) { S.areas[S.refIdx || 0].mcda = S.refCdA; } delete S.refCdA; if (!S.calc) S.calc = {}; if (!Array.isArray(S.areas)) S.areas = []; if (typeof S.refIdx !== "number") S.refIdx = 0;
 
 function rhoOf(tempC, altM) { const p = 101325 * Math.pow(1 - 2.25577e-5 * altM, 5.25588); return p / (287.058 * (tempC + 273.15)); }
 function wheelPower(v, P) { return 0.5 * P.rho * P.cda * v * v * v + P.crr * P.m * G * v; }
@@ -170,10 +170,7 @@ $("s-aero").innerHTML = `
   </div>
   <div class="card">
     <h2>Uložené varianty</h2>
-    <div class="grid">
-      ${field("ar_refcda", "Změřené CdA referenční varianty (m²)", S.refCdA != null ? S.refCdA : "", "0.001")}
-    </div>
-    <p class="muted" style="margin-top:6px">Bez změřeného CdA ukazuje aplikace jen rozdíly plochy. Se změřeným CdA spočítá tvůj osobní součinitel Cd = CdA / plocha a odhadne CdA a watty ostatních variant. Platí jen pro malé změny pozice, ne pro jinou helmu nebo kombinézu.</p>
+    <p class="muted">Ke variantám, které máš změřené z jízdy (záložka CdA z jízdy), zapiš změřené CdA. S jedním měřením aplikace počítá přímou úměru CdA a plochy. Se dvěma a více měřeními různých ploch proloží přímku CdA = a + b × plocha, která je přesnější, protože část odporu (kolo, tvar těla) se s plochou nemění. Od tří měření ukáže i nejistotu. Platí jen pro stejnou helmu a kombinézu.</p>
     <div id="ar_list"></div>
   </div>
 </div>
@@ -435,28 +432,61 @@ $("ar_save").onclick = () => {
   S.areas.push({ name, area: R.area, bike: $("ar_bike").checked, scale: $("ar_scale").value, date: new Date().toISOString().slice(0, 10) });
   save(); renderAreaList(); setArStatus("Uloženo jako „" + name + "“.", false); $("ar_name").value = "";
 };
-$("ar_refcda").oninput = () => { const v = num("ar_refcda", NaN); S.refCdA = isFinite(v) && v > 0 ? v : null; save(); renderAreaList(); };
+// Převod plochy na CdA podle změřených variant: přímka CdA = a + b·plocha (≥ 2 měření), jinak přímá úměra
+function areaModel(P) {
+  if (!P.length) return null;
+  const n = P.length, mA = P.reduce((t, x) => t + x.area, 0) / n, mC = P.reduce((t, x) => t + x.mcda, 0) / n;
+  const Sxx = P.reduce((t, x) => t + (x.area - mA) ** 2, 0), Sxy = P.reduce((t, x) => t + (x.area - mA) * (x.mcda - mC), 0);
+  const lo = Math.min(...P.map(x => x.area)), hi = Math.max(...P.map(x => x.area));
+  const prop = { kind: "prop", Cd: P.reduce((t, x) => t + x.mcda, 0) / P.reduce((t, x) => t + x.area, 0), n, lo, hi };
+  prop.pred = A => ({ cda: prop.Cd * A, half: null });
+  if (n < 2) return prop;
+  if ((hi - lo) / mA < 0.03) return Object.assign(prop, { why: "Změřené varianty se liší plochou méně než o 3 %, přímku z nich nejde spolehlivě proložit." });
+  const b = Sxy / Sxx, a = mC - b * mA;
+  if (!(b > 0)) return Object.assign(prop, { why: "Změřená CdA neodpovídají plochám (větší plocha má menší CdA). Rozdíly jsou nejspíš v šumu měření nebo se změnil tvar, ne plocha." });
+  const s = n > 2 ? Math.sqrt(P.reduce((t, x) => t + (x.mcda - a - b * x.area) ** 2, 0) / (n - 2)) : null;
+  const lin = { kind: "lin", a, b, n, s, lo, hi, Cd: prop.Cd };
+  lin.pred = A => ({ cda: a + b * A, half: s != null ? tq(n - 2) * s * Math.sqrt(1 + 1 / n + (A - mA) ** 2 / Sxx) : null });
+  return lin;
+}
 function renderAreaList() {
   const L = S.areas;
   if (!L.length) { $("ar_list").innerHTML = "<p class='muted'>Zatím žádná uložená varianta.</p>"; return; }
   if (S.refIdx >= L.length) S.refIdx = 0;
-  const ref = L[S.refIdx], c = calcParams(), Cd = S.refCdA ? S.refCdA / ref.area : null, wRef = Cd ? wattsAt(c, Cd * ref.area) : null;
-  const mixed = L.some(x => x.bike !== ref.bike || x.scale !== ref.scale);
-  let h = `<div class="scroll"><table class="wide"><tr><td>Varianta</td><td>Plocha m²</td><td>Rozdíl</td>${Cd ? `<td>CdA</td><td>W</td><td>ΔW</td>` : ""}<td></td></tr>`;
+  const ref = L[S.refIdx], c = calcParams(), same = x => x.bike === ref.bike && x.scale === ref.scale;
+  const M = areaModel(L.filter(x => same(x) && x.mcda > 0)), mixed = L.some(x => !same(x));
+  const refP = M ? M.pred(ref.area) : null, wRef = M ? wattsAt(c, refP.cda) : null;
+  let h = `<div class="scroll"><table class="wide"><tr><td>Varianta</td><td>Plocha m²</td><td>Rozdíl</td><td>Změřené CdA</td>${M ? `<td>Odhad CdA</td><td>W</td><td>ΔW</td>` : ""}<td></td></tr>`;
   L.forEach((x, i) => {
-    const d = (x.area / ref.area - 1) * 100, cda = Cd ? Cd * x.area : null, w = Cd ? wattsAt(c, cda) : null;
-    h += `<tr><td><label class="chk" style="margin:0"><input type="radio" name="arref" data-i="${i}"${i === S.refIdx ? " checked" : ""}><span>${esc(x.name)}<small>${x.bike ? "jezdec + kolo" : "jen jezdec"}, ${x.scale === "a4" ? "A4" : "kolo"}, ${esc(x.date)}</small></span></label></td><td>${fmt(x.area, 3)}</td><td>${i === S.refIdx ? "reference" : sgn(d, 1) + " %"}</td>${Cd ? `<td>${fmt(cda, 3)}</td><td>${fmt(w, 0)}</td><td>${i === S.refIdx ? "–" : sgn(w - wRef, 0)}</td>` : ""}<td><button class="xbtn" data-del="${i}" aria-label="Smazat">×</button></td></tr>`;
+    const d = (x.area / ref.area - 1) * 100, ok = same(x), p = M && ok ? M.pred(x.area) : null, w = p ? wattsAt(c, p.cda) : null;
+    const out = p && (x.area < M.lo - 0.05 * M.lo || x.area > M.hi + 0.05 * M.hi);
+    const hw = p && p.half != null ? wattsAt(c, p.cda + p.half) - w : null;
+    h += `<tr><td><label class="chk" style="margin:0"><input type="radio" name="arref" data-i="${i}"${i === S.refIdx ? " checked" : ""}><span>${esc(x.name)}<small>${x.bike ? "jezdec + kolo" : "jen jezdec"}, ${x.scale === "a4" ? "A4" : "kolo"}, ${esc(x.date)}</small></span></label></td><td>${fmt(x.area, 3)}</td><td>${i === S.refIdx ? "reference" : sgn(d, 1) + " %"}</td>` +
+      `<td><input type="text" inputmode="decimal" autocomplete="off" data-mc="${i}" value="${x.mcda > 0 ? String(x.mcda).replace(".", ",") : ""}" placeholder="–" style="width:80px;padding:6px"></td>` +
+      (M ? (p ? `<td${out ? " class='flag'" : ""}>${fmt(p.cda, 3)}${p.half != null ? "<small>± " + fmt(p.half, 3) + "</small>" : ""}${out ? "<small>mimo změřený rozsah</small>" : ""}</td><td>${fmt(w, 0)}${hw != null ? "<small>± " + fmt(hw, 0) + "</small>" : ""}</td><td>${i === S.refIdx ? "–" : sgn(w - wRef, 0)}</td>` : `<td>–<small>měřeno jinak</small></td><td>–</td><td>–</td>`) : "") +
+      `<td><button class="xbtn" data-del="${i}" aria-label="Smazat">×</button></td></tr>`;
   });
   h += "</table></div>";
-  if (Cd) h += `<p class="muted" style="margin-top:6px">W a ΔW jsou watty při ${fmt(c.spd, 0)} km/h podle kalkulačky. Tvůj osobní Cd = ${fmt(Cd, 3)} (CdA ${fmt(S.refCdA, 3)} / plocha ${fmt(ref.area, 3)} m²). Odhad předpokládá stejný Cd u všech variant, takže zachytí změnu plochy, ne tvaru. Nejistota je aspoň ±2 až 3 %, rozdíly do ~3 W ber jako shodu.</p>`;
-  else h += `<p class="muted" style="margin-top:6px">Radiem vyber referenční variantu. Rozdíl plochy v % zhruba odpovídá rozdílu CdA v %, pokud se nemění tvar (helma, kombinéza).</p>`;
-  if (mixed) h += `<p class="muted warn">Varianty jsou měřené různě (s kolem a bez, nebo jiným měřítkem). Srovnávej jen stejně měřené.</p>`;
+  if (M && M.kind === "lin") {
+    h += `<p style="margin-top:8px"><b>Model z ${M.n} měření:</b> CdA = ${fmt(M.a, 3)} + ${fmt(M.b, 3)} × plocha.</p><p class="muted">${fmt(M.a, 3)} m² je část odporu, která se s plochou nemění. ${fmt(M.b, 3)} je účinek změny plochy: zmenšení plochy o 0,01 m² ušetří ${fmt(M.b * 0.01, 4)} m² CdA, tj. asi ${fmt(wattsAt(c, refP.cda) - wattsAt(c, refP.cda - M.b * 0.01), 1)} W při ${fmt(c.spd, 0)} km/h. Přímá úměra by dala ${fmt(M.Cd * 0.01, 4)} m².` +
+      (M.s != null ? ` ± je 95% nejistota odhadu, spočítaná z toho, jak měření sedí na přímku (odchylka ${fmt(M.s, 4)} m²).` : ` Nejistotu ze 2 měření spočítat nejde, přidej třetí měření jiné pozice.`) + ` Mimo změřený rozsah ploch je odhad méně spolehlivý.</p>`;
+  } else if (M) {
+    h += `<p class="muted" style="margin-top:6px">${M.why ? `<span class="warn" style="display:block">${esc(M.why)} Používám přímou úměru.</span>` : ""}Odhad: přímá úměra, osobní Cd = ${fmt(M.Cd, 3)} (CdA / plocha${M.n > 1 ? " z " + M.n + " měření" : ""}). Zachytí změnu plochy, ne tvaru, a změnu CdA spíš přecení. Nejistota je aspoň ±2 až 3 %, rozdíly do ~3 W ber jako shodu. Změř CdA ještě jedné pozice s jinou plochou a aplikace proloží přesnější přímku. W a ΔW jsou watty při ${fmt(c.spd, 0)} km/h podle kalkulačky.</p>`;
+  } else h += `<p class="muted" style="margin-top:6px">Radiem vyber referenční variantu. Rozdíl plochy v % zhruba odpovídá rozdílu CdA v %, pokud se nemění tvar (helma, kombinéza). Pro odhad CdA a wattů zapiš u varianty změřené CdA.</p>`;
+  if (mixed) h += `<p class="muted warn">Varianty jsou měřené různě (s kolem a bez, nebo jiným měřítkem). Srovnávej jen stejně měřené, odhad CdA se počítá jen pro varianty měřené stejně jako reference.</p>`;
   $("ar_list").innerHTML = h;
 }
 $("ar_list").addEventListener("click", e => {
   const del = e.target.closest("[data-del]"); if (del) { S.areas.splice(+del.dataset.del, 1); if (S.refIdx >= S.areas.length) S.refIdx = 0; save(); renderAreaList(); return; }
 });
-$("ar_list").addEventListener("change", e => { if (e.target.name === "arref") { S.refIdx = +e.target.dataset.i; save(); renderAreaList(); } });
+$("ar_list").addEventListener("input", e => {
+  const i = e.target.dataset.mc; if (i == null) return;
+  const v = parseFloat(String(e.target.value).replace(",", ".")); S.areas[+i].mcda = isFinite(v) && v > 0.05 && v < 1 ? v : null; save();
+});
+$("ar_list").addEventListener("change", e => {
+  if (e.target.name === "arref") { S.refIdx = +e.target.dataset.i; save(); renderAreaList(); }
+  if (e.target.dataset.mc != null) renderAreaList();
+});
 renderAreaList();
 
 // ---------- 3. výkon v pozici ----------
@@ -732,10 +762,10 @@ function renderCdRes() {
   h += `</table></div><table style="margin-top:8px"><tr><td>Valivý odpor Crr<small>${R.crrFixed == null ? "odhadnuto z dat" : "pevná hodnota"}</small></td><td>${fmt(R.crr, 4)}</td></tr><tr><td>Hustota vzduchu<small>${fmt(R.tC, 1)} °C, ${fmt(R.alt, 0)} m n. m.</small></td><td>${fmt(R.rho, 3)} kg/m³</td></tr><tr><td>Průměrná odchylka výšky<small>čím menší, tím lépe sedí model</small></td><td>${fmt(R.rmse, 2)} m</td></tr></table>`;
   if (perLab.length > 1) h += `<h3>Je rozdíl skutečný?</h3><p style="margin-top:4px">${verdicts.map(esc).join("<br>")}</p><p class="muted">± je 95% nejistota spočítaná z rozptylu jednotlivých kol. Rozdíl je průkazný, když je větší než nejistota. Rozptyl kol v % ukazuje opakovatelnost: pro srovnání ve větrném tunelu dosahují nejlepší testeři asi 0,5 až 1 %, zkušení jezdci 2 %, začátečníci 3 %. Pozice jezdi střídavě (A, B, A, B), ať je změna větru nezkreslí. Watty jsou přepočtené na podmínky z kalkulačky.</p>`;
   if (warns.length) h += `<p class="muted warn">${warns.map(esc).join("<br>")}</p>`;
-  h += `<div class="row"><select id="cd_pick" style="width:auto">${perLab.map((x, i) => `<option value="${i}">${esc(x.lab)}: ${fmt(x.cda, 3)}</option>`).join("")}</select><button class="btn ghost" id="cd_tocalc">Použít v kalkulačce</button><button class="btn ghost" id="cd_toref">Použít jako referenci pro čelní plochu</button></div><p class="muted" id="cd_msg"></p>`;
+  h += `<div class="row"><select id="cd_pick" style="width:auto">${perLab.map((x, i) => `<option value="${i}">${esc(x.lab)}: ${fmt(x.cda, 3)}</option>`).join("")}</select><button class="btn ghost" id="cd_tocalc">Použít v kalkulačce</button><button class="btn ghost" id="cd_toref">Zapsat k referenční variantě čelní plochy</button></div><p class="muted" id="cd_msg"></p>`;
   $("cd_res").innerHTML = h;
   $("cd_tocalc").onclick = () => { const x = perLab[+$("cd_pick").value]; $("c_cda").value = Math.round(x.cda * 1000) / 1000; S.calc.c_cda = $("c_cda").value; save(); renderCalc(); $("cd_msg").textContent = "CdA " + fmt(x.cda, 3) + " je v kalkulačce."; };
-  $("cd_toref").onclick = () => { const x = perLab[+$("cd_pick").value]; S.refCdA = Math.round(x.cda * 1000) / 1000; $("ar_refcda").value = S.refCdA; save(); renderAreaList(); $("cd_msg").textContent = "CdA " + fmt(x.cda, 3) + " je nastavené jako reference v záložce Čelní plocha. Vyber tam variantu se stejnou pozicí."; };
+  $("cd_toref").onclick = () => { const x = perLab[+$("cd_pick").value]; const r = S.areas[S.refIdx]; if (!r) { $("cd_msg").textContent = "V záložce Čelní plocha zatím není uložená žádná varianta. Ulož ji a zapiš k ní CdA " + fmt(x.cda, 3) + "."; return; } r.mcda = Math.round(x.cda * 1000) / 1000; save(); renderAreaList(); $("cd_msg").textContent = "CdA " + fmt(x.cda, 3) + " je zapsané k variantě „" + r.name + "“ (reference) v záložce Čelní plocha. Když patří k jiné variantě, přepiš ho tam."; };
   $("cd_out").value = "Změřil jsem CdA z jízdy metodou virtual elevation (okruh, " + CD.laps.filter(l => l.inc).length + " kol).\n" +
     "Podmínky: " + fmt(R.tC, 1) + " °C, " + fmt(R.alt, 0) + " m n. m., hustota vzduchu " + fmt(R.rho, 3) + ", hmotnost " + fmt(R.m, 1) + " kg, účinnost " + fmt(R.eff * 100, 1) + " %.\n" +
     "Crr " + fmt(R.crr, 4) + (R.crrFixed == null ? " (odhad)" : " (pevné)") + ", průměrná odchylka výšky " + fmt(R.rmse, 2) + " m.\n\n" +
