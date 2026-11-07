@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Aero pozice – měření z fotek a videí</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0e7c86">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
 :root{--bg:#eef2f4;--surface:#fff;--ink:#12202b;--muted:#5a6b78;--line:#cfd9df;--accent:#0e7c86;--pt:#e8590c;--on:#fff;--c1:#0083a0;--c2:#e0560a}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a22;--surface:#17252f;--ink:#e6eef2;--muted:#93a6b2;--line:#2b3d49;--accent:#4cc3cf;--pt:#ff8a4c;--on:#0f1a22;--c1:#2a9fae;--c2:#e0662f}}
@@ -66,6 +70,15 @@ select{width:100%;font:inherit;padding:9px;border:1px solid var(--line);border-r
 <body>
 <h1>Aero pozice na časovkářském kole</h1>
 <p class="muted">Měření úhlů ze čtyř pohledů: levá strana, pravá strana, zepředu, zezadu. U každého pohledu můžeš nahrát fotku, nebo video celého cyklu šlapání. Body těla najde automaticky model v prohlížeči. Navíc můžeš nahrát fotky mobilitních testů a aplikace ověří, jestli pozice nepřesahuje tvoji mobilitu. V části Aero a výkon spočítáš watty z CdA, změříš čelní plochu, porovnáš výkon v pozicích a změříš CdA z jízdy. Nic se nikam neodesílá.</p>
+
+<div class="card" id="pwaCard">
+  <div id="pwaUpdate" class="warn hidden" style="margin-bottom:8px">Je k dispozici nová verze aplikace. <button class="btn" id="pwaReload" style="margin-left:6px">Obnovit</button></div>
+  <p class="muted" id="pwaStatus" style="margin:0">Offline režim se připravuje…</p>
+  <div class="row">
+    <button class="btn hidden" id="pwaInstall">Nainstalovat aplikaci</button>
+    <button class="btn ghost" id="pwaOffline">Stáhnout modely pro offline</button>
+  </div>
+</div>
 
 <div class="topnav tabs" id="topnav">
   <button class="tab on" data-top="pos">Pozice a mobilita</button>
@@ -592,5 +605,6 @@ $("copy").onclick=()=>{const ta=$("out");ta.focus();ta.select();let ok=false;
 ["v","h","p","n","o"].forEach(i=>{$(i).oninput=()=>{if(cur==="res")renderResults();};});
 </script>
 <script type="module" src="aero.js"></script>
+<script src="pwa.js"></script>
 </body>
 </html>
