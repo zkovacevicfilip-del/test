@@ -110,7 +110,7 @@ const avgOf = (recs, k) => { let s = 0, n = 0; for (const r of recs) if (r[k] !=
 async function readFitFile(f) { const buf = await f.arrayBuffer(); return parseFIT(buf); }
 
 // ---------- šablona ----------
-const field = (id, label, val, step) => `<div><label for="${id}">${label}</label><input id="${id}" type="number" inputmode="decimal" step="${step || "any"}" value="${val}"></div>`;
+const field = (id, label, val, step) => `<div><label for="${id}">${label}</label><input id="${id}" type="text" inputmode="decimal" autocomplete="off" value="${val}"></div>`;
 $("s-aero").innerHTML = `
 <div class="card"><div class="tabs" id="aTabs">
   <button class="tab on" data-a="calc">Kalkulačka</button>
@@ -521,7 +521,7 @@ function renderMan() {
   if (!M.length) { $("pw_man").innerHTML = "<p class='muted'>Zatím žádný interval. Klepni na Přidat interval.</p>"; return; }
   let h = `<table class="tbl-in wide"><tr><td>Pozice</td><td>Délka (min)</td><td>Ø W</td><td>Ø tep</td><td>Kadence</td><td></td></tr>`;
   M.forEach((r, i) => {
-    const inp = (k, ph) => `<input type="number" inputmode="decimal" step="any" data-mi="${i}" data-mk="${k}" value="${r[k] != null ? r[k] : ""}" placeholder="${ph}" style="width:84px">`;
+    const inp = (k, ph) => `<input type="text" inputmode="decimal" autocomplete="off" data-mi="${i}" data-mk="${k}" value="${r[k] != null ? r[k] : ""}" placeholder="${ph}" style="width:84px">`;
     h += `<tr><td>${posSelect(r.pos, 'data-mi="' + i + '" data-mk="pos"')}</td><td>${inp("min", "8")}</td><td>${inp("p", "250")}</td><td>${inp("hr", "150")}</td><td>${inp("cad", "90")}</td><td><button class="xbtn" data-mdel="${i}" aria-label="Smazat interval">×</button></td></tr>`;
   });
   $("pw_man").innerHTML = h + "</table>";
