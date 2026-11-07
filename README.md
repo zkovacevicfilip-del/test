@@ -52,7 +52,7 @@ Z fotek a videí ze čtyř pohledů (levá strana, pravá strana, zepředu, zeza
 - Pravidla: aplikace (role anon) smí jen zapisovat, číst a mazat jen vlastník v Supabase. Databáze odmítne neplatná data a víc než 50 odeslání za den z jednoho zařízení. Ověřeno na PostgreSQL 16.
 - V `share.js` je **publishable** klíč (veřejný, určený do webu). Secret / service_role klíč ani heslo databáze nikdy do kódu ani do chatu.
 - Data najdeš v Supabase → Table Editor → `submissions` (jde exportovat do CSV). Smazání na žádost: SQL Editor → `delete from public.submissions where device_id = 'ID';`
-- Zásady ochrany soukromí: `soukromi.html`. Kontakt je zatím GitHub projektu, pro GDPR je vhodné doplnit jméno a e-mail správce.
+- Zásady ochrany soukromí: `soukromi.html`. Správce dat: Filip Kovačević, aeroanalysisapp@gmail.com (odkaz na e-mail se předvyplní anonymním ID).
 - Free tarif Supabase uspí projekt po týdnu bez aktivity, pak ho je potřeba v Supabase probudit (Restore).
 
 ## Důležitá rozhodnutí a proč

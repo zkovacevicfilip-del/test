@@ -40,7 +40,7 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.88rem;word-break:break-
 
 <div class="card">
   <h2>Kdo data spravuje</h2>
-  <p>Autor aplikace Aero pozice (soukromá osoba, nekomerční projekt). Kontakt: <a href="https://github.com/zkovacevicfilip-del/test/issues" target="_blank" rel="noopener">GitHub projektu</a>.</p>
+  <p><b>Filip Kovačević</b>, autor aplikace Aero pozice (soukromá osoba, nekomerční projekt).<br>E-mail: <a href="mailto:aeroanalysisapp@gmail.com">aeroanalysisapp@gmail.com</a></p>
 </div>
 
 <div class="card">
@@ -68,14 +68,22 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.88rem;word-break:break-
 
 <div class="card">
   <h2>Tvoje práva</h2>
-  <p>Máš právo na přístup ke svým datům, jejich smazání a odvolání souhlasu. Napiš přes kontakt výše a uveď své anonymní ID:</p>
+  <p>Máš právo na přístup ke svým datům, jejich smazání a odvolání souhlasu. Napiš na <a id="mail" href="mailto:aeroanalysisapp@gmail.com?subject=Aero%20pozice%20%E2%80%93%20moje%20data">aeroanalysisapp@gmail.com</a> a uveď své anonymní ID:</p>
   <p><code id="devid">ID se vytvoří, až se v aplikaci poprvé zobrazí nabídka sdílení.</code></p>
   <p class="muted">Pokud máš pocit, že s daty není zacházeno správně, můžeš se obrátit na Úřad pro ochranu osobních údajů (<a href="https://uoou.gov.cz" target="_blank" rel="noopener">uoou.gov.cz</a>).</p>
 </div>
 
 <p><a href="./">← Zpět do aplikace</a></p>
 <script>
-try { const d = localStorage.getItem("aero.device"); if (d) document.getElementById("devid").textContent = d; } catch (e) { }
+try {
+  const d = localStorage.getItem("aero.device");
+  if (d) {
+    document.getElementById("devid").textContent = d;
+    // e-mail se rovnou předvyplní anonymním ID
+    document.getElementById("mail").href = "mailto:aeroanalysisapp@gmail.com?subject=" + encodeURIComponent("Aero pozice – moje data") +
+      "&body=" + encodeURIComponent("Dobrý den,\nprosím o smazání (nebo zaslání) mých dat.\nMoje anonymní ID: " + d + "\n");
+  }
+} catch (e) { }
 </script>
 </body>
 </html>
