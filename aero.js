@@ -124,7 +124,7 @@ async function readFitFile(f) { const buf = await f.arrayBuffer(); return parseF
 // ---------- šablona ----------
 const field = (id, label, val, step) => `<div><label for="${id}">${label}</label><input id="${id}" type="text" inputmode="decimal" autocomplete="off" value="${val}"></div>`;
 $("s-aero").innerHTML = `
-<div class="card"><div class="tabs" id="aTabs">
+<div class="card"><div class="seg" id="aTabs" data-pane="#s-aero .apane">
   <button class="tab on" data-a="calc">Kalkulačka</button>
   <button class="tab" data-a="area">Čelní plocha</button>
   <button class="tab" data-a="pow">Výkon v pozici</button>
@@ -187,7 +187,7 @@ $("s-aero").innerHTML = `
   </div>
   <div class="card">
     <h2>Odkud vezmu data</h2>
-    <div class="tabs" id="pw_src">
+    <div class="seg" id="pw_src" data-pane="#pw_fitbox,#pw_manbox">
       <button class="tab on" data-s="fit">Z .fit souboru</button>
       <button class="tab" data-s="man">Zadat ručně</button>
     </div>

@@ -54,8 +54,8 @@ b,strong{font-weight:600}
 .mainnav button:active{transform:scale(.96)}
 .mainnav button.on{flex-grow:1.9;color:#000;font-weight:600}
 .mainnav:not(.js) button.on{background:#fff}
-.nav-ind{position:absolute;z-index:0;top:5px;left:0;height:48px;width:0;border-radius:999px;background:#fff;box-shadow:0 6px 22px rgba(255,255,255,.07);pointer-events:none;will-change:transform,width}
-.mainnav:not(.js) .nav-ind{display:none}
+.mainnav>.seg-ind{top:5px;bottom:5px}
+.mainnav:not(.js)>.seg-ind{display:none}
 .mainnav button.on svg{transform:scale(1.06)}
 .nl{display:flex;margin-left:8px;overflow:hidden}
 .nl>span{display:block;white-space:nowrap;overflow:hidden}
@@ -71,7 +71,6 @@ b,strong{font-weight:600}
 @keyframes viewIn{from{opacity:0;transform:translate3d(var(--dx,0px),var(--dy,10px),0)}to{opacity:1;transform:none}}
 @keyframes fadeUp{from{opacity:0;transform:translate3d(0,8px,0)}to{opacity:1;transform:none}}
 .view:not(.hidden){animation:viewIn .55s var(--ease) both}
-.apane:not(.hidden),#pw_fitbox:not(.hidden),#pw_manbox:not(.hidden),#resCard:not(.hidden),#outBox:not(.hidden){animation:fadeUp .4s var(--ease) both}
 
 /* karty a rozložení */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;margin:14px 0}
@@ -112,15 +111,20 @@ button:disabled,button:disabled:hover{opacity:.35;cursor:default;transform:none}
 .xbtn{font:inherit;font-size:.85rem;border:1px solid var(--line-2);background:transparent;color:#fff;border-radius:999px;padding:5px 12px;cursor:pointer;transition:border-color .2s,background-color .2s}
 .xbtn:hover{border-color:#fff}
 
-/* záložky uvnitř částí: zvolená se zvýrazní a trochu rozšíří */
-.tabs{display:flex;gap:6px;flex-wrap:wrap}
-.tab{flex:1 1 auto;min-width:0;font:inherit;font-size:.9rem;padding:9px 14px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--muted);cursor:pointer;transition:flex-grow .5s var(--ease),background-color .3s var(--ease),color .3s var(--ease),border-color .3s var(--ease),transform .18s var(--ease)}
-.tab:hover{color:#fff;border-color:#555}
-.tab:active{transform:scale(.97)}
-.tab.on{flex-grow:1.7;background:#fff;color:#000;border-color:#fff;font-weight:600}
-#tabs .tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
-#tabs .tabs:last-child{grid-template-columns:1fr}
-@media (min-width:520px){#tabs .tabs{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* vodorovné výběry (stejná klouzavá pilulka jako hlavní menu, řídí ui.js) */
+.seg{position:relative;display:flex;gap:4px;padding:4px;background:#0f0f0f;border:1px solid var(--line-2);border-radius:999px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.seg::-webkit-scrollbar{display:none}
+.tab{position:relative;z-index:1;flex:1 0 auto;min-width:0;font:inherit;font-size:.9rem;font-weight:500;white-space:nowrap;padding:10px 15px;border:0;border-radius:999px;background:transparent;color:var(--muted);cursor:pointer;transition:flex-grow .6s var(--ease),padding .6s var(--ease),color .2s ease,transform .18s var(--ease)}
+.tab:hover{color:#fff}
+.tab:active{transform:scale(.96)}
+.tab.on{flex-grow:1.6;padding-left:21px;padding-right:21px;color:#000;font-weight:600}
+.seg:not(.js)>.tab.on{background:#fff}
+.seg-ind{position:absolute;z-index:0;top:4px;bottom:4px;left:0;width:0;border-radius:999px;background:#fff;box-shadow:0 6px 22px rgba(255,255,255,.07);pointer-events:none;opacity:0;transition:opacity .25s ease;will-change:transform,width}
+.seg:not(.js)>.seg-ind{display:none}
+.seg.fade-r{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 34px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 34px),transparent)}
+.seg.fade-l{-webkit-mask-image:linear-gradient(to left,#000 calc(100% - 34px),transparent);mask-image:linear-gradient(to left,#000 calc(100% - 34px),transparent)}
+.seg.fade-l.fade-r{-webkit-mask-image:linear-gradient(to right,transparent,#000 34px,#000 calc(100% - 34px),transparent);mask-image:linear-gradient(to right,transparent,#000 34px,#000 calc(100% - 34px),transparent)}
+@media (max-width:599px){.tab{font-size:.88rem;padding:10px 13px}.tab.on{padding-left:18px;padding-right:18px}}
 .tgl{font-size:.72rem;color:var(--muted);margin:14px 0 8px;text-transform:uppercase;letter-spacing:.08em}
 .tgl:first-child{margin-top:0}
 
@@ -172,7 +176,7 @@ td small{display:block;color:var(--muted);font-weight:400;font-size:.8rem;margin
 </div>
 
 <div class="navwrap"><nav class="mainnav" id="topnav" aria-label="Hlavní nabídka">
-  <span class="nav-ind" aria-hidden="true"></span>
+  <span class="seg-ind" aria-hidden="true"></span>
   <button class="on" data-top="pos" aria-label="Pozice a mobilita"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M4 20 15.5 6.5"/><path d="M9.6 20a5.6 5.6 0 0 0-1.7-4"/><circle cx="17.5" cy="4.5" r="1.6"/></svg><span class="nl"><span class="nl-full">Pozice a mobilita</span><span class="nl-short" aria-hidden="true">Pozice</span></span></button>
   <button data-top="aero" aria-label="Aero a výkon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10.5a2.8 2.8 0 1 0-2.8-2.8"/><path d="M3 12h15.5a2.8 2.8 0 1 1-2.8 2.8"/><path d="M3 16h7"/></svg><span class="nl"><span class="nl-full">Aero a výkon</span><span class="nl-short" aria-hidden="true">Aero</span></span></button>
   <button data-top="hist" aria-label="Moje pozice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 4.5v4h4"/><path d="M12 7.5V12l3 2"/></svg><span class="nl"><span class="nl-full">Moje pozice</span><span class="nl-short" aria-hidden="true">Moje</span></span></button>
@@ -206,7 +210,7 @@ td small{display:block;color:var(--muted);font-weight:400;font-size:.8rem;margin
     <input id="o" type="text">
   </div>
 
-  <div class="card"><div id="tabs"></div></div>
+  <div class="card"><div id="tabs" data-pane="#photoCard,#resCard,#outBox"></div></div>
 
   <div class="card" id="photoCard">
     <h2 id="viewTitle"></h2>
@@ -395,8 +399,12 @@ async function handleVideo(k,f){
 function done(k){const v=V[k];return !!v.img&&!v.busy&&v.body.length===NAMES[k].length&&(!isSide(k)||mode!=="hand"||v.ref.length===6);}
 
 function renderTabs(){
-  const tb=k=>"<button class='tab"+(cur===k?" on":"")+"' data-v='"+k+"'>"+TABN[k]+(k!=="res"&&done(k)?" ✓":"")+"</button>";
-  $("tabs").innerHTML="<div class='tgl'>Pozice na kole</div><div class='tabs'>"+VIEWS.map(tb).join("")+"</div><div class='tgl'>Mobilita (maximální rozsah)</div><div class='tabs'>"+MOB.map(tb).join("")+"</div><div class='tabs' style='margin-top:8px'>"+tb("res")+"</div>";
+  const box=$("tabs");
+  if(!box.querySelector("[data-v]")){
+    const tb=k=>"<button class='tab' data-v='"+k+"'></button>";
+    box.innerHTML="<div class='tgl'>Pozice na kole</div><div class='seg'>"+VIEWS.map(tb).join("")+"</div><div class='tgl'>Mobilita (maximální rozsah)</div><div class='seg'>"+MOB.map(tb).join("")+"</div><div class='seg' style='margin-top:10px'>"+tb("res")+"</div>";
+  }
+  box.querySelectorAll("[data-v]").forEach(b=>{const k=b.dataset.v,t=TABN[k]+(k!=="res"&&done(k)?" ✓":"");if(b.textContent!==t)b.textContent=t;b.classList.toggle("on",cur===k);});
 }
 function go(k){cur=k;$("file").value="";$("cam").value="";$("vcam").value="";drag=null;update();}
 $("tabs").onclick=e=>{const b=e.target.closest("button");if(b)go(b.dataset.v);};
@@ -713,10 +721,10 @@ $("copy").onclick=()=>{const ta=$("out");ta.focus();ta.select();let ok=false;
   $("copied").textContent=ok?"Zkopírováno":"Označ text a zkopíruj ručně";};
 ["v","h","p","n","o"].forEach(i=>{$(i).oninput=()=>{if(cur==="res")renderResults();};});
 </script>
-<script type="module" src="aero.js?v=12"></script>
-<script src="share.js?v=12"></script>
-<script src="history.js?v=12"></script>
-<script src="pwa.js?v=12"></script>
-<script src="ui.js?v=12"></script>
+<script type="module" src="aero.js?v=13"></script>
+<script src="share.js?v=13"></script>
+<script src="history.js?v=13"></script>
+<script src="pwa.js?v=13"></script>
+<script src="ui.js?v=13"></script>
 </body>
 </html>
