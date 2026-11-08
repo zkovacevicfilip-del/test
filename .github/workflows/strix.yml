@@ -61,7 +61,14 @@ jobs:
           if ! printf '%s' "$BUDGET" | grep -Eq '^[0-9]+([.][0-9]+)?$'; then echo "::error::Cena musí být číslo, například 5."; exit 1; fi
 
       - name: Instalace Strix
-        run: pipx install strix-agent==1.7.0
+        run: |
+          if command -v pipx >/dev/null; then
+            pipx install strix-agent==1.7.0
+          else
+            python3 -m venv "$RUNNER_TEMP/strix"
+            "$RUNNER_TEMP/strix/bin/pip" install -q strix-agent==1.7.0
+            echo "$RUNNER_TEMP/strix/bin" >> "$GITHUB_PATH"
+          fi
 
       - name: Test
         env:
