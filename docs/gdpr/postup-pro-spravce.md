@@ -4,13 +4,13 @@ Praktický návod, co dělat, aby provoz aplikace odpovídal GDPR. Doplňuje zá
 
 ## 1. Udělej hned (jednorázově)
 
-- [ ] **Spusť znovu celý SQL** ze souboru `supabase/schema.sql` v Supabase (SQL Editor → New query → vložit celý soubor → Run). Dole se musí ukázat „Ochrana je zapnutá“; samotné „Success. No rows returned“ znamená, že se nevložil celý soubor. Od 8. 11. 2026 přibyly dvě části „Zpřísnění zabezpečení“: kontrola obsahu (jen čísla a krátké hodnoty), povinný záznam o souhlasu, limity a strop velikosti. Skript jde spustit opakovaně.
-- [ ] **Vypni registraci uživatelů v Supabase:** Authentication → Sign In / Providers → vypnout „Allow new users to sign up“. Aplikace přihlašování nepoužívá a otevřená registrace by šla zneužít (cizí účty, rozesílání e-mailů z tvého projektu).
+- [x] **Spusť znovu celý SQL** ze souboru `supabase/schema.sql` v Supabase (SQL Editor → New query → vložit celý soubor → Run). Dole se musí ukázat „Ochrana je zapnutá“; samotné „Success. No rows returned“ znamená, že se nevložil celý soubor. Hotovo 8. 11. 2026, ověřeno na živé databázi (volný text a zápis bez souhlasu odmítne, data z aplikace přijme). Od 8. 11. 2026 přibyly dvě části „Zpřísnění zabezpečení“: kontrola obsahu (jen čísla a krátké hodnoty), povinný záznam o souhlasu, limity a strop velikosti. Skript jde spustit opakovaně.
+- [x] **Vypni registraci uživatelů v Supabase:** Authentication → Sign In / Providers → vypnout „Allow new users to sign up“. Aplikace přihlašování nepoužívá a otevřená registrace by šla zneužít (cizí účty, rozesílání e-mailů z tvého projektu). Hotovo 8. 11. 2026, ověřeno.
 - [x] **Smlouva o zpracování se Supabase (DPA, čl. 28 GDPR):** Data Processing Addendum verze 1 z 1. 8. 2026 je součástí podmínek služby Supabase a platí jejich přijetím. Smluvní strana je Supabase Pte. Ltd. (Singapur), standardní smluvní doložky jsou součástí (bod 12, přijetí = podpis). Podpis není nutný. Podepsanou kopii si můžeš volitelně vyžádat v dashboardu (Settings → Legal Documents). Kopii textu si ulož k sobě.
 - [ ] **Přihlas se k odběru změn subdodavatelů** na supabase.com/legal/customer-resources/subprocessor-list. Jen tak ti Supabase dá 30 dní předem vědět o nových subdodavatelích (DPA bod 6.3). Na námitku máš pak 5 dní.
-- [ ] **Zapni dvoufázové ověření (2FA)** na účtech Supabase, GitHub a Gmail (aeroanalysisapp@gmail.com).
+- [ ] **Zapni dvoufázové ověření (2FA)** na účtech Supabase a Gmail (aeroanalysisapp@gmail.com). GitHub už ho má.
 - [x] **Testovací řádky** z 7. 11. 2026 (ID zařízení `00000000-0000-4000-8000-000000000001`) už v databázi nejsou, ověřeno 8. 11. 2026. Kontrola v SQL Editoru: `select id, created_at, kind from public.submissions where device_id = '00000000-0000-4000-8000-000000000001';` (má vrátit „No rows returned“).
-- [ ] Zkontroluj, že projekt v Supabase je v regionu **Central EU (Frankfurt)** (je).
+- [x] Zkontroluj, že projekt v Supabase je v regionu **Central EU (Frankfurt)** (je).
 - [ ] Volitelně **bezpečnostní test Strix** (postup v README, část Zabezpečení). Pokud testoval i živou databázi, smaž jeho testovací řádky: `delete from public.submissions where device_id = '00000000-0000-4000-8000-0000000000aa';`
 
 ## 2. Žádosti uživatelů (lhůta: do 1 měsíce od doručení)

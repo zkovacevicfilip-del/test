@@ -413,11 +413,11 @@ function drawArea() {
   if (!AR.img) return;
   arCtx.drawImage(AR.img, 0, 0, AR.w, AR.h);
   const M = AR.mask; if (M && M.ov) arCtx.drawImage(M.ov, M.rect.x, M.rect.y, M.rect.w, M.rect.h);
-  const r = Math.max(6, AR.w / 110), css = getComputedStyle(document.documentElement), pt = css.getPropertyValue("--pt").trim();
+  const r = Math.max(6, AR.w / 110), css = getComputedStyle(document.documentElement), pt = css.getPropertyValue("--pt").trim(), ink = css.getPropertyValue("--ink").trim(), dk = css.getPropertyValue("--bg").trim();
   arCtx.strokeStyle = pt; arCtx.lineWidth = r / 2.5;
   if (AR.pts.length > 1) { arCtx.beginPath(); AR.pts.forEach((q, i) => i ? arCtx.lineTo(q.x, q.y) : arCtx.moveTo(q.x, q.y)); if (needPts() === 4 && AR.pts.length === 4) arCtx.closePath(); arCtx.stroke(); }
   arCtx.font = "bold " + (r * 2) + "px sans-serif";
-  AR.pts.forEach((q, i) => { arCtx.fillStyle = pt; arCtx.beginPath(); arCtx.arc(q.x, q.y, r, 0, 7); arCtx.fill(); arCtx.lineWidth = r / 3; arCtx.strokeStyle = "#000"; arCtx.fillStyle = "#fff"; arCtx.strokeText(String(i + 1), q.x + r * 1.2, q.y - r * 1.2); arCtx.fillText(String(i + 1), q.x + r * 1.2, q.y - r * 1.2); arCtx.strokeStyle = pt; arCtx.lineWidth = r / 2.5; });
+  AR.pts.forEach((q, i) => { arCtx.fillStyle = pt; arCtx.beginPath(); arCtx.arc(q.x, q.y, r, 0, 7); arCtx.fill(); arCtx.lineWidth = r / 3; arCtx.strokeStyle = dk; arCtx.fillStyle = ink; arCtx.strokeText(String(i + 1), q.x + r * 1.2, q.y - r * 1.2); arCtx.fillText(String(i + 1), q.x + r * 1.2, q.y - r * 1.2); arCtx.strokeStyle = pt; arCtx.lineWidth = r / 2.5; });
 }
 function areaResult() {
   const M = AR.mask, need = needPts();
