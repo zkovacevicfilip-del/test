@@ -5,7 +5,8 @@ Praktický návod, co dělat, aby provoz aplikace odpovídal GDPR. Doplňuje zá
 ## 1. Udělej hned (jednorázově)
 
 - [ ] **Spusť aktualizovaný SQL** ze souboru `supabase/schema.sql` v Supabase (SQL Editor → New query → vložit celý soubor → Run). Přidá funkce pro stažení a smazání vlastních dat. Skript jde spustit opakovaně.
-- [ ] **Smlouva o zpracování se Supabase (DPA, čl. 28 GDPR):** stáhni a uschovej si aktuální DPA společnosti Supabase (supabase.com → Legal → DPA). Pokud v nastavení organizace v Supabase najdeš možnost DPA podepsat nebo vyžádat podepsanou kopii, udělej to. Ulož si PDF a datum.
+- [x] **Smlouva o zpracování se Supabase (DPA, čl. 28 GDPR):** Data Processing Addendum verze 1 z 1. 8. 2026 je součástí podmínek služby Supabase a platí jejich přijetím. Smluvní strana je Supabase Pte. Ltd. (Singapur), standardní smluvní doložky jsou součástí (bod 12, přijetí = podpis). Podpis není nutný. Podepsanou kopii si můžeš volitelně vyžádat v dashboardu (Settings → Legal Documents). Kopii textu si ulož k sobě.
+- [ ] **Přihlas se k odběru změn subdodavatelů** na supabase.com/legal/customer-resources/subprocessor-list. Jen tak ti Supabase dá 30 dní předem vědět o nových subdodavatelích (DPA bod 6.3). Na námitku máš pak 5 dní.
 - [ ] **Zapni dvoufázové ověření (2FA)** na účtech Supabase, GitHub a Gmail (aeroanalysisapp@gmail.com).
 - [ ] **Smaž testovací řádky** z databáze (SQL: `delete from public.submissions where device_id = '00000000-0000-4000-8000-000000000001';`).
 - [ ] Zkontroluj, že projekt v Supabase je v regionu **Central EU (Frankfurt)** (je).
