@@ -55,7 +55,7 @@
         btn.disabled = true; btn.dataset.busy = "1"; msg.textContent = "Odesílám…";
         try {
           const r = await fetch(API, { method: "POST", headers: { apikey: KEY, Authorization: "Bearer " + KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body });
-          if (!r.ok) throw new Error("server odpověděl " + r.status);
+          if (!r.ok) throw new Error(await dbMsg(r));
           ls.set(key, hb);
           try { if (o.onSent) o.onSent(data); } catch (e) { }
           msg.textContent = Array.isArray(data) ? "Odesláno (" + data.length + " " + (data.length === 1 ? "záznam" : data.length < 5 ? "záznamy" : "záznamů") + "), díky!" : "Odesláno, díky!";
@@ -70,6 +70,12 @@
     sync();
   }
   function detach(boxId) { const box = document.getElementById(boxId); if (box) { box.innerHTML = ""; delete box.dataset.ready; box._get = null; } }
+
+  // Hláška z databáze: vlastní české hlášky (limity, kontrola dat) se ukážou, ostatní jen jako číslo chyby
+  async function dbMsg(r) {
+    try { const j = await r.json(); if (j && j.code === "P0001" && typeof j.message === "string") return j.message.slice(0, 120); } catch (e) { }
+    return "server odpověděl " + r.status;
+  }
 
   // Funkce pro stránku Zásad ochrany osobních údajů: stažení, smazání, odvolání souhlasu
   async function rpc(name, args) {

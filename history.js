@@ -8,7 +8,7 @@
   const store = () => { try { localStorage.setItem(KEY, JSON.stringify(P)); return true; } catch (e) { return false; } };
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const ok = x => x != null && isFinite(x);
-  const fmt = (x, d) => ok(x) ? x.toFixed(d).replace(".", ",") : "–";
+  const fmt = (x, d) => ok(x) ? (+x).toFixed(d).replace(".", ",") : "–";
   const sgn = (x, d) => ok(x) ? (x > 0 ? "+" : x < 0 ? "−" : "") + fmt(Math.abs(x), d) : "–";
   const num = v => { const x = parseFloat(String(v).replace(",", ".")); return isFinite(x) ? x : null; };
   const uuid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : "r" + Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -47,6 +47,44 @@
     comfort: ok(r.comfort) ? r.comfort : null
   });
   const sentOk = r => r.sentHash && r.sentHash === hash(JSON.stringify(strip(r)));
+
+  // Načtení zálohy: ze souboru se převezmou jen známé položky se správným typem.
+  // Soubor může pocházet odjinud, proto žádné cizí texty ani neznámá pole
+  // (nedostanou se tak ani do výzkumné databáze, kam jdou jen čísla a krátké hodnoty).
+  const isNum = x => typeof x === "number" && isFinite(x);
+  const tok = (x, n) => typeof x === "string" && x.length <= (n || 40) && /^[0-9A-Za-z._:-]*$/.test(x) ? x : null;
+  const txt = (x, n) => typeof x === "string" ? x.slice(0, n) : "";
+  const BADKEY = /^(__proto__|constructor|prototype)$/;
+  const val = (v, d) => isNum(v) || typeof v === "boolean" || v === null ? v : typeof v === "object" ? nums(v, d) : null; // v úhlech a mírách jen čísla
+  function nums(o, d) {
+    if (!o || typeof o !== "object" || d > 4) return null;
+    if (Array.isArray(o)) return o.slice(0, 50).map(v => val(v, d + 1));
+    const out = {};
+    Object.keys(o).slice(0, 64).forEach(k => { if (/^[A-Za-z0-9_]{1,32}$/.test(k) && !BADKEY.test(k)) out[k] = val(o[k], d + 1); });
+    return out;
+  }
+  // Převezme jen položky, které v záznamu jsou, každou přes její kontrolu (tvar záznamu se nemění).
+  const pickK = (o, spec) => { const out = {}; Object.keys(spec).forEach(k => { if (Object.prototype.hasOwnProperty.call(o, k)) out[k] = spec[k](o[k]); }); return out; };
+  const obj = x => x && typeof x === "object" && !Array.isArray(x);
+  const AREA = { m2: v => v, bike: v => !!v, scale: v => tok(v, 10), variant: v => txt(v, 80) };
+  const CDA = { value: v => v, sd: v => isNum(v) ? v : null, laps: v => isNum(v) ? v : null, source: v => ["jízda", "plocha", "ručně"].includes(v) ? v : "ručně", wind: v => !!v, date: v => tok(v, 30) };
+  const REC = {
+    id: v => v, rid: v => v, name: v => txt(v, 80).trim() || "Pozice", note: v => txt(v, 500), mode: v => tok(v, 10),
+    date: v => typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) && tok(v) ? v : new Date().toISOString(),
+    views: v => Array.isArray(v) ? v.slice(0, 20).filter(x => obj(x) && tok(x.view, 10)).map(x => ({ view: x.view, video: !!x.video, frames: isNum(x.frames) ? x.frames : 1, edited: !!x.edited })) : [],
+    rider: v => nums(v, 1), side: v => nums(v, 1), front: v => nums(v, 1), back: v => nums(v, 1), mobility: v => nums(v, 1),
+    area: v => obj(v) && isNum(v.m2) ? pickK(v, AREA) : null,
+    cda: v => obj(v) && isNum(v.value) ? pickK(v, CDA) : null,
+    comfort: v => isNum(v) && v >= 1 && v <= 10 ? Math.round(v) : null,
+    sentHash: v => tok(v, 16)
+  };
+  function clean(r) {
+    if (!obj(r) || !tok(r.id, 64) || !tok(r.rid, 64)) return null;
+    const out = pickK(r, REC);
+    if (!out.name) out.name = "Pozice";
+    if (!out.date) out.date = new Date().toISOString();
+    return out;
+  }
 
   // ---------- osobní model: CdA = a + b · ukazatel ----------
   function fit(pts) {
@@ -201,11 +239,14 @@
     const t = e.target, h = t.dataset.h;
     if (h === "import") {
       const f = t.files && t.files[0]; if (!f) return;
-      f.text().then(txt => {
-        const a = JSON.parse(txt); if (!Array.isArray(a)) throw new Error("soubor neobsahuje seznam pozic");
-        let n = 0; a.forEach(r => { if (r && r.id && r.rid && !P.some(x => x.id === r.id)) { P.push(r); n++; } });
-        store(); render(); bmsg("Načteno " + n + " nových pozic.");
-      }).catch(err => bmsg("Načtení se nepovedlo: " + err.message));
+      if (f.size > 5e6) { bmsg("Načtení se nepovedlo: soubor je větší než 5 MB, to není záloha z této aplikace."); return; }
+      f.text().then(s => {
+        const a = JSON.parse(s); if (!Array.isArray(a)) throw new Error("soubor neobsahuje seznam pozic");
+        let n = 0, bad = 0;
+        a.slice(0, 1000).forEach(x => { const r = clean(x); if (!r) { bad++; return; } if (!P.some(y => y.id === r.id)) { P.push(r); n++; } });
+        const saved = store(); render();
+        bmsg("Načteno " + n + " nových pozic." + (bad ? " Vynecháno " + bad + " záznamů, které nemají správný tvar." : "") + (a.length > 1000 ? " Načte se nejvýš 1000 záznamů." : "") + (saved ? "" : " Pozor: v prohlížeči došlo místo, pozice se neuložily."));
+      }).catch(err => bmsg("Načtení se nepovedlo: " + (err instanceof SyntaxError ? "soubor není záloha ve formátu JSON." : err.message)));
       return;
     }
     const c = t.closest("[data-id]"); if (!c) return;

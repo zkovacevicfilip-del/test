@@ -28,6 +28,7 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.86rem;word-bre
 .toc li{break-inside:avoid}
 .back{display:inline-block;margin-top:8px;padding:10px 18px;border-radius:999px;border:1px solid var(--line-2);text-decoration:none;font-weight:600}
 .back:hover{border-color:#fff}
+html.framed body{display:none!important}
 /* stránka vložená do okna s podmínkami při prvním spuštění */
 body.embed{padding:0;max-width:none}
 body.embed .noembed{display:none}

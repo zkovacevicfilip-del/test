@@ -3,6 +3,8 @@ const $ = id => document.getElementById(id);
 const G = 9.80665, A4 = 0.210 * 0.297, FIT_EPOCH = 631065600;
 const VER = "0.10.14", BASE = "vendor/mediapipe/tasks-vision-" + VER; // knihovna je součástí aplikace
 const SEG_MODEL = "https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/1/deeplab_v3.tflite";
+// Otisk SHA-256 modelu: prohlížeč použije jen přesně tento soubor, podvržený nebo změněný odmítne.
+const SEG_SRI = "sha256-/zbiTUBUf+nmReL06HRdGHbW44szLTmoLwvw9dHVYbM=";
 const LS = "aero.v1";
 
 // ---------- pomocné ----------
@@ -86,7 +88,7 @@ function parseFIT(buf) {
       laps.push({ start: vals[2], end: vals[253], elapsed: vals[7] != null ? vals[7] / 1000 : null });
     }
   };
-  while (p < end) {
+  try { while (p < end) {
     const h = dv.getUint8(p++);
     if (h & 0x80) {
       const lt = (h >> 5) & 3, off = h & 0x1f; const def = defs[lt]; if (!def) throw new Error("Poškozený soubor (chybí definice).");
@@ -104,7 +106,7 @@ function parseFIT(buf) {
       const def = defs[h & 0x0f]; if (!def) throw new Error("Poškozený soubor (chybí definice).");
       readData(def, null);
     }
-  }
+  } } catch (e) { throw e instanceof RangeError ? new Error("Poškozený soubor.") : e; }
   const rec = records.filter(r => r.t != null).sort((a, b) => a.t - b.t);
   let lp = laps.filter(l => l.end != null).map(l => ({ start: l.start != null ? l.start : (l.elapsed != null ? l.end - Math.round(l.elapsed) : null), end: l.end })).filter(l => l.start != null && l.end > l.start).sort((a, b) => a.start - b.start);
   return { records: rec, laps: lp };
@@ -113,13 +115,18 @@ function lapRecords(fit) {
   const R = fit.records;
   if (!R.length) return [];
   if (!fit.laps.length) return [{ start: R[0].t, end: R[R.length - 1].t, recs: R, whole: true }];
+  // Záznamy jsou seřazené podle času, kola se proto vyhledávají půlením (i soubor s tisíci kol je hned).
+  const first = (t, incl) => { let lo = 0, hi = R.length; while (lo < hi) { const mid = (lo + hi) >> 1; if (incl ? R[mid].t <= t : R[mid].t < t) lo = mid + 1; else hi = mid; } return lo; };
   return fit.laps.map((l, i) => {
     const last = i === fit.laps.length - 1;
-    return { start: l.start, end: l.end, recs: R.filter(r => r.t >= l.start && (last ? r.t <= l.end : r.t < l.end)) };
+    return { start: l.start, end: l.end, recs: R.slice(first(l.start, false), first(l.end, last)) };
   }).filter(l => l.recs.length > 1);
 }
 const avgOf = (recs, k) => { let s = 0, n = 0; for (const r of recs) if (r[k] != null) { s += r[k]; n++; } return n ? s / n : null; };
-async function readFitFile(f) { const buf = await f.arrayBuffer(); return parseFIT(buf); }
+async function readFitFile(f) {
+  if (f.size > 50e6) throw new Error("Soubor je větší než 50 MB, takový záznam z jízdy to nebude.");
+  const buf = await f.arrayBuffer(); return parseFIT(buf);
+}
 
 // ---------- šablona ----------
 const field = (id, label, val, step) => `<div><label for="${id}">${label}</label><input id="${id}" type="text" inputmode="decimal" autocomplete="off" value="${val}"></div>`;
@@ -311,9 +318,14 @@ const needPts = () => $("ar_scale").value === "a4" ? 4 : 2;
 function getSeg() {
   if (AR.seg) return Promise.resolve(AR.seg);
   if (!AR.segLoading) AR.segLoading = (async () => {
+    const model = fetch(SEG_MODEL, { integrity: SEG_SRI, credentials: "omit", referrerPolicy: "no-referrer" })
+      .then(r => { if (!r.ok) throw new Error("server odpověděl " + r.status); return r.arrayBuffer(); })
+      .catch(e => { throw new Error("Model obrysu se nepodařilo stáhnout ze serveru Google nebo neodpovídá očekávanému souboru (" + (e.message || e) + ")."); });
+    model.catch(() => { });
     const m = await import(new URL(BASE + "/vision_bundle.js", document.baseURI).href);
     const fs = await m.FilesetResolver.forVisionTasks(BASE + "/wasm");
-    const seg = await m.ImageSegmenter.createFromOptions(fs, { baseOptions: { modelAssetPath: SEG_MODEL, delegate: "CPU" }, runningMode: "IMAGE", outputCategoryMask: true, outputConfidenceMasks: false });
+    const buf = new Uint8Array(await model);
+    const seg = await m.ImageSegmenter.createFromOptions(fs, { baseOptions: { modelAssetBuffer: buf, delegate: "CPU" }, runningMode: "IMAGE", outputCategoryMask: true, outputConfidenceMasks: false });
     let labels = []; try { labels = seg.getLabels() || []; } catch (e) { }
     const low = labels.map(x => String(x).toLowerCase());
     AR.labels = { person: low.indexOf("person") >= 0 ? low.indexOf("person") : 15, bike: low.indexOf("bicycle") >= 0 ? low.indexOf("bicycle") : 2 };
@@ -577,7 +589,7 @@ function renderMan() {
   if (!M.length) { $("pw_man").innerHTML = "<p class='muted'>Zatím žádný interval. Klepni na Přidat interval.</p>"; return; }
   let h = `<table class="tbl-in wide"><tr><td>Pozice</td><td>Délka (min)</td><td>Ø W</td><td>Ø tep</td><td>Kadence</td><td></td></tr>`;
   M.forEach((r, i) => {
-    const inp = (k, ph) => `<input type="text" inputmode="decimal" autocomplete="off" data-mi="${i}" data-mk="${k}" value="${r[k] != null ? r[k] : ""}" placeholder="${ph}" style="width:84px">`;
+    const inp = (k, ph) => `<input type="text" inputmode="decimal" autocomplete="off" data-mi="${i}" data-mk="${k}" value="${r[k] != null ? esc(r[k]) : ""}" placeholder="${ph}" style="width:84px">`;
     h += `<tr><td>${posSelect(r.pos, 'data-mi="' + i + '" data-mk="pos"')}</td><td>${inp("min", "8")}</td><td>${inp("p", "250")}</td><td>${inp("hr", "150")}</td><td>${inp("cad", "90")}</td><td><button class="xbtn" data-mdel="${i}" aria-label="Smazat interval">×</button></td></tr>`;
   });
   $("pw_man").innerHTML = h + "</table>";

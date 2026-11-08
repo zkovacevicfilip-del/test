@@ -4,12 +4,14 @@ Praktický návod, co dělat, aby provoz aplikace odpovídal GDPR. Doplňuje zá
 
 ## 1. Udělej hned (jednorázově)
 
-- [ ] **Spusť aktualizovaný SQL** ze souboru `supabase/schema.sql` v Supabase (SQL Editor → New query → vložit celý soubor → Run). Přidá funkce pro stažení a smazání vlastních dat. Skript jde spustit opakovaně.
+- [ ] **Spusť znovu celý SQL** ze souboru `supabase/schema.sql` v Supabase (SQL Editor → New query → vložit celý soubor → Run). Od 8. 11. 2026 přibyly dvě části „Zpřísnění zabezpečení“: kontrola obsahu (jen čísla a krátké hodnoty), povinný záznam o souhlasu, limity a strop velikosti. Skript jde spustit opakovaně.
+- [ ] **Vypni registraci uživatelů v Supabase:** Authentication → Sign In / Providers → vypnout „Allow new users to sign up“. Aplikace přihlašování nepoužívá a otevřená registrace by šla zneužít (cizí účty, rozesílání e-mailů z tvého projektu).
 - [x] **Smlouva o zpracování se Supabase (DPA, čl. 28 GDPR):** Data Processing Addendum verze 1 z 1. 8. 2026 je součástí podmínek služby Supabase a platí jejich přijetím. Smluvní strana je Supabase Pte. Ltd. (Singapur), standardní smluvní doložky jsou součástí (bod 12, přijetí = podpis). Podpis není nutný. Podepsanou kopii si můžeš volitelně vyžádat v dashboardu (Settings → Legal Documents). Kopii textu si ulož k sobě.
 - [ ] **Přihlas se k odběru změn subdodavatelů** na supabase.com/legal/customer-resources/subprocessor-list. Jen tak ti Supabase dá 30 dní předem vědět o nových subdodavatelích (DPA bod 6.3). Na námitku máš pak 5 dní.
 - [ ] **Zapni dvoufázové ověření (2FA)** na účtech Supabase, GitHub a Gmail (aeroanalysisapp@gmail.com).
 - [ ] **Smaž testovací řádky** z databáze (SQL: `delete from public.submissions where device_id = '00000000-0000-4000-8000-000000000001';`).
 - [ ] Zkontroluj, že projekt v Supabase je v regionu **Central EU (Frankfurt)** (je).
+- [ ] Volitelně **bezpečnostní test Strix** (postup v README, část Zabezpečení). Pokud testoval i živou databázi, smaž jeho testovací řádky: `delete from public.submissions where device_id = '00000000-0000-4000-8000-0000000000aa';`
 
 ## 2. Žádosti uživatelů (lhůta: do 1 měsíce od doručení)
 
@@ -57,7 +59,9 @@ delete from public.submissions where created_at < now() - interval '5 years';
 | Změna | Co upravit |
 |---|---|
 | Sdílí se nový typ údajů nebo se mění účel | Zásady (oddíl 5), záznam o činnostech, **zvýšit `CONSENT_VER` v `share.js`** (aplikace si vyžádá nový souhlas). |
-| Mění se podmínky použití | `podminky.html` (verze, datum), **zvýšit `AERO_TERMS_VER` v `index.html`** a číslo u `podminky.html?v=` v `terms.js` (aplikace zobrazí nové podmínky k přijetí). |
+| Mění se podmínky použití | `podminky.html` (verze, datum), **zvýšit `AERO_TERMS_VER` v `boot.js`** (a `boot.js?v=` v `index.html`) a číslo u `podminky.html?v=` v `terms.js` (aplikace zobrazí nové podmínky k přijetí). |
+| Do sdílených dat přibývá nové pole | Smí obsahovat jen čísla, ano/ne nebo krátké hodnoty (do 40 znaků: písmena, číslice a `._:-`), jinak ho databáze odmítne. Ověř odesláním z testovacího zařízení. |
+| Přidáváš skript nebo připojení k dalšímu serveru | Skript jen jako soubor `.js` (skript vložený do HTML pravidla CSP zablokují). Nový server přidat do `connect-src` v CSP v `index.html` a zvážit dopad na zásady. |
 | Přidáváš službu třetí strany (analytika, fonty, CDN, reklama) | Nejdřív zvaž, jestli je nutná. Pokud ano: zásady, případně souhlas (cookies a podobné technologie vyžadují souhlas podle § 89 odst. 3 zákona č. 127/2005 Sb.). |
 | Aplikace začne vydělávat (reklama, platby, předplatné) | Stáváš se podnikatelem: zákon o ochraně spotřebitele, informační povinnosti, živnost, daně, případně digitální obsah podle § 2389a a násl. OZ. **Poraď se s právníkem.** |
 | Funkce by měla sloužit k diagnóze nebo léčbě | Hrozí, že se aplikace stane zdravotnickým prostředkem (nařízení (EU) 2017/745). **Nedělat bez právníka.** |

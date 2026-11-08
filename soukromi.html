@@ -5,13 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Ochrana osobních údajů – Aero pozice</title>
 <meta name="theme-color" content="#000000">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://mtkxpqvrlvwicnnraevw.supabase.co/rest/v1/rpc/; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<script src="legal.js?v=1"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=8">
-<link rel="stylesheet" href="legal.css?v=1">
+<link rel="stylesheet" href="legal.css?v=2">
 </head>
 <body>
 <main id="doc">
 <h1>Zásady ochrany osobních údajů</h1>
-<p class="muted">Aplikace Aero pozice · verze 2.1 · účinné od 8. 11. 2026</p>
+<p class="muted">Aplikace Aero pozice · verze 2.2 · účinné od 8. 11. 2026</p>
 
 <div class="card sum">
   <h2>Stručně</h2>
@@ -91,7 +94,7 @@
 <p><span class="num">5.8</span><b>Příjemci:</b> údaje nikomu neprodávám a kromě zpracovatele je neposkytuji dalším příjemcům. Výjimkou by byla jen povinnost uložená zákonem.</p>
 <p><span class="num">5.9</span><b>Doba uložení:</b> po dobu trvání výzkumu, nejdéle 5 let od odeslání. Dříve je smažu, pokud o to požádáš, nebo je můžeš smazat sám.</p>
 <p><span class="num">5.10</span><b>Odvolání souhlasu a výmaz:</b> souhlas odvoláš odškrtnutím políčka v aplikaci nebo tlačítkem v části <a href="#moje-data">Tvoje data</a>. Další data se pak neodesílají. Odvolání nemá vliv na zákonnost zpracování před ním. Odeslaná data smažeš tlačítkem Smazat moje data nebo e-mailem s uvedením ID zařízení.</p>
-<p><span class="num">5.11</span><b>Zabezpečení:</b> šifrované spojení (HTTPS), databáze, do které aplikace může jen zapisovat, čtení a správa jen přes účet správce, limit počtu odeslání a pseudonymizace.</p>
+<p><span class="num">5.11</span><b>Zabezpečení:</b> šifrované spojení (HTTPS), databáze, do které aplikace může jen zapisovat, čtení a správa jen přes účet správce, limity počtu odeslání a pseudonymizace. Databáze přijme jen čísla a krátké hodnoty (volný text odmítne) a jen záznamy se záznamem o souhlasu. Aplikace má pravidla prohlížeče proti spuštění cizího kódu a model od Googlu používá jen s ověřeným otiskem souboru.</p>
 </div>
 
 <div class="card" id="email">
@@ -134,7 +137,7 @@
 <div class="card" id="zmeny">
 <h2><span class="num">11.</span>Změny zásad</h2>
 <p>Zásady mohu aktualizovat, například při změně funkcí aplikace nebo právních předpisů. Podstatné změny oznámím v aplikaci. Pokud by se měnil rozsah sdílených údajů, aplikace si vyžádá nový souhlas.</p>
-<p class="muted">Verze 2.1, účinné od 8. 11. 2026 (upřesněn zpracovatel Supabase Pte. Ltd.). Předchozí verze: 2.0 a 1.0 (od 7. 11. 2026).</p>
+<p class="muted">Verze 2.2, účinné od 8. 11. 2026 (doplněna technická opatření v bodě 5.11). Předchozí verze: 2.1 (upřesněn zpracovatel Supabase Pte. Ltd.), 2.0 a 1.0 (od 7. 11. 2026).</p>
 </div>
 
 <div class="card" id="moje-data">
@@ -153,9 +156,9 @@
 
 <div class="row noprint">
   <a class="back" href="./">← Zpět do aplikace</a>
-  <button class="btn ghost" onclick="print()">Vytisknout nebo uložit jako PDF</button>
+  <button class="btn ghost" data-print>Vytisknout nebo uložit jako PDF</button>
 </div>
-<script src="share.js?v=14"></script>
+<script src="share.js?v=16"></script>
 <script src="mydata.js?v=1"></script>
 </body>
 </html>

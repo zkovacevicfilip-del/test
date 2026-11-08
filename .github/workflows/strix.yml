@@ -1,0 +1,92 @@
+# Bezpečnostní test aplikace pomocí Strix (AI penetrační test).
+# Spouští se jen ručně: GitHub -> Actions -> Bezpečnostní test (Strix) -> Run workflow.
+# Potřebuje tajný klíč LLM_API_KEY (Settings -> Secrets and variables -> Actions)
+# a model ve tvaru poskytovatel/model (pole "model" nebo proměnná STRIX_LLM).
+# Repozitář je veřejný, výsledky (souhrn běhu) proto může vidět kdokoli. Nálezy hned opravuj.
+name: Bezpečnostní test (Strix)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Hloubka testu: quick (rychlý), standard, deep (nejdůkladnější a nejdražší)"
+        type: choice
+        options: [quick, standard, deep]
+        default: standard
+      model:
+        description: "Model AI ve tvaru poskytovatel/model. Prázdné = proměnná STRIX_LLM z nastavení repozitáře."
+        type: string
+        required: false
+        default: ""
+      budget:
+        description: "Nejvyšší cena za AI v USD, pak se test sám ukončí"
+        type: string
+        default: "5"
+      live:
+        description: "Testovat i živou stránku a databázi (jen šetrné pokusy s testovacím ID)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: strix
+  cancel-in-progress: false
+
+jobs:
+  strix:
+    name: Strix
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      # Bez cizích akcí: kód se stáhne přímo gitem (repozitář je veřejný, žádný přístupový klíč se neukládá).
+      - name: Stažení kódu
+        env:
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          git init -q .
+          git fetch -q --depth 1 "https://github.com/$REPO" "$SHA"
+          git checkout -q FETCH_HEAD
+
+      - name: Kontrola nastavení
+        env:
+          HAS_KEY: ${{ secrets.LLM_API_KEY != '' }}
+          MODEL: ${{ inputs.model || vars.STRIX_LLM }}
+          BUDGET: ${{ inputs.budget }}
+        run: |
+          if [ "$HAS_KEY" != "true" ]; then echo "::error::Chybí tajný klíč LLM_API_KEY (Settings -> Secrets and variables -> Actions)."; exit 1; fi
+          if [ -z "$MODEL" ]; then echo "::error::Vyplň model (pole model při spuštění, nebo proměnnou STRIX_LLM v nastavení)."; exit 1; fi
+          if ! printf '%s' "$BUDGET" | grep -Eq '^[0-9]+([.][0-9]+)?$'; then echo "::error::Cena musí být číslo, například 5."; exit 1; fi
+
+      - name: Instalace Strix
+        run: pipx install strix-agent==1.7.0
+
+      - name: Test
+        env:
+          STRIX_LLM: ${{ inputs.model || vars.STRIX_LLM }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          MODE: ${{ inputs.mode }}
+          BUDGET: ${{ inputs.budget }}
+          LIVE: ${{ inputs.live }}
+        run: |
+          set +e
+          targets=(-t ./)
+          if [ "$LIVE" = "true" ]; then targets+=(-t https://zkovacevicfilip-del.github.io/test/); fi
+          strix -n "${targets[@]}" --scan-mode "$MODE" --scope-mode full --max-budget-usd "$BUDGET" --instruction-file .github/strix-instrukce.md
+          echo "Strix skončil s kódem $? (2 = našel aspoň jedno zjištění)."
+
+      - name: Výsledky
+        if: always()
+        run: |
+          shopt -s nullglob
+          {
+            echo "# Výsledek bezpečnostního testu"
+            found=0
+            for f in strix_runs/*/penetration_test_report.md; do cat "$f"; echo; found=1; done
+            for f in strix_runs/*/vulnerabilities/*.md; do echo "---"; cat "$f"; echo; found=1; done
+            if [ "$found" = 0 ]; then echo "Strix nevytvořil žádnou zprávu. Podívej se do záznamu kroku Test."; fi
+          } > souhrn.md
+          head -c 900000 souhrn.md >> "$GITHUB_STEP_SUMMARY"
+          cat souhrn.md
