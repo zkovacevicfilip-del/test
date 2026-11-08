@@ -45,6 +45,7 @@ Z fotek a videí ze čtyř pohledů (levá strana, pravá strana, zepředu, zeza
 ### Instalace (PWA, bez offline režimu)
 - Na Androidu v Chrome tlačítko **Nainstalovat aplikaci** nahoře (zobrazí se, jen když to Chrome nabídne), nebo menu ⋮ → Nainstalovat aplikaci. Pak se spouští jako samostatná aplikace s ikonou.
 - Offline režim byl na přání autora odstraněn: aplikace i modely MediaPipe se vždy načítají ze sítě. `sw.js` nic neukládá, jen smaže dřívější offline cache (asi 21 MB) a zůstává kvůli instalaci.
+- Dole na stránce je údaj o verzi (`#appVer` v `index.html`), podle kterého se na tabletu pozná, jestli se načetla nová verze. Při každém vydání ho aktualizovat. Odkaz na manifest má taky `?v=` (stejné číslo jako ikony).
 - **Při změně `aero.js`, `share.js`, `history.js`, `pwa.js` nebo `ui.js` zvýšit číslo `?v=` u jejich načtení na konci `index.html`** (teď `?v=13`), aby prohlížeč nevzal starou verzi ze své mezipaměti.
 
 ### Část Aero a výkon (`aero.js`)
