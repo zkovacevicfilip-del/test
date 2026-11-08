@@ -38,6 +38,7 @@ Z fotek a videí ze čtyř pohledů (levá strana, pravá strana, zepředu, zeza
 - **Všechny vodorovné výběry mají stejnou animaci jako hlavní menu:** záložky v Aero a výkon, „Z .fit souboru / Zadat ručně“, pohledy, mobilita a Výsledky. Bílá pilulka přejede pod zvolené tlačítko, to se roztáhne a ostatní odsune, obsah vjede ze strany podle směru. Když se výběr nevejde na šířku (telefon), dá se posouvat prstem, okraj se ztrácí a zvolená volba se sama posune do středu.
 - Technicky: výběr má třídu `.seg`, atribut `data-pane` říká, který obsah má vjet. `ui.js` jen sleduje, které tlačítko má třídu `on`. Záložky pohledů se kvůli animaci vytvoří jednou a pak se jen přepíná zvolená (`renderTabs` v `index.html`).
 - Úvodní popis aplikace je pod rozbalovacím „Co aplikace umí“.
+- **Logo** (`icons/logo.svg`): minimalistický jezdec v aero pozici s časovkářskou helmou, kolo a dvě oranžové proudnice vzduchu, které obtékají helmu a záda a za jezdcem se rozpadají. Jen černá, bílá a oranžová. PNG ikony (`icon-192`, `icon-512`, `icon-maskable-512` s obsahem v bezpečné zóně pro kruhovou masku, `apple-touch-icon`, zjednodušený `favicon-32`) jsou vyrenderované z tohoto návrhu. Adresy ikon mají `?v=3`, při další změně ikon číslo zvýšit (v `manifest.webmanifest`, `index.html` a `soukromi.html`).
 - `ui.js` mění jen vzhled (animace, pilulka, `aria-current`), přepínání dělá dál `aero.js`. Při zapnutém „omezit pohyb“ v systému se animace vypnou.
 - Otestováno v Playwrightu na telefonu (412 a 360 px) a tabletu (1000 px): všechny dřívější testy funkcí prošly, aplikace jde nainstalovat.
 
