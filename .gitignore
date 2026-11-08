@@ -1,0 +1,12 @@
+# Tajné údaje (API klíče, hesla) nikdy do repozitáře
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Místní nastavení a dočasné soubory
+.claude/settings.local.json
+node_modules/
+.DS_Store
+Thumbs.db
