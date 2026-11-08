@@ -3,7 +3,7 @@
 Webová aplikace pro zlepšení aerodynamické pozice na časovkářském kole. Běží celá v prohlížeči (žádný server, žádné účty), fotky a data se nikam neodesílají. Je určená jen pro osobní použití.
 
 - Web: https://zkovacevicfilip-del.github.io/test/ (GitHub Pages z větve `main`, složka root)
-- Soubory: `index.html` (stránka, část Pozice a mobilita, styly), `aero.js` (část Aero a výkon)
+- Soubory: `index.html` (stránka, část Pozice a mobilita, styly), `aero.js` (část Aero a výkon), `history.js` (Moje pozice), `share.js` (sdílení), `ui.js` (animace menu)
 - PWA: `manifest.webmanifest`, `sw.js` (jen úklid staré offline cache), `pwa.js` (tlačítko instalace), `icons/`
 
 > Toto README je předávací shrnutí dosavadního vývoje, aby nový chat s Claude přesně věděl, v jaké fázi projekt je.
@@ -31,10 +31,18 @@ Z fotek a videí ze čtyř pohledů (levá strana, pravá strana, zepředu, zeza
 - **Mobilita:** čtyři testy z boku (kyčel koleno k hrudi, rameno paže nad hlavu, kotník koleno k zdi, předklon vsedě). Limit pro pozici je 85 % maxima. Aplikace ukáže rezervu nebo nedostatek v ° a určí oblast, kterou má smysl zlepšit.
 - Výstup: hotový text s údaji, výsledky a prosbou o rady, který se zkopíruje do Claude.
 
+### Vzhled
+- Černobílý minimalistický vzhled: černé pozadí, bílý text, karty o odstín světlejší, hlavní tlačítka bílá s černým textem. Barvy jen pro data: oranžová `#ff7a3d` (body těla, virtuální výška, varování) a tyrkysová `#36c5f0` (pravá strana, osy kola, skutečná výška, obrys čelní plochy).
+- Barvy jsou proměnné v `:root` v `index.html`. Skripty pro kreslení čtou `--pt`, `--accent`, `--c1`, `--c2`, `--muted`, `--line`, `--surface`; `--c1` musí zůstat ve tvaru `#rrggbb`.
+- Hlavní menu (`#topnav`): bílá pilulka plynule přejede pod zvolené tlačítko, to se roztáhne a ostatní odsune do stran (`ui.js`). Na úzkém telefonu mají neaktivní tlačítka zkrácený popisek (Pozice, Aero, Moje), pod 375 px jen ikonu. Obsah vjede ze strany podle směru přepnutí a stránka se vrátí na začátek obsahu.
+- Záložky uvnitř částí: zvolená zbělá a rozšíří se. Úvodní popis aplikace je pod rozbalovacím „Co aplikace umí“.
+- `ui.js` mění jen vzhled (animace, pilulka, `aria-current`), přepínání dělá dál `aero.js`. Při zapnutém „omezit pohyb“ v systému se animace vypnou.
+- Otestováno v Playwrightu na telefonu (412 a 360 px) a tabletu (1000 px): všechny dřívější testy funkcí prošly, aplikace jde nainstalovat.
+
 ### Instalace (PWA, bez offline režimu)
 - Na Androidu v Chrome tlačítko **Nainstalovat aplikaci** nahoře (zobrazí se, jen když to Chrome nabídne), nebo menu ⋮ → Nainstalovat aplikaci. Pak se spouští jako samostatná aplikace s ikonou.
 - Offline režim byl na přání autora odstraněn: aplikace i modely MediaPipe se vždy načítají ze sítě. `sw.js` nic neukládá, jen smaže dřívější offline cache (asi 21 MB) a zůstává kvůli instalaci.
-- **Při změně `aero.js`, `share.js`, `history.js` nebo `pwa.js` zvýšit číslo `?v=` u jejich načtení na konci `index.html`** (teď `?v=9`), aby prohlížeč nevzal starou verzi ze své mezipaměti.
+- **Při změně `aero.js`, `share.js`, `history.js` nebo `pwa.js` zvýšit číslo `?v=` u jejich načtení na konci `index.html`** (teď `?v=12`), aby prohlížeč nevzal starou verzi ze své mezipaměti.
 
 ### Část Aero a výkon (`aero.js`)
 1. **Kalkulačka:** z CdA, hmotnosti, Crr, teploty, nadmořské výšky a účinnosti spočítá watty při zvolené rychlosti (výchozí 40 km/h), rozpad na aero, valivý odpor a ztráty, čas na zadanou vzdálenost a tabulku citlivosti na změnu CdA. Pro orientaci: 0,01 m² CdA ≈ 8 W při 40 km/h.
