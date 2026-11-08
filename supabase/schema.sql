@@ -29,3 +29,30 @@ end $$;
 drop trigger if exists limit_submissions on public.submissions;
 create trigger limit_submissions before insert on public.submissions
   for each row execute function public.limit_submissions();
+
+-- ---------------------------------------------------------------------------
+-- Práva uživatelů (čl. 15, 17 a 20 GDPR): stažení a smazání vlastních dat.
+-- Volá je stránka Zásad ochrany osobních údajů. Funguje jen se znalostí
+-- náhodného ID zařízení, které má uložené pouze uživatel.
+-- Doplněno 8. 11. 2026. Skript lze spustit opakovaně.
+-- ---------------------------------------------------------------------------
+create or replace function public.get_my_data(p_device uuid)
+returns setof public.submissions
+language sql stable security definer set search_path = public as $$
+  select * from public.submissions where device_id = p_device order by created_at;
+$$;
+
+create or replace function public.delete_my_data(p_device uuid)
+returns integer
+language plpgsql security definer set search_path = public as $$
+declare n integer;
+begin
+  delete from public.submissions where device_id = p_device;
+  get diagnostics n = row_count;
+  return n;
+end $$;
+
+revoke all on function public.get_my_data(uuid) from public;
+revoke all on function public.delete_my_data(uuid) from public;
+grant execute on function public.get_my_data(uuid) to anon;
+grant execute on function public.delete_my_data(uuid) to anon;

@@ -1,7 +1,7 @@
 // Aero a výkon: kalkulačka, čelní plocha, výkon v pozici, CdA z jízdy
 const $ = id => document.getElementById(id);
 const G = 9.80665, A4 = 0.210 * 0.297, FIT_EPOCH = 631065600;
-const VER = "0.10.14", BASE = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@" + VER;
+const VER = "0.10.14", BASE = "vendor/mediapipe/tasks-vision-" + VER; // knihovna je součástí aplikace
 const SEG_MODEL = "https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/1/deeplab_v3.tflite";
 const LS = "aero.v1";
 
@@ -311,7 +311,7 @@ const needPts = () => $("ar_scale").value === "a4" ? 4 : 2;
 function getSeg() {
   if (AR.seg) return Promise.resolve(AR.seg);
   if (!AR.segLoading) AR.segLoading = (async () => {
-    const m = await import(BASE + "/vision_bundle.mjs");
+    const m = await import(new URL(BASE + "/vision_bundle.js", document.baseURI).href);
     const fs = await m.FilesetResolver.forVisionTasks(BASE + "/wasm");
     const seg = await m.ImageSegmenter.createFromOptions(fs, { baseOptions: { modelAssetPath: SEG_MODEL, delegate: "CPU" }, runningMode: "IMAGE", outputCategoryMask: true, outputConfidenceMasks: false });
     let labels = []; try { labels = seg.getLabels() || []; } catch (e) { }
@@ -330,7 +330,7 @@ function runSeg(seg, canvas) {
 }
 async function segmentArea() {
   if (!AR.img) return;
-  AR.busy = true; AR.mask = null; setArStatus("Načítám model a hledám obrys těla… (poprvé se stahuje asi 3 MB)", false); updArea();
+  AR.busy = true; AR.mask = null; setArStatus("Načítám model a hledám obrys těla… (poprvé se stahuje asi 3 MB ze serveru Google)", false); updArea();
   try {
     const seg = await getSeg(), L = AR.labels;
     const sel = v => v === L.person || v === L.bike;

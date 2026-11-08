@@ -3,92 +3,159 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ochrana soukromí – Aero pozice</title>
+<title>Ochrana osobních údajů – Aero pozice</title>
 <meta name="theme-color" content="#000000">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=8">
-<style>
-:root{color-scheme:dark;--bg:#000;--surface:#0c0c0c;--ink:#fff;--muted:#8f8f8f;--line:#1e1e1e;--line-2:#2e2e2e}
-*{box-sizing:border-box}
-html{background:var(--bg)}
-html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;padding:22px 16px 48px;max-width:760px;margin:0 auto}
-::selection{background:#fff;color:#000}
-h1{font-size:clamp(1.8rem,6vw,2.4rem);line-height:1.08;letter-spacing:-.035em;margin:10px 0 6px}
-h2{font-size:1.04rem;font-weight:600;letter-spacing:-.01em;margin:0 0 8px}
-p,ul{margin:0 0 10px}
-ul{padding-left:20px}
-li{margin:5px 0}
-li::marker{color:var(--muted)}
-b{font-weight:600}
-a{color:#fff;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.35)}
-.muted{color:var(--muted);font-size:.9rem}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;margin:14px 0}
-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.86rem;word-break:break-all;background:#151515;border:1px solid var(--line-2);border-radius:8px;padding:3px 7px}
-.back{display:inline-block;margin-top:6px;padding:10px 18px;border-radius:999px;border:1px solid var(--line-2);text-decoration:none;font-weight:600}
-.back:hover{border-color:#fff}
-</style>
+<link rel="stylesheet" href="legal.css?v=1">
 </head>
 <body>
-<h1>Ochrana soukromí</h1>
-<p class="muted">Aplikace Aero pozice · platí od 7. 11. 2026</p>
+<main id="doc">
+<h1>Zásady ochrany osobních údajů</h1>
+<p class="muted">Aplikace Aero pozice · verze 2.0 · účinné od 8. 11. 2026</p>
 
-<div class="card">
+<div class="card sum">
   <h2>Stručně</h2>
   <ul>
-    <li>Aplikace běží v prohlížeči. Fotky, videa a výsledky zůstávají ve tvém zařízení.</li>
-    <li>Do výzkumné databáze se odešle něco <b>jen když</b> zaškrtneš souhlas a klepneš na <b>Odeslat anonymně</b>.</li>
-    <li>Odesílají se jen čísla (úhly, plochy, CdA, výkon). <b>Nikdy</b> fotky, videa, poznámky, popisy pozic, názvy variant, jméno ani e-mail.</li>
-    <li>Souhlas můžeš kdykoli odškrtnout a požádat o smazání odeslaných dat.</li>
+    <li>Aplikaci můžeš používat úplně bez předávání osobních údajů provozovateli. <b>Fotky, videa a výsledky zůstávají ve tvém zařízení.</b></li>
+    <li>Při načtení aplikace zpracovává technické údaje (například IP adresu) hostingová služba GitHub. Při použití automatického obrysu čelní plochy také Google, ze kterého se stahuje model.</li>
+    <li>Do výzkumné databáze se odesílají jen čísla, <b>jen s tvým výslovným souhlasem</b> a jen když klepneš na Odeslat. Souhlas můžeš kdykoli odvolat a odeslaná data si sám stáhnout nebo smazat (<a href="#moje-data">Tvoje data</a>).</li>
+    <li>Nepoužívám cookies, analytické ani reklamní nástroje a údaje neprodávám.</li>
   </ul>
 </div>
 
-<div class="card">
-  <h2>Kdo data spravuje</h2>
-  <p><b>Filip Kovačević</b>, autor aplikace Aero pozice (soukromá osoba, nekomerční projekt).<br>E-mail: <a href="mailto:aeroanalysisapp@gmail.com">aeroanalysisapp@gmail.com</a></p>
+<div class="card noprint">
+  <h2>Obsah</h2>
+  <ol class="toc">
+    <li><a href="#spravce">Správce</a></li>
+    <li><a href="#zarizeni">Data ve tvém zařízení</a></li>
+    <li><a href="#hosting">Hosting (GitHub Pages)</a></li>
+    <li><a href="#google">Model obrysu (Google)</a></li>
+    <li><a href="#vyzkum">Dobrovolné sdílení do výzkumné databáze</a></li>
+    <li><a href="#email">Komunikace e-mailem</a></li>
+    <li><a href="#claude">Text pro Claude</a></li>
+    <li><a href="#rozhodovani">Automatizované rozhodování</a></li>
+    <li><a href="#prava">Tvá práva</a></li>
+    <li><a href="#deti">Děti</a></li>
+    <li><a href="#zmeny">Změny zásad</a></li>
+    <li><a href="#moje-data">Tvoje data ve výzkumné databázi</a></li>
+  </ol>
 </div>
 
-<div class="card">
-  <h2>Co se odesílá</h2>
-  <ul>
-    <li><b>Pozice:</b> úhly z boku (koleno, kyčel, loket, rameno, sklon trupu), údaje zepředu a zezadu (sklony, poměry šířek, vybočení kolen), výsledky testů mobility, režim měření a typ zdroje (fotka, video, ručně upravené body). Výška, hmotnost, obvod pasu a délka nohy, pokud je vyplníš.</li>
-    <li><b>CdA z jízdy:</b> CdA pozic a jednotlivých kol, Crr, hustota a teplota vzduchu, nadmořská výška, hmotnost, údaje o větru. Pozice jsou označené jen P1, P2… Neodesílá se poloha GPS ani .fit soubor.</li>
-    <li><b>Výkon v pozici:</b> průměrný výkon, tep, kadence, délka intervalů a hodnocení pohodlí pro pozice P1 až P3.</li>
-    <li><b>Čelní plocha:</b> plochy variant, změřené CdA a způsob měření (s kolem nebo bez, měřítko).</li>
-    <li><b>Moje pozice:</b> uložené pozice jako propojené záznamy (úhly, mobilita, údaje o jezdci, čelní plocha, změřené CdA a hodnocení pohodlí), s datem a náhodným ID záznamu. Názvy pozic, poznámky a názvy variant se neodesílají. Odesílají se jen nové nebo změněné pozice.</li>
-    <li><b>Anonymní ID zařízení:</b> náhodné číslo vytvořené v prohlížeči, aby šlo tvá data najít a smazat. Není spojené s tvým jménem ani účtem.</li>
-  </ul>
-  <p class="muted">Server poskytovatele databáze může krátce evidovat technické údaje o spojení (např. IP adresu) v provozních záznamech. Do databáze se neukládají a nepoužívají se.</p>
+<div class="card" id="spravce">
+<h2><span class="num">1.</span>Správce osobních údajů</h2>
+<p>Správcem je <b>Filip Kovačević</b>, fyzická osoba, provozovatel aplikace Aero pozice. Kontakt: <a href="mailto:aeroanalysisapp@gmail.com">aeroanalysisapp@gmail.com</a>.</p>
+<p>Pověřenec pro ochranu osobních údajů jmenován není, protože to v tomto případě právní předpisy nevyžadují (čl. 37 GDPR).</p>
+<p class="muted">Zásady vycházejí z nařízení Evropského parlamentu a Rady (EU) 2016/679, obecné nařízení o ochraně osobních údajů (dále jen „GDPR“), ze zákona č. 110/2019 Sb., o zpracování osobních údajů, a ze zákona č. 127/2005 Sb., o elektronických komunikacích.</p>
 </div>
 
-<div class="card">
-  <h2>Proč a na jakém základě</h2>
-  <p>Data slouží k výzkumu vztahu mezi pozicí na kole, mobilitou a aerodynamikou a ke zlepšení aplikace. Zpracovávají se statisticky. Zveřejněné mohou být jen souhrnné výsledky, ze kterých nejde poznat jednotlivce.</p>
-  <p>Základem je tvůj výslovný souhlas (čl. 6 odst. 1 písm. a) a čl. 9 odst. 2 písm. a) GDPR, protože výsledky mobility se mohou týkat zdraví). Souhlas je dobrovolný a aplikace funguje stejně i bez něj.</p>
+<div class="card" id="zarizeni">
+<h2><span class="num">2.</span>Data ve tvém zařízení</h2>
+<p><span class="num">2.1</span>Fotky a videa zpracovává aplikace přímo ve tvém zařízení, včetně automatického hledání bodů těla modelem MediaPipe, který je součástí aplikace. Nikam se neodesílají a neukládají se.</p>
+<p><span class="num">2.2</span>Zadané údaje a výsledky (například výška, hmotnost, poznámky, úhly, výsledky testů mobility, varianty čelní plochy, jízdní data a Moje pozice) se ukládají jen v úložišti prohlížeče ve tvém zařízení. Provozovatel k nim nemá přístup a jako správce je nezpracovává.</p>
+<p><span class="num">2.3</span>Úložiště v zařízení aplikace používá jen pro funkce, které si sám vyžádáš: uložení nastavení a výsledků, záznam o přijetí podmínek a údaj o souhlasu se sdílením. Jde o technické ukládání nezbytné k poskytnutí služby, ke kterému není třeba souhlas (§ 89 odst. 3 zákona č. 127/2005 Sb.). Cookies, analytické ani reklamní nástroje aplikace nepoužívá.</p>
+<p><span class="num">2.4</span>Soubory .fit se čtou jen ve tvém zařízení. Poloha GPS z nich slouží jen ke korekci větru a nikam se neodesílá.</p>
+<p><span class="num">2.5</span>Data v zařízení smažeš odinstalováním aplikace a vymazáním dat webu v nastavení prohlížeče. Tím se smažou i uložené pozice, proto si je předtím případně zálohuj.</p>
 </div>
 
-<div class="card">
-  <h2>Kde a jak dlouho</h2>
-  <p>Data jsou uložená v databázi Supabase v datacentru ve Frankfurtu (EU). Aplikace do databáze může jen zapisovat, číst a mazat může jen správce. Data se uchovávají po dobu trvání projektu, nejdéle 5 let, nebo do odvolání souhlasu.</p>
+<div class="card" id="hosting">
+<h2><span class="num">3.</span>Hosting aplikace (GitHub Pages)</h2>
+<p>Aplikace se načítá ze služby GitHub Pages společnosti GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA. Při načtení zpracovává GitHub technické údaje o požadavku, zejména IP adresu, a podle své dokumentace je ukládá pro účely zabezpečení služby, a to i u návštěvníků, kteří nejsou na GitHubu přihlášeni.</p>
+<p>GitHub tyto údaje zpracovává jako samostatný správce. Podrobnosti, včetně předávání údajů do USA, uvádí <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">Prohlášení GitHubu o ochraně osobních údajů</a>.</p>
+<p>Právním základem pro využití hostingu je oprávněný zájem provozovatele na zpřístupnění a bezpečném provozu aplikace (čl. 6 odst. 1 písm. f) GDPR).</p>
 </div>
 
-<div class="card">
-  <h2>Tvoje práva</h2>
-  <p>Máš právo na přístup ke svým datům, jejich smazání a odvolání souhlasu. Napiš na <a id="mail" href="mailto:aeroanalysisapp@gmail.com?subject=Aero%20pozice%20%E2%80%93%20moje%20data">aeroanalysisapp@gmail.com</a> a uveď své anonymní ID:</p>
-  <p><code id="devid">ID se vytvoří, až se v aplikaci poprvé zobrazí nabídka sdílení.</code></p>
-  <p class="muted">Pokud máš pocit, že s daty není zacházeno správně, můžeš se obrátit na Úřad pro ochranu osobních údajů (<a href="https://uoou.gov.cz" target="_blank" rel="noopener">uoou.gov.cz</a>).</p>
+<div class="card" id="google">
+<h2><span class="num">4.</span>Model pro obrys čelní plochy (Google)</h2>
+<p>Při prvním použití automatického hledání obrysu v části Čelní plocha stáhne tvůj prohlížeč model DeepLab v3 ze serveru storage.googleapis.com společnosti Google LLC, 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA. Google tím získá technické údaje o požadavku, zejména IP adresu, a zpracovává je jako samostatný správce podle <a href="https://policies.google.com/privacy?hl=cs" target="_blank" rel="noopener">Zásad ochrany soukromí Google</a>, kde najdeš i informace o předávání údajů do USA.</p>
+<p>Fotka se Googlu neodesílá, obrys se hledá ve tvém zařízení. Právním základem je oprávněný zájem na poskytnutí funkce, kterou sis vyžádal (čl. 6 odst. 1 písm. f) GDPR). Pokud si to nepřeješ, automatické hledání obrysu nepoužívej. Ostatní části aplikace se na Google nepřipojují.</p>
 </div>
 
-<p><a class="back" href="./">← Zpět do aplikace</a></p>
-<script>
-try {
-  const d = localStorage.getItem("aero.device");
-  if (d) {
-    document.getElementById("devid").textContent = d;
-    // e-mail se rovnou předvyplní anonymním ID
-    document.getElementById("mail").href = "mailto:aeroanalysisapp@gmail.com?subject=" + encodeURIComponent("Aero pozice – moje data") +
-      "&body=" + encodeURIComponent("Dobrý den,\nprosím o smazání (nebo zaslání) mých dat.\nMoje anonymní ID: " + d + "\n");
-  }
-} catch (e) { }
-</script>
+<div class="card" id="vyzkum">
+<h2><span class="num">5.</span>Dobrovolné sdílení do výzkumné databáze</h2>
+<p><span class="num">5.1</span><b>Kdy:</b> jen když v aplikaci zaškrtneš souhlas a klepneš na Odeslat anonymně. Bez toho se nic neodesílá.</p>
+<p><span class="num">5.2</span><b>Jaké údaje:</b></p>
+<ul>
+  <li><b>Pozice:</b> úhly z boku (koleno, kyčel, loket, rameno, sklon trupu), údaje zepředu a zezadu (sklony, poměry šířek, vybočení kolen), výsledky testů mobility, režim měření a typ zdroje (fotka, video, ručně upravené body). Pokud je vyplníš, také výška, hmotnost, obvod pasu a délka nohy.</li>
+  <li><b>CdA z jízdy:</b> CdA pozic a jednotlivých kol, valivý odpor, hustota a teplota vzduchu, nadmořská výška, hmotnost, účinnost převodů, údaje o větru, rychlost a výkon jednotlivých kol. Pozice jsou označené jen P1, P2…</li>
+  <li><b>Výkon v pozici:</b> výkon, tepová frekvence, kadence, délka intervalů a hodnocení pohodlí pozic P1 až P3.</li>
+  <li><b>Čelní plocha:</b> plochy variant, změřené CdA a způsob měření.</li>
+  <li><b>Moje pozice:</b> uložené pozice jako propojené záznamy (údaje výše, čelní plocha, změřené CdA, pohodlí), datum uložení a náhodné ID záznamu.</li>
+  <li><b>Ke každému záznamu:</b> náhodné ID zařízení, verze a čas udělení souhlasu a čas přijetí záznamu.</li>
+</ul>
+<p><b>Neodesílají se</b> fotky, videa, jména, e-mail, poznámky, popisy a názvy pozic a variant, poloha GPS ani soubory .fit.</p>
+<p><span class="num">5.3</span><b>Údaje o zdraví:</b> výsledky testů mobility, tělesné míry a tepová frekvence mohou vypovídat o zdravotním stavu, a proto mohou být zvláštní kategorií osobních údajů (čl. 9 GDPR). Zpracovávám je jen na základě tvého výslovného souhlasu.</p>
+<p><span class="num">5.4</span><b>Účel:</b> statistický výzkum vztahu mezi pozicí na kole, mobilitou, výkonem a aerodynamikou a zlepšování aplikace, například přesnějších odhadů CdA. Zveřejnit mohu jen souhrnné výsledky, ze kterých nelze poznat jednotlivce.</p>
+<p><span class="num">5.5</span><b>Právní základ:</b> tvůj souhlas (čl. 6 odst. 1 písm. a) GDPR), u údajů o zdraví výslovný souhlas (čl. 9 odst. 2 písm. a) GDPR). Poskytnutí údajů je dobrovolné, není zákonným ani smluvním požadavkem a aplikace funguje stejně i bez něj. Souhlas může udělit jen osoba starší 15 let.</p>
+<p><span class="num">5.6</span><b>Pseudonymizace:</b> záznamy jsou označené jen náhodným ID zařízení. To vznikne až při udělení souhlasu a je uložené jen ve tvém zařízení. Neznám tvé jméno ani kontakt, pokud mi je sám nesdělíš, například v e-mailu se žádostí.</p>
+<p><span class="num">5.7</span><b>Zpracovatel a umístění dat:</b> databázi pro mě provozuje společnost Supabase (smluvní stranou je společnost skupiny Supabase uvedená ve smlouvě o zpracování) jako zpracovatel na základě smlouvy o zpracování osobních údajů podle čl. 28 GDPR. Data jsou uložená v datovém centru ve Frankfurtu nad Mohanem (Německo, EU). Pokud by k nim zpracovatel nebo jeho subdodavatelé měli přístup ze zemí mimo Evropský hospodářský prostor, je předání zajištěno standardními smluvními doložkami schválenými Evropskou komisí (prováděcí rozhodnutí Komise (EU) 2021/914), případně rozhodnutím Komise o odpovídající ochraně.</p>
+<p><span class="num">5.8</span><b>Příjemci:</b> údaje nikomu neprodávám a kromě zpracovatele je neposkytuji dalším příjemcům. Výjimkou by byla jen povinnost uložená zákonem.</p>
+<p><span class="num">5.9</span><b>Doba uložení:</b> po dobu trvání výzkumu, nejdéle 5 let od odeslání. Dříve je smažu, pokud o to požádáš, nebo je můžeš smazat sám.</p>
+<p><span class="num">5.10</span><b>Odvolání souhlasu a výmaz:</b> souhlas odvoláš odškrtnutím políčka v aplikaci nebo tlačítkem v části <a href="#moje-data">Tvoje data</a>. Další data se pak neodesílají. Odvolání nemá vliv na zákonnost zpracování před ním. Odeslaná data smažeš tlačítkem Smazat moje data nebo e-mailem s uvedením ID zařízení.</p>
+<p><span class="num">5.11</span><b>Zabezpečení:</b> šifrované spojení (HTTPS), databáze, do které aplikace může jen zapisovat, čtení a správa jen přes účet správce, limit počtu odeslání a pseudonymizace.</p>
+</div>
+
+<div class="card" id="email">
+<h2><span class="num">6.</span>Komunikace e-mailem</h2>
+<p>Když mi napíšeš, zpracovávám tvou e-mailovou adresu, obsah zprávy a případně ID zařízení, abych ti mohl odpovědět nebo vyřídit tvou žádost. Právním základem je oprávněný zájem na komunikaci s tebou (čl. 6 odst. 1 písm. f) GDPR), u žádostí o uplatnění práv podle GDPR plnění právní povinnosti (čl. 6 odst. 1 písm. c) GDPR).</p>
+<p>E-maily uchovávám po dobu nezbytnou k vyřízení a poté nejdéle 3 roky pro případ sporu. E-mailová schránka je vedena u služby Gmail společnosti Google.</p>
+</div>
+
+<div class="card" id="claude">
+<h2><span class="num">7.</span>Text pro Claude</h2>
+<p>Aplikace jen připraví text k ručnímu zkopírování a nikam ho neodesílá. Text může obsahovat i citlivé údaje, například tvé poznámky o bolesti. Pokud ho vložíš do služby třetí strany, například Claude od společnosti Anthropic, řídí se další zpracování podmínkami a zásadami této služby. Zvaž, jaké údaje v něm sdílíš.</p>
+</div>
+
+<div class="card" id="rozhodovani">
+<h2><span class="num">8.</span>Automatizované rozhodování</h2>
+<p>Neprobíhá žádné automatizované rozhodování ani profilování s právními nebo podobně závažnými účinky (čl. 22 GDPR). Výpočty a doporučení probíhají jen ve tvém zařízení a slouží jen tobě.</p>
+</div>
+
+<div class="card" id="prava">
+<h2><span class="num">9.</span>Tvá práva</h2>
+<p>V rozsahu, ve kterém tvé osobní údaje zpracovávám, máš právo:</p>
+<ul>
+  <li>na <b>přístup</b> k údajům (čl. 15 GDPR) – stačí tlačítko Stáhnout moje data,</li>
+  <li>na <b>opravu</b> nepřesných údajů (čl. 16 GDPR),</li>
+  <li>na <b>výmaz</b> (čl. 17 GDPR) – stačí tlačítko Smazat moje data,</li>
+  <li>na <b>omezení zpracování</b> (čl. 18 GDPR),</li>
+  <li>na <b>přenositelnost</b> údajů ve strojově čitelném formátu (čl. 20 GDPR) – data se stáhnou jako soubor JSON,</li>
+  <li><b>vznést námitku</b> proti zpracování na základě oprávněného zájmu (čl. 21 GDPR),</li>
+  <li>kdykoli <b>odvolat souhlas</b> (čl. 7 odst. 3 GDPR),</li>
+  <li>podat <b>stížnost</b> u Úřadu pro ochranu osobních údajů, Pplk. Sochora 727/27, 170 00 Praha 7, <a href="https://uoou.gov.cz" target="_blank" rel="noopener">uoou.gov.cz</a>, nebo u dozorového úřadu státu, kde máš bydliště nebo pracuješ.</li>
+</ul>
+<p>Žádosti posílej na <a href="mailto:aeroanalysisapp@gmail.com">aeroanalysisapp@gmail.com</a>. Vyřídím je bezplatně, bez zbytečného odkladu, nejpozději do 1 měsíce (čl. 12 GDPR). Protože tě neznám jménem, k ověření slouží ID zařízení.</p>
+</div>
+
+<div class="card" id="deti">
+<h2><span class="num">10.</span>Děti</h2>
+<p>Souhlas se sdílením dat může udělit jen osoba starší 15 let (§ 7 zákona č. 110/2019 Sb.). Pokud zjistím, že data odeslala mladší osoba bez souhlasu zákonného zástupce, smažu je.</p>
+</div>
+
+<div class="card" id="zmeny">
+<h2><span class="num">11.</span>Změny zásad</h2>
+<p>Zásady mohu aktualizovat, například při změně funkcí aplikace nebo právních předpisů. Podstatné změny oznámím v aplikaci. Pokud by se měnil rozsah sdílených údajů, aplikace si vyžádá nový souhlas.</p>
+<p class="muted">Verze 2.0, účinné od 8. 11. 2026. Předchozí verze 1.0 platila od 7. 11. 2026.</p>
+</div>
+
+<div class="card" id="moje-data">
+<h2><span class="num">12.</span>Tvoje data ve výzkumné databázi</h2>
+<p id="md-state">Načítám…</p>
+<p class="muted">Anonymní ID zařízení: <code id="devid">–</code></p>
+<div class="row">
+  <button class="btn ghost" id="md-get" disabled>Stáhnout moje data</button>
+  <button class="btn ghost" id="md-del" disabled>Smazat moje data</button>
+  <button class="btn ghost" id="md-revoke" disabled>Odvolat souhlas</button>
+</div>
+<p class="muted" id="md-msg" style="margin-top:10px"></p>
+<p class="muted">Žádost můžeš poslat i e-mailem: <a id="mail" href="mailto:aeroanalysisapp@gmail.com?subject=Aero%20pozice%20%E2%80%93%20moje%20data">aeroanalysisapp@gmail.com</a>.</p>
+</div>
+</main>
+
+<div class="row noprint">
+  <a class="back" href="./">← Zpět do aplikace</a>
+  <button class="btn ghost" onclick="print()">Vytisknout nebo uložit jako PDF</button>
+</div>
+<script src="share.js?v=14"></script>
+<script src="mydata.js?v=1"></script>
 </body>
 </html>

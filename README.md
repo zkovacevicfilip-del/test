@@ -25,7 +25,7 @@ Z fotek a videí ze čtyř pohledů (levá strana, pravá strana, zepředu, zeza
 ### Část Pozice a mobilita (`index.html`)
 - Volba režimu: **pevné stanoviště** (stativ, bez korekce) nebo **z ruky s korekcí perspektivy** (u bočních pohledů se označí osy a okraje předního kola, aplikace srovná náklon a vodorovné zkreslení).
 - Pohledy levá, pravá, zepředu, zezadu. U každého fotka z galerie, fotoaparát, nebo **video** (až 90 snímků, statistiky přes celý cyklus šlapání).
-- **Automatická detekce těla** (MediaPipe Pose Landmarker 0.10.14 z jsdelivr, model `pose_landmarker_full` z storage.googleapis.com). Ruční označení bodů je vypnuté, zapne se jen při selhání detekce nebo zaškrtnutím. Do textu pro Claude se uvede, že byly body upraveny ručně.
+- **Automatická detekce těla** (MediaPipe Pose Landmarker 0.10.14; knihovna i model `pose_landmarker_full` jsou součástí aplikace ve složce `vendor/`, takže se při detekci nic nestahuje z cizích serverů). Ruční označení bodů je vypnuté, zapne se jen při selhání detekce nebo zaškrtnutím. Do textu pro Claude se uvede, že byly body upraveny ručně.
 - Z boku: koleno, kyčel, sklon trupu, loket, rameno (levá, pravá, rozdíl, zvýrazněno nad 5°). U videa koleno dole a nahoře, kyčel nejvíc zavřená a otevřená, rozkmit trupu.
 - Zepředu a zezadu: sklon ramen, sklon pánve, boční náklon trupu, vybočení kolen, poměry šířek (jen zepředu).
 - **Mobilita:** čtyři testy z boku (kyčel koleno k hrudi, rameno paže nad hlavu, kotník koleno k zdi, předklon vsedě). Limit pro pozici je 85 % maxima. Aplikace ukáže rezervu nebo nedostatek v ° a určí oblast, kterou má smysl zlepšit.
@@ -45,7 +45,7 @@ Z fotek a videí ze čtyř pohledů (levá strana, pravá strana, zepředu, zeza
 ### Instalace (PWA, bez offline režimu)
 - Na Androidu v Chrome tlačítko **Nainstalovat aplikaci** nahoře (zobrazí se, jen když to Chrome nabídne), nebo menu ⋮ → Nainstalovat aplikaci. Pak se spouští jako samostatná aplikace s ikonou.
 - Offline režim byl na přání autora odstraněn: aplikace i modely MediaPipe se vždy načítají ze sítě. `sw.js` nic neukládá, jen smaže dřívější offline cache (asi 21 MB) a zůstává kvůli instalaci.
-- Dole na stránce je údaj o verzi (`#appVer` v `index.html`), podle kterého se na tabletu pozná, jestli se načetla nová verze. Při každém vydání ho aktualizovat. Odkaz na manifest má taky `?v=` (stejné číslo jako ikony).
+- Dole na stránce jsou odkazy na Podmínky použití, Ochranu osobních údajů a Licence a údaj o verzi (`#appVer` v `index.html`), podle kterého se na tabletu pozná, jestli se načetla nová verze. Při každém vydání ho aktualizovat. Odkaz na manifest má taky `?v=` (stejné číslo jako ikony).
 - **Při změně `aero.js`, `share.js`, `history.js`, `pwa.js` nebo `ui.js` zvýšit číslo `?v=` u jejich načtení na konci `index.html`** (teď `?v=13`), aby prohlížeč nevzal starou verzi ze své mezipaměti.
 
 ### Část Aero a výkon (`aero.js`)
@@ -62,6 +62,15 @@ Z fotek a videí ze čtyř pohledů (levá strana, pravá strana, zepředu, zeza
 - Data jsou v `localStorage` (`aero.pos.v1`). Tlačítka **Stáhnout zálohu** a **Načíst zálohu** (JSON).
 - Sdílení: každá pozice jde do databáze jako jeden propojený řádek (`kind` = position, `schema_ver` = 2, náhodné `rid` záznamu), posílají se jen nové nebo změněné pozice, nejvýš 40 najednou.
 - Otestováno v Playwrightu: uložení z výsledků, přiřazení plochy a CdA z jízdy, srovnání, model (vrátil nastavený vliv 0,003 m² na 1° trupu a správný odhad), varování při souvisejících ukazatelích, sdílení, záloha a obnova.
+
+### Právní dokumenty a GDPR (stav 8. 11. 2026)
+- **Okno s podmínkami při prvním spuštění** (`terms.js`, markup `#termsGate` v `index.html`): celé znění Podmínek použití (načítá se z `podminky.html`), povinné zaškrtnutí a tlačítko Pokračovat. Přijetí (verze, čas) se ukládá jen v zařízení (`aero.terms`). **Při změně podmínek zvýšit `AERO_TERMS_VER` v `index.html`** (okno se ukáže znovu) a číslo `?v=` u `podminky.html` v `terms.js`. Souhlas s podmínkami je oddělený od souhlasu se sdílením dat (GDPR zakazuje souhlas přibalit k podmínkám).
+- **Dokumenty:** `podminky.html` (Podmínky použití 1.0: účel, není zdravotnický prostředek podle MDR, věk 15+, pravidla, bezpečnost, licence, odpovědnost s ohledem na § 2898 OZ, změny, rozhodné právo), `soukromi.html` (Zásady ochrany osobních údajů 2.0 podle čl. 13 GDPR, včetně samoobslužné správy dat), `licence.html` (komponenty třetích stran, Apache 2.0). Společný vzhled `legal.css`, dají se vytisknout nebo uložit jako PDF.
+- **Souhlas se sdílením** (`share.js`): výslovný souhlas včetně údajů o zdraví (mobilita, tělesné míry, tep) a věku 15+, verze `CONSENT_VER`. Starší souhlasy neplatí. Anonymní ID zařízení vzniká až se souhlasem. Ke každému odeslanému záznamu se přidává `consent` (verze a čas), aby šel souhlas doložit. **Při změně rozsahu sdílených dat zvýšit `CONSENT_VER`.**
+- **Samoobslužná práva** (`mydata.js` na stránce Zásad, oddíl 12): stažení vlastních dat jako JSON (přístup, přenositelnost), smazání (výmaz) a odvolání souhlasu. Potřebuje funkce `get_my_data` a `delete_my_data` v databázi (konec `supabase/schema.sql`, otestováno na PostgreSQL 16).
+- **Třetí strany:** knihovna MediaPipe a model detekce těla jsou hostované s aplikací (Apache 2.0, `vendor/mediapipe/LICENSE-Apache-2.0.txt`, `NOTICE.txt`). Jediné připojení k cizímu serveru je stažení modelu DeepLab od Googlu při použití obrysu čelní plochy (jeho licenci se nepodařilo jednoznačně ověřit, proto se nešíří s aplikací; uvedeno v zásadách). Při spuštění aplikace se nepřipojuje k žádnému cizímu serveru (kromě hostingu GitHub Pages).
+- **Interní dokumenty správce:** `docs/gdpr/zaznam-o-cinnostech-zpracovani.md` (záznam podle čl. 30 GDPR, posouzení rizik, proč není nutné DPIA) a `docs/gdpr/postup-pro-spravce.md` (co udělat hned, vyřizování žádostí, únik dat, roční kontrola, změny aplikace, co dát zkontrolovat právníkovi).
+- Otestováno v Playwrightu (53 kontrol): okno s podmínkami na telefonu i tabletu, neovladatelnost aplikace před přijetím, opětovné zobrazení při nové verzi, žádná cizí připojení při spuštění, výslovný souhlas a jeho záznam, stažení, smazání a odvolání. Všechny dřívější testy funkcí prošly.
 
 ### Sdílení dat do výzkumné databáze (`share.js`, `soukromi.html`, `supabase/schema.sql`)
 - Dobrovolné: pod výsledky (Pozice, CdA z jízdy, Výkon v pozici, Čelní plocha u variant se změřeným CdA) je zaškrtávátko souhlasu a tlačítko **Odeslat anonymně**. Souhlas platí pro všechna místa najednou a pamatuje se.

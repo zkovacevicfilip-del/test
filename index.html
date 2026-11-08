@@ -2,6 +2,7 @@
 <html lang="cs">
 <head>
 <meta charset="utf-8">
+<script>window.AERO_TERMS_VER="2026-11-08";try{var t=JSON.parse(localStorage.getItem("aero.terms")||"null");if(!t||t.v!==window.AERO_TERMS_VER)document.documentElement.classList.add("terms-needed");}catch(e){document.documentElement.classList.add("terms-needed");}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Aero pozice – měření z fotek a videí</title>
 <link rel="manifest" href="manifest.webmanifest?v=8">
@@ -160,10 +161,43 @@ td small{display:block;color:var(--muted);font-weight:400;font-size:.8rem;margin
 .hchip b{color:#fff}
 .foot{color:var(--muted);font-size:.78rem;text-align:center;margin:36px 0 0}
 
+/* okno s podmínkami při prvním spuštění */
+#termsGate{display:none}
+html.terms-needed #termsGate{display:flex}
+html.terms-needed body{overflow:hidden}
+html.terms-needed body>:not(#termsGate):not(script){visibility:hidden}
+#termsGate{position:fixed;inset:0;z-index:100;background:#000;justify-content:center;outline:none;animation:fadeUp .45s var(--ease) both}
+.tg-in{width:100%;max-width:820px;height:100%;display:flex;flex-direction:column;padding:16px 16px calc(14px + env(safe-area-inset-bottom))}
+.tg-head{display:flex;gap:12px;align-items:center}
+.tg-head img{width:40px;height:40px;border-radius:11px}
+.tg-head h2{font-size:1.45rem;margin:0;letter-spacing:-.02em}
+.tg-lead{color:#d0d0d0;margin:10px 0 12px;font-size:.95rem}
+.tg-doc{flex:1 1 auto;min-height:140px;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border:1px solid var(--line-2);border-radius:18px;background:var(--surface);padding:4px 16px 16px}
+.tg-doc:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.tg-doc h1{font-size:1.5rem;margin:14px 0 2px}
+.tg-doc .card{background:var(--surface-2);margin:12px 0;padding:14px}
+.tg-doc .num{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:6px}
+.tg-doc ul,.tg-doc ol{padding-left:22px}
+.tg-foot{padding-top:12px}
+.tg-foot .chk{margin:0 0 12px}
+.tg-foot .row{margin-top:0;justify-content:space-between}
+.foot a{color:var(--muted)}
+.foot a:hover{color:#fff}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
+<div id="termsGate" role="dialog" aria-modal="true" aria-labelledby="tgTitle" aria-describedby="tgLead" tabindex="-1">
+  <div class="tg-in">
+    <div class="tg-head"><img src="icons/icon-192.png?v=8" alt="" width="40" height="40"><h2 id="tgTitle">Než začneš</h2></div>
+    <p class="tg-lead" id="tgLead">Aero pozice je bezplatná aplikace pro sportovní účely. Přečti si prosím Podmínky použití. Jak se zachází s osobními údaji, popisují <a href="soukromi.html" target="_blank" rel="noopener">Zásady ochrany osobních údajů</a>.</p>
+    <div class="tg-doc" id="tgDoc" tabindex="0" aria-label="Podmínky použití"><p class="muted">Načítám podmínky…</p></div>
+    <div class="tg-foot">
+      <label class="chk"><input type="checkbox" id="tgOk"><span>Přečetl(a) jsem si <a href="podminky.html" target="_blank" rel="noopener">Podmínky použití</a> a souhlasím s nimi. Je mi alespoň 15 let, nebo aplikaci používám se souhlasem zákonného zástupce.</span></label>
+      <div class="row"><a class="muted" href="podminky.html" target="_blank" rel="noopener">Otevřít nebo vytisknout podmínky</a><button class="btn" id="tgGo" disabled>Pokračovat do aplikace</button></div>
+    </div>
+  </div>
+</div>
 <header class="hero">
   <img class="logo" src="icons/icon-192.png?v=8" alt="" width="46" height="46">
   <h1>Aero pozice na časovkářském kole</h1>
@@ -244,6 +278,7 @@ td small{display:block;color:var(--muted);font-weight:400;font-size:.8rem;margin
 
   <div class="card hidden" id="outBox">
     <h2>Text pro Claude</h2>
+    <p class="muted">Text obsahuje tvé údaje včetně poznámek. Aplikace ho nikam neposílá. Když ho vložíš do Claude nebo jiné služby, řídí se další zpracování jejími podmínkami.</p>
     <textarea id="out" readonly></textarea>
     <div class="row"><button class="btn" id="copy">Zkopírovat</button><span class="muted" id="copied"></span></div>
     <div id="shPos"></div>
@@ -253,8 +288,8 @@ td small{display:block;color:var(--muted);font-weight:400;font-size:.8rem;margin
 
 <script type="module">
 const VER="0.10.14";
-const BASE="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@"+VER;
-const MODEL="https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task";
+const BASE="vendor/mediapipe/tasks-vision-"+VER; // knihovna je součástí aplikace (žádné stahování z cizích serverů)
+const MODEL="vendor/models/pose_landmarker_full.task";
 const REF=["Osa zadního kola","Osa předního kola","Přední kolo – levý okraj","Přední kolo – pravý okraj","Přední kolo – horní okraj","Přední kolo – dolní okraj"];
 const BODY=["Kotník","Koleno","Kyčel","Rameno","Loket","Zápěstí"];
 const FB=["Levé rameno","Pravé rameno","Levý loket","Pravý loket","Levé zápěstí","Pravé zápěstí","Levá kyčel","Pravá kyčel","Levé koleno","Pravé koleno","Levý kotník","Pravý kotník"];
@@ -292,7 +327,7 @@ let landmarker=null,loading=null;
 function getLM(){
   if(landmarker)return Promise.resolve(landmarker);
   if(!loading)loading=(async()=>{
-    const m=await import(BASE+"/vision_bundle.mjs");
+    const m=await import(new URL(BASE+"/vision_bundle.js",document.baseURI).href);
     const fs=await m.FilesetResolver.forVisionTasks(BASE+"/wasm");
     const opt=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:"IMAGE",numPoses:1});
     try{landmarker=await m.PoseLandmarker.createFromOptions(fs,opt("GPU"));}
@@ -722,11 +757,12 @@ $("copy").onclick=()=>{const ta=$("out");ta.focus();ta.select();let ok=false;
   $("copied").textContent=ok?"Zkopírováno":"Označ text a zkopíruj ručně";};
 ["v","h","p","n","o"].forEach(i=>{$(i).oninput=()=>{if(cur==="res")renderResults();};});
 </script>
-<p class="foot" id="appVer">Aero pozice · verze 8. 11. 2026 (logo 8)</p>
-<script type="module" src="aero.js?v=13"></script>
-<script src="share.js?v=13"></script>
-<script src="history.js?v=13"></script>
-<script src="pwa.js?v=13"></script>
-<script src="ui.js?v=13"></script>
+<p class="foot" id="appVer">Aero pozice · verze 8. 11. 2026 (logo 8, podmínky 1.0)<br><a href="podminky.html">Podmínky použití</a> · <a href="soukromi.html">Ochrana osobních údajů</a> · <a href="licence.html">Licence</a></p>
+<script type="module" src="aero.js?v=14"></script>
+<script src="share.js?v=14"></script>
+<script src="history.js?v=14"></script>
+<script src="pwa.js?v=14"></script>
+<script src="ui.js?v=14"></script>
+<script src="terms.js?v=1"></script>
 </body>
 </html>

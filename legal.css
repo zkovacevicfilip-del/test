@@ -1,0 +1,41 @@
+/* Společný vzhled právních stránek (podmínky, ochrana osobních údajů, licence) */
+:root{color-scheme:dark;--bg:#000;--surface:#0c0c0c;--surface-2:#151515;--ink:#fff;--muted:#8f8f8f;--line:#1e1e1e;--line-2:#2e2e2e;--pt:#ff7a3d}
+*{box-sizing:border-box}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;padding:22px 16px 56px;max-width:780px;margin:0 auto}
+::selection{background:#fff;color:#000}
+h1{font-size:clamp(1.8rem,6vw,2.4rem);line-height:1.08;letter-spacing:-.035em;margin:10px 0 6px}
+h2{font-size:1.08rem;font-weight:600;letter-spacing:-.01em;margin:0 0 10px}
+h3{font-size:.98rem;font-weight:600;margin:14px 0 6px}
+p,ul,ol{margin:0 0 10px}
+ul,ol{padding-left:22px}
+li{margin:5px 0}
+li::marker{color:var(--muted)}
+b,strong{font-weight:600}
+a{color:#fff;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.35)}
+.muted{color:var(--muted);font-size:.9rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;margin:14px 0}
+.sum{border-color:var(--line-2)}
+.num{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:6px}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.86rem;word-break:break-all;background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;padding:2px 7px}
+.btn{display:inline-block;font:inherit;font-size:.95rem;font-weight:600;padding:10px 18px;border-radius:999px;border:1px solid #fff;background:#fff;color:#000;cursor:pointer;text-decoration:none}
+.btn.ghost{background:transparent;color:#fff;border-color:var(--line-2)}
+.btn:disabled{opacity:.35;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.warn{border-left:3px solid var(--pt);padding-left:12px}
+.toc{columns:2;column-gap:24px;font-size:.92rem}
+.toc li{break-inside:avoid}
+.back{display:inline-block;margin-top:8px;padding:10px 18px;border-radius:999px;border:1px solid var(--line-2);text-decoration:none;font-weight:600}
+.back:hover{border-color:#fff}
+/* stránka vložená do okna s podmínkami při prvním spuštění */
+body.embed{padding:0;max-width:none}
+body.embed .noembed{display:none}
+@media (max-width:560px){.toc{columns:1}}
+@media print{
+  :root{color-scheme:light;--bg:#fff;--surface:#fff;--ink:#000;--muted:#444;--line:#bbb;--line-2:#999}
+  body{padding:0}
+  .noprint,.back{display:none!important}
+  .card{border-radius:0;break-inside:avoid}
+  a{color:#000}
+}
