@@ -45,8 +45,17 @@ Bez ID zařízení data nenajdeš (to je v pořádku, vysvětli to). Vždy odpov
 4. Při vysokém riziku informuj i dotčené uživatele (např. oznámením v aplikaci, protože kontakty na ně nemáš).
 5. Každý incident si zapiš, i když ho neohlašuješ (čl. 33 odst. 5).
 
-## 4. Pravidelně (jednou ročně)
+## 4. Pravidelně
 
+**Jednou za měsíc:**
+- [ ] **Záloha výzkumných dat:** Supabase → Table Editor → `submissions` → Export → CSV. Bezplatný tarif Supabase zálohy ke stažení nenabízí, při chybě nebo smazání projektu by data zmizela. Soubor obsahuje údaje, které se mohou týkat zdraví: ulož ho šifrovaně (např. zaheslovaný archiv) a nikdy ne do GitHubu.
+- [ ] **Kontrola zneužití** (SQL Editor). Nečekaný skok v počtu odeslání znamená, že někdo zkouší limity:
+```sql
+select date_trunc('day', created_at) as den, count(*) as odeslani, count(distinct device_id) as zarizeni
+from public.submissions group by 1 order by 1 desc limit 14;
+```
+
+**Jednou ročně:**
 - [ ] Smaž záznamy starší 5 let:
 ```sql
 delete from public.submissions where created_at < now() - interval '5 years';
