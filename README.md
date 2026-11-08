@@ -42,7 +42,7 @@ Z fotek a videí ze čtyř pohledů (levá strana, pravá strana, zepředu, zeza
 ### Instalace (PWA, bez offline režimu)
 - Na Androidu v Chrome tlačítko **Nainstalovat aplikaci** nahoře (zobrazí se, jen když to Chrome nabídne), nebo menu ⋮ → Nainstalovat aplikaci. Pak se spouští jako samostatná aplikace s ikonou.
 - Offline režim byl na přání autora odstraněn: aplikace i modely MediaPipe se vždy načítají ze sítě. `sw.js` nic neukládá, jen smaže dřívější offline cache (asi 21 MB) a zůstává kvůli instalaci.
-- **Při změně `aero.js`, `share.js`, `history.js` nebo `pwa.js` zvýšit číslo `?v=` u jejich načtení na konci `index.html`** (teď `?v=12`), aby prohlížeč nevzal starou verzi ze své mezipaměti.
+- **Při změně `aero.js`, `share.js`, `history.js`, `pwa.js` nebo `ui.js` zvýšit číslo `?v=` u jejich načtení na konci `index.html`** (teď `?v=12`), aby prohlížeč nevzal starou verzi ze své mezipaměti.
 
 ### Část Aero a výkon (`aero.js`)
 1. **Kalkulačka:** z CdA, hmotnosti, Crr, teploty, nadmořské výšky a účinnosti spočítá watty při zvolené rychlosti (výchozí 40 km/h), rozpad na aero, valivý odpor a ztráty, čas na zadanou vzdálenost a tabulku citlivosti na změnu CdA. Pro orientaci: 0,01 m² CdA ≈ 8 W při 40 km/h.
