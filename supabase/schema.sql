@@ -153,3 +153,9 @@ revoke all on function public.get_my_data(uuid) from public, anon, authenticated
 revoke all on function public.delete_my_data(uuid) from public, anon, authenticated;
 grant execute on function public.get_my_data(uuid) to anon;
 grant execute on function public.delete_my_data(uuid) to anon;
+
+-- Kontrola na úplný konec: po spuštění celého souboru se dole ukáže „Ochrana je zapnutá“.
+-- Když se ukáže jen „Success. No rows returned“, nespustil se celý soubor.
+select case when to_regprocedure('public.submission_json_ok(jsonb,integer)') is not null
+  and exists (select 1 from pg_trigger where tgname = 'limit_submissions' and tgrelid = 'public.submissions'::regclass)
+  then 'Ochrana je zapnutá' else 'Chyba: něco chybí, napiš Claudovi' end as vysledek;
