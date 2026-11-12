@@ -8,13 +8,7 @@ Webová aplikace pro zlepšení aerodynamické pozice na časovkářském kole. 
 
 > Toto README je předávací shrnutí dosavadního vývoje, aby nový chat s Claude přesně věděl, v jaké fázi projekt je.
 
-## Kontext a pravidla spolupráce
-
-- Autor je začátečník bez zkušeností s programováním, pracuje na **Android tabletu** (bez PC), píše česky.
-- Odpovídej česky, stručně (čte se na tabletu), buď kritický a upozorni, když je něco nerealistické. Když něco nevíš, doptej se.
-- Kód dodávej celý a testuj ho (Playwright je v prostředí k dispozici). Změny nahrávej na `main` v repozitáři `zkovacevicfilip-del/test`.
-- Má předplatné Claude Pro. Limity se sdílí mezi chatem a Claude Code a obnovují se po 5 hodinách, proto drž úkoly malé a konkrétní.
-- Nikdy nežádat heslo ani přístupový token ke GitHubu.
+Kontext a pravidla spolupráce s Claude jsou v [CLAUDE.md](CLAUDE.md).
 
 ## Cíl projektu
 
