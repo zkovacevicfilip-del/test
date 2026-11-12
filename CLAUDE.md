@@ -19,6 +19,8 @@
 
 ## Hotovo znamená
 
+- Před dokončením každé změny spusť `npm test` a oprav, co selže.
+- Ke každé nové funkci a ke každé opravené chybě přidej test (do složky `tests/`).
 - Změna je ověřená a uvedeš čím (například test v Playwrightu).
 - Na konci krátce napíšeš: co se změnilo, co má autor zkontrolovat na tabletu (nejvýš 3 kroky) a co se ověřit nepodařilo.
 - Když se změnil vzhled, přilož snímky na šířce 412 a 1000 px.

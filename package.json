@@ -1,0 +1,8 @@
+{
+  "name": "aero-pozice",
+  "private": true,
+  "description": "Aero pozice: statická webová aplikace. Tento soubor slouží jen ke spuštění testů (npm test), aplikace sama žádné balíčky nepotřebuje.",
+  "scripts": {
+    "test": "node tests/run.js"
+  }
+}

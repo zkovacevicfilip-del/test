@@ -103,6 +103,14 @@ Normální postup: změna v repozitáři `zkovacevicfilip-del/test` na větvi `m
 
 Ruční nahrání (nouzově): na GitHubu Add file → Upload files → Commit changes. Soubor se musí jmenovat přesně `index.html`, ne `index (1).html`.
 
+## Automatické testy
+
+Spouští se jedním příkazem `npm test` v Claude Code (soubory `tests/run.js` a `tests/data.js`, běh asi 15 s). Nic se neinstaluje, Playwright s prohlížečem je v cloudovém prostředí předinstalovaný. Na tabletu samotném spustit nejdou.
+
+- **Co kontrolují** (na šířce 412 a 1000 px): načtení bez chyb v konzoli a bez porušení CSP, okno s podmínkami (blokuje aplikaci, po přijetí zmizí), přepnutí tří částí hlavním menu, kalkulačku wattů proti nezávislému výpočtu v testu, načtení zálohy (platný soubor přijme, vadné odmítne).
+- **Testovací data** vyrábí skript `tests/data.js`, jsou to vymyšlená čísla.
+- **Co zatím nepokrývají:** měření úhlů z fotek a videí (detekce bodů těla), čelní plochu z fotky, výkon v pozici, CdA z jízdy a soubory `.fit`, databázi a sdílení dat, stránky Podmínek a Zásad (včetně správy vlastních dat), stažení zálohy, uložení pozice z výsledků, srovnání pozic a osobní model, instalaci na plochu, vzhled (testy neporovnávají snímky) a jiné prohlížeče než Chromium.
+
 ## Co nebylo ověřeno na skutečných datech
 
 Tohle prostředí nemá přístup ke stahování modelů a Claude nemá k dispozici skutečné fotky ani soubory autora. Otestováno bylo na simulovaných `.fit` souborech se známým CdA (aplikace je vrátila přesně) a na testovacím obrázku s náhradním segmentačním modelem. Neověřeno zůstává:
