@@ -46,7 +46,7 @@ Z fotek a videí ze čtyř pohledů (levá strana, pravá strana, zepředu, zeza
 - Na Androidu v Chrome tlačítko **Nainstalovat aplikaci** nahoře (zobrazí se, jen když to Chrome nabídne), nebo menu ⋮ → Nainstalovat aplikaci. Pak se spouští jako samostatná aplikace s ikonou.
 - Offline režim byl na přání autora odstraněn: aplikace i modely MediaPipe se vždy načítají ze sítě. `sw.js` nic neukládá, jen smaže dřívější offline cache (asi 21 MB) a zůstává kvůli instalaci.
 - Dole na stránce jsou odkazy na Podmínky použití, Ochranu osobních údajů a Licence a údaj o verzi (`#appVer` v `index.html`), podle kterého se na tabletu pozná, jestli se načetla nová verze. Při každém vydání ho aktualizovat. Odkaz na manifest má taky `?v=` (stejné číslo jako ikony).
-- **Při změně kteréhokoli skriptu zvýšit číslo `?v=` u jeho načtení v `index.html`** (teď `aero.js` `?v=17`, `share.js` a `history.js` `?v=16`, `pwa.js` a `ui.js` `?v=15`, `terms.js` a `pos.js` `?v=2`, `boot.js` `?v=1`, `legal.css` `?v=3`; `share.js` se načítá i v `soukromi.html`), aby prohlížeč nevzal starou verzi ze své mezipaměti.
+- **Při změně kteréhokoli skriptu zvýšit číslo `?v=` u jeho načtení v `index.html`** (teď `aero.js` `?v=18`, `share.js` a `history.js` `?v=17`, `pwa.js` a `ui.js` `?v=15`, `terms.js` a `pos.js` `?v=2`, `boot.js` `?v=1`, `legal.css` `?v=3`; `share.js` se načítá i v `soukromi.html`), aby prohlížeč nevzal starou verzi ze své mezipaměti.
 
 ### Část Aero a výkon (`aero.js`)
 1. **Kalkulačka:** z CdA, hmotnosti, Crr, teploty, nadmořské výšky a účinnosti spočítá watty při zvolené rychlosti (výchozí 40 km/h), rozpad na aero, valivý odpor a ztráty, čas na zadanou vzdálenost a tabulku citlivosti na změnu CdA. Pro orientaci: 0,01 m² CdA ≈ 8 W při 40 km/h.

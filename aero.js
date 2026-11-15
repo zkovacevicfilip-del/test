@@ -1,6 +1,6 @@
 // Aero a výkon: kalkulačka, čelní plocha, výkon v pozici, CdA z jízdy
 const $ = id => document.getElementById(id);
-const G = 9.80665, A4 = 0.210 * 0.297, FIT_EPOCH = 631065600;
+const G = 9.80665, A4 = 0.210 * 0.297;
 const VER = "0.10.14", BASE = "vendor/mediapipe/tasks-vision-" + VER; // knihovna je součástí aplikace
 const SEG_MODEL = "https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/1/deeplab_v3.tflite";
 // Otisk SHA-256 modelu: prohlížeč použije jen přesně tento soubor, podvržený nebo změněný odmítne.
@@ -129,7 +129,7 @@ async function readFitFile(f) {
 }
 
 // ---------- šablona ----------
-const field = (id, label, val, step) => `<div><label for="${id}">${label}</label><input id="${id}" type="text" inputmode="decimal" autocomplete="off" value="${val}"></div>`;
+const field = (id, label, val) => `<div><label for="${id}">${label}</label><input id="${id}" type="text" inputmode="decimal" autocomplete="off" value="${val}"></div>`;
 $("s-aero").innerHTML = `
 <div class="card"><div class="seg" id="aTabs" data-pane="#s-aero .apane">
   <button class="tab on" data-a="calc">Kalkulačka</button>
@@ -143,16 +143,16 @@ $("s-aero").innerHTML = `
     <h2>Watty a čas podle CdA</h2>
     <p class="muted">Čistá fyzika. Když znáš CdA, je výpočet přesný. CdA změříš v záložce CdA z jízdy, odtud se dá jedním klepnutím přenést sem.</p>
     <div class="grid">
-      ${field("c_cda", "CdA (m²)", 0.24, "0.001")}
-      ${field("c_spd", "Rychlost (km/h)", 40, "0.5")}
-      ${field("c_mr", "Hmotnost jezdce (kg)", 75, "0.5")}
-      ${field("c_mb", "Kolo a výbava (kg)", 9, "0.1")}
-      ${field("c_crr", "Valivý odpor Crr", 0.004, "0.0001")}
-      ${field("c_eff", "Účinnost převodů (%)", 97.5, "0.1")}
-      ${field("c_temp", "Teplota vzduchu (°C)", 20, "1")}
-      ${field("c_alt", "Nadmořská výška (m)", 300, "10")}
-      ${field("c_pwr", "Tvůj výkon (W)", 250, "1")}
-      ${field("c_dist", "Délka časovky (km)", 40, "0.1")}
+      ${field("c_cda", "CdA (m²)", 0.24)}
+      ${field("c_spd", "Rychlost (km/h)", 40)}
+      ${field("c_mr", "Hmotnost jezdce (kg)", 75)}
+      ${field("c_mb", "Kolo a výbava (kg)", 9)}
+      ${field("c_crr", "Valivý odpor Crr", 0.004)}
+      ${field("c_eff", "Účinnost převodů (%)", 97.5)}
+      ${field("c_temp", "Teplota vzduchu (°C)", 20)}
+      ${field("c_alt", "Nadmořská výška (m)", 300)}
+      ${field("c_pwr", "Tvůj výkon (W)", 250)}
+      ${field("c_dist", "Délka časovky (km)", 40)}
     </div>
     <div id="c_out" style="margin-top:12px"></div>
   </div>
@@ -165,7 +165,7 @@ $("s-aero").innerHTML = `
     <div class="grid">
       <div><label for="ar_name">Název varianty</label><input id="ar_name" type="text" placeholder="např. A – lokty 12 cm"></div>
       <div><label for="ar_scale">Měřítko</label><select id="ar_scale"><option value="a4">List A4 (doporučeno)</option><option value="wheel">Výška předního kola</option></select></div>
-      <div id="ar_wbox" class="hidden">${field("ar_wd", "Průměr kola s pláštěm (mm)", 672, "1")}</div>
+      <div id="ar_wbox" class="hidden">${field("ar_wd", "Průměr kola s pláštěm (mm)", 672)}</div>
     </div>
     <label class="chk"><input type="checkbox" id="ar_bike" checked><span>Započítat i kolo (CdA zahrnuje jezdce i kolo)</span></label>
     <label for="ar_file" style="margin-top:10px">Vybrat fotku z galerie</label><input id="ar_file" type="file" accept="image/*">
@@ -200,7 +200,7 @@ $("s-aero").innerHTML = `
     </div>
     <div id="pw_fitbox" style="margin-top:10px">
       <label for="pw_file">Vybrat .fit soubory</label><input id="pw_file" type="file" multiple>
-      <div class="grid" style="margin-top:8px">${field("pw_min", "Nejkratší započítané kolo (s)", 120, "10")}</div>
+      <div class="grid" style="margin-top:8px">${field("pw_min", "Nejkratší započítané kolo (s)", 120)}</div>
       <p id="pw_status" class="muted status"></p>
       <div id="pw_laps" class="scroll"></div>
     </div>
@@ -222,10 +222,10 @@ $("s-aero").innerHTML = `
     <p class="muted">Potřebuješ wattmetr, snímač rychlosti na kole (ne rychlost z GPS) a barometrický výškoměr. Jezdi okruh 1 až 3 min bez brzdění za bezvětří, 4 až 6 kol s různým výkonem, start a cíl kola na stejném místě a na každém průjezdu zmáčkni Lap. Pozici během kola neměň. Pro srovnání pozic jeď několik kol v každé a označ je níže.</p>
     <label for="cd_file">Vybrat .fit soubor z jízdy</label><input id="cd_file" type="file">
     <div class="grid" style="margin-top:8px">
-      ${field("cd_m", "Celková hmotnost jezdec + kolo (kg)", 84, "0.5")}
+      ${field("cd_m", "Celková hmotnost jezdec + kolo (kg)", 84)}
       <div><label for="cd_pm">Wattmetr</label><select id="cd_pm"><option value="0.975">Klika nebo pedály (ztráty 2,5 %)</option><option value="1">Zadní náboj (bez ztrát)</option></select></div>
       <div><label for="cd_crrm">Valivý odpor</label><select id="cd_crrm"><option value="fit">Odhadnout z dat</option><option value="fix">Pevná hodnota</option></select></div>
-      ${field("cd_crr", "Crr (při pevné hodnotě)", 0.004, "0.0001")}
+      ${field("cd_crr", "Crr (při pevné hodnotě)", 0.004)}
       ${field("cd_temp", "Teplota vzduchu (°C)", "", "0.5")}
       ${field("cd_alt", "Nadmořská výška (m)", "", "10")}
       <div><label for="cd_wdir">Vítr fouká od</label><select id="cd_wdir"><option value="">Bez korekce větru</option><option value="0">severu (S)</option><option value="45">severovýchodu (SV)</option><option value="90">východu (V)</option><option value="135">jihovýchodu (JV)</option><option value="180">jihu (J)</option><option value="225">jihozápadu (JZ)</option><option value="270">západu (Z)</option><option value="315">severozápadu (SZ)</option></select></div>
@@ -447,7 +447,7 @@ function updArea() {
 $("ar_save").onclick = () => {
   const R = areaResult(); if (!R) { setArStatus("Nejdřív počkej na obrys a označ body měřítka.", true); return; }
   const name = $("ar_name").value.trim() || ("Varianta " + (S.areas.length + 1));
-  S.areas.push({ name, area: R.area, bike: $("ar_bike").checked, scale: $("ar_scale").value, date: new Date().toISOString().slice(0, 10) });
+  S.areas.push({ name, area: R.area, bike: $("ar_bike").checked, scale: $("ar_scale").value });
   save(); renderAreaList(); setArStatus("Uloženo jako „" + name + "“.", false); $("ar_name").value = "";
 };
 // Převod plochy na CdA podle změřených variant: přímka CdA = a + b·plocha (≥ 2 měření), jinak přímá úměra

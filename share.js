@@ -87,7 +87,7 @@
   const forgetSent = () => { try { Object.keys(localStorage).filter(k => k.startsWith("aero.share.last.")).forEach(k => localStorage.removeItem(k)); } catch (e) { } };
 
   window.aeroShare = {
-    attach, detach, consent, revoke, deviceId, CONSENT_VER,
+    attach, detach, consent, revoke, deviceId,
     getMyData: () => rpc("get_my_data", { p_device: deviceId() }),
     deleteMyData: async () => { const n = await rpc("delete_my_data", { p_device: deviceId() }); forgetSent(); return n; }
   };

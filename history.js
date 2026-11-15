@@ -280,5 +280,5 @@
     }
   });
 
-  window.aeroHist = { add, list, setCdA, render, saveBox, clearSaveBox };
+  window.aeroHist = { list, setCdA, render, saveBox, clearSaveBox };
 })();
