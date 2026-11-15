@@ -8,13 +8,7 @@ Webová aplikace pro zlepšení aerodynamické pozice na časovkářském kole. 
 
 > Toto README je předávací shrnutí dosavadního vývoje, aby nový chat s Claude přesně věděl, v jaké fázi projekt je.
 
-## Kontext a pravidla spolupráce
-
-- Autor je začátečník bez zkušeností s programováním, pracuje na **Android tabletu** (bez PC), píše česky.
-- Odpovídej česky, stručně (čte se na tabletu), buď kritický a upozorni, když je něco nerealistické. Když něco nevíš, doptej se.
-- Kód dodávej celý a testuj ho (Playwright je v prostředí k dispozici). Změny nahrávej na `main` v repozitáři `zkovacevicfilip-del/test`.
-- Má předplatné Claude Pro. Limity se sdílí mezi chatem a Claude Code a obnovují se po 5 hodinách, proto drž úkoly malé a konkrétní.
-- Nikdy nežádat heslo ani přístupový token ke GitHubu.
+Kontext a pravidla spolupráce s Claude jsou v [CLAUDE.md](CLAUDE.md).
 
 ## Cíl projektu
 
@@ -108,6 +102,14 @@ Z fotek a videí ze čtyř pohledů (levá strana, pravá strana, zepředu, zeza
 Normální postup: změna v repozitáři `zkovacevicfilip-del/test` na větvi `main` přes Claude Code. Po nahrání GitHub Pages web znovu sestaví (1 až 3 minuty). Když prohlížeč ukazuje starou verzi, otevři odkaz s `?v=číslo` na konci.
 
 Ruční nahrání (nouzově): na GitHubu Add file → Upload files → Commit changes. Soubor se musí jmenovat přesně `index.html`, ne `index (1).html`.
+
+## Automatické testy
+
+Spouští se jedním příkazem `npm test` v Claude Code (soubory `tests/run.js` a `tests/data.js`, běh asi 15 s). Nic se neinstaluje, Playwright s prohlížečem je v cloudovém prostředí předinstalovaný. Na tabletu samotném spustit nejdou.
+
+- **Co kontrolují** (na šířce 412 a 1000 px): načtení bez chyb v konzoli a bez porušení CSP, okno s podmínkami (blokuje aplikaci, po přijetí zmizí), přepnutí tří částí hlavním menu, kalkulačku wattů proti nezávislému výpočtu v testu, načtení zálohy (platný soubor přijme, vadné odmítne).
+- **Testovací data** vyrábí skript `tests/data.js`, jsou to vymyšlená čísla.
+- **Co zatím nepokrývají:** měření úhlů z fotek a videí (detekce bodů těla), čelní plochu z fotky, výkon v pozici, CdA z jízdy a soubory `.fit`, databázi a sdílení dat, stránky Podmínek a Zásad (včetně správy vlastních dat), stažení zálohy, uložení pozice z výsledků, srovnání pozic a osobní model, instalaci na plochu, vzhled (testy neporovnávají snímky) a jiné prohlížeče než Chromium.
 
 ## Co nebylo ověřeno na skutečných datech
 
