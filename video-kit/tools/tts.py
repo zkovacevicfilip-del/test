@@ -1,0 +1,61 @@
+# Voiceover po větách podle script.json. Hotové věty se nepřegenerují (šetří znaky ElevenLabs).
+#   python tts.py <kit> <work>
+import json, os, subprocess, sys, urllib.request, urllib.error
+import numpy as np, soundfile as sf
+
+KIT, WORK = sys.argv[1], sys.argv[2]
+sc = json.load(open(KIT + "/script.json", encoding="utf-8")); vo = sc["voice"]
+keys = [k for a in sc["acts"] for k in a["lines"]]
+out_dir = WORK + "/tts"; os.makedirs(out_dir, exist_ok=True)
+old = {}
+if os.path.exists(out_dir + "/vo.json"):
+    j = json.load(open(out_dir + "/vo.json", encoding="utf-8"))
+    if j.get("voice") == vo: old = {l["key"]: l for l in j["lines"]}
+
+
+def trim(a, sr):
+    idx = np.where(np.abs(a) > 0.01)[0]
+    return a[max(0, idx[0] - int(0.03 * sr)): min(len(a), idx[-1] + int(0.08 * sr))]
+
+
+def eleven(i, key):
+    text = sc["lines"][key]["say"]
+    body = {"text": text, "model_id": vo.get("model", "eleven_multilingual_v2"), "voice_settings": vo.get("settings", {}),
+            "previous_text": sc["lines"][keys[i - 1]]["say"] if i else None, "next_text": sc["lines"][keys[i + 1]]["say"] if i + 1 < len(keys) else None}
+    # klíč doplní síťová proxy prostředí (uložený přes request_credential); proměnná je jen pro běh mimo ni
+    req = urllib.request.Request(f"https://api.elevenlabs.io/v1/text-to-speech/{vo['voice_id']}?output_format=mp3_44100_128", data=json.dumps(body).encode(),
+                                 headers={"Content-Type": "application/json", "xi-api-key": os.environ.get("ELEVENLABS_API_KEY", "proxy-injected")})
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r: open(f"{out_dir}/{key}.mp3", "wb").write(r.read())
+    except urllib.error.HTTPError as e:
+        sys.exit(f"ElevenLabs odmítl požadavek ({e.code}): {e.read()[:300].decode(errors='replace')}\n"
+                 "401/403 = chybí nebo neplatí klíč. Požádej uživatele o klíč nástrojem request_credential (host api.elevenlabs.io, hlavička xi-api-key), nikdy ne v chatu.")
+    except Exception as e:
+        sys.exit(f"ElevenLabs nedostupný: {e}. Je host api.elevenlabs.io povolený a klíč uložený (request_credential)?")
+    subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", f"{out_dir}/{key}.mp3", "-ac", "1", "-ar", "44100", f"{out_dir}/{key}.wav"], check=True)
+    os.remove(f"{out_dir}/{key}.mp3")
+    return sf.read(f"{out_dir}/{key}.wav", dtype="float32")
+
+
+_k = None
+def kokoro(i, key):
+    # náhradní hlas bez klíče: pip install kokoro-onnx, modely z GitHub releases thewh1teagle/kokoro-onnx (model-files-v1.0)
+    global _k
+    from kokoro_onnx import Kokoro
+    if _k is None: _k = Kokoro(WORK + "/kokoro/kokoro-v1.0.onnx", WORK + "/kokoro/voices-v1.0.bin")
+    a, sr = _k.create(sc["lines"][key]["say"].replace("-", " "), voice=vo.get("voice_id", "am_michael"), speed=vo.get("speed", 1.08), lang="en-us")
+    return np.asarray(a, dtype=np.float32), sr
+
+
+gen = {"elevenlabs": eleven, "kokoro": kokoro}[vo["provider"]]
+lines, chars, sr = [], 0, 44100
+for i, key in enumerate(keys):
+    text = sc["lines"][key]["say"]; wav = f"{out_dir}/{key}.wav"
+    if key in old and old[key]["text"] == text and os.path.exists(wav):
+        a, sr = sf.read(wav, dtype="float32"); note = "beze změny"
+    else:
+        a, sr = gen(i, key); a = trim(a, sr); sf.write(wav, a, sr); chars += len(text); note = "nově"
+    lines.append({"key": key, "text": text, "dur": round(len(a) / sr, 3)})
+    print(f"{key:10s} {len(a)/sr:5.2f} s  {note}", flush=True)
+json.dump({"voice": vo, "sr": sr, "lines": lines}, open(out_dir + "/vo.json", "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+print(f"celkem řeči {sum(l['dur'] for l in lines):.1f} s, nově vygenerováno {chars} znaků")

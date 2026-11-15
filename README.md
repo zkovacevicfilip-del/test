@@ -109,7 +109,12 @@ Spouští se jedním příkazem `npm test` v Claude Code (soubory `tests/run.js`
 
 - **Co kontrolují** (na šířce 412 a 1000 px): načtení bez chyb v konzoli a bez porušení CSP, okno s podmínkami (blokuje aplikaci, po přijetí zmizí), přepnutí tří částí hlavním menu, kalkulačku wattů proti nezávislému výpočtu v testu, načtení zálohy (platný soubor přijme, vadné odmítne).
 - **Testovací data** vyrábí skript `tests/data.js`, jsou to vymyšlená čísla.
+- **Sada na videa:** `tests/video-kit.js` (součást `npm test`, běží do vteřiny) hlídá, že scénář a scény ve `video-kit/` k sobě sedí. Samotné video ani hlas nevyrábí.
 - **Co zatím nepokrývají:** měření úhlů z fotek a videí (detekce bodů těla), čelní plochu z fotky, výkon v pozici, CdA z jízdy a soubory `.fit`, databázi a sdílení dat, stránky Podmínek a Zásad (včetně správy vlastních dat), stažení zálohy, uložení pozice z výsledků, srovnání pozic a osobní model, instalaci na plochu, vzhled (testy neporovnávají snímky) a jiné prohlížeče než Chromium.
+
+## Výroba videí (`video-kit/`, stav 15. 11. 2026)
+
+Sada na vysvětlovací aero videa pro Instagram Reels (1080 × 1920, asi 60 s, anglicky, hlas ElevenLabs „Liam“). S aplikací nesouvisí a na webu se nepoužívá. Návod a pravidla stylu jsou ve `video-kit/SABLONA.md`, vzor (video „What is CdA“) ve `video-kit/examples/what-is-cda/`. Pro nové video se píše jen `script.json` a `scenes.js`, zbytek udělá `bash video-kit/build.sh`. Pracovní soubory a hotová videa (`video-kit/work/`) se do repozitáře neukládají.
 
 ## Co nebylo ověřeno na skutečných datech
 

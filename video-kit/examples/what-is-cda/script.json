@@ -1,0 +1,42 @@
+{
+  "title": "what-is-cda",
+  "voice": {
+    "provider": "elevenlabs",
+    "name": "Liam - Energetic, Social Media Creator",
+    "voice_id": "TX3LPaxmHKxFdv7VOQHJ",
+    "model": "eleven_multilingual_v2",
+    "settings": { "stability": 0.45, "similarity_boost": 0.8, "style": 0.35, "use_speaker_boost": true }
+  },
+  "timing": { "lead": 0.40, "gap_line": 0.32, "gap_act": 0.62, "tail": 1.90 },
+  "acts": [
+    { "id": "hook", "lines": ["hook"] },
+    { "id": "rider", "lines": ["decides", "air"] },
+    { "id": "shapes", "lines": ["blunt", "smooth", "cd"] },
+    { "id": "area", "lines": ["area"] },
+    { "id": "equation", "lines": ["cda"] },
+    { "id": "race", "lines": ["speed"] },
+    { "id": "tuck", "lines": ["tuck"] }
+  ],
+  "lines": {
+    "hook": { "say": "Ninety-nine percent of people don't know what C-D-A means.", "captions": false,
+      "chunks": [["99% of people", "NINETY"], "don't know what", ["CdA means…", "CDA|CDM"]] },
+    "decides": { "say": "But if you ride a bike, it decides how fast you go.",
+      "chunks": ["But if you ride a bike,", "it decides", "how fast you go."] },
+    "air": { "say": "At race speed, about eighty-five percent of your effort goes into one thing: pushing air out of the way.",
+      "chunks": ["At race speed,", "about 85% of your effort", "goes into one thing:", "pushing air", "out of the way."] },
+    "blunt": { "say": "Air has to flow around you. A blunt shape tears the flow apart, and leaves a messy, swirling wake behind it. That wake is drag.",
+      "chunks": ["Air has to flow", "around you.", "A blunt shape", "tears the flow apart,", "and leaves a messy,", "swirling wake", "behind it.", "That wake is drag."] },
+    "smooth": { "say": "A smooth shape lets the air close back in. Same width, about ten times less drag.",
+      "chunks": ["A smooth shape", "lets the air", "close back in.", "Same width,", "about 10× less drag."] },
+    "cd": { "say": "That slipperiness has a name: C-D, the drag coefficient.",
+      "chunks": ["That slipperiness", "has a name:", ["Cd,", "CD"], "the drag coefficient."] },
+    "area": { "say": "The second part is A, your frontal area. How big you look to the wind.",
+      "chunks": ["The second part is A,", "your frontal area.", "How big you look", "to the wind."] },
+    "cda": { "say": "Multiply them, and you get C-D-A. One number for how hard the air pushes back.",
+      "chunks": ["Multiply them,", "and you get CdA.", "One number", "for how hard", "the air pushes back."] },
+    "speed": { "say": "Same rider, same two hundred fifty watts. Lower C-D-A: two kilometers per hour faster. Three and a half minutes over forty kilometers.",
+      "chunks": ["Same rider,", "same 250 watts.", "Lower CdA:", ["2 km/h faster.", "TWO"], ["3½ minutes", "THREE"], "over 40 km."] },
+    "tuck": { "say": "Lower your back. Narrow your elbows. Tuck your head. Small changes, free speed.",
+      "chunks": ["Lower your back.", "Narrow your elbows.", "Tuck your head.", "Small changes,", "free speed."] }
+  }
+}
