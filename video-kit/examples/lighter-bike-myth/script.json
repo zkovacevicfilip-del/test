@@ -26,6 +26,6 @@
     "eight": { "say": "That's eight and a half watts: almost twenty times more! And about forty-five seconds.",
       "chunks": [["That's 8.5 watts:", "THAT'S"], ["almost 20× more!", "ALMOST"], ["And about 45 seconds.", "AND"]] },
     "verdict": { "say": "Weight wins on steep climbs. Everywhere else, aero wins. And a better position is free!",
-      "chunks": ["Weight wins", "on steep climbs.", "Everywhere else,", ["aero wins.", "AERO|ARROW"], "And a better position", "is free!"] }
+      "chunks": [["Weight wins", "WEIGHT|WAIT"], "on steep climbs.", "Everywhere else,", ["aero wins.", "AERO|ARROW"], "And a better position", "is free!"] }
   }
 }

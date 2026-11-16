@@ -61,6 +61,16 @@ ok("motor a nástroje sady jsou na místě", ["engine/engine.js", "engine/render
   "tools/audio.py", "tools/sheet.py", "tools/physics.py", "sim/lbm.py", "sim/potential.py", "sim/mkmask.js", "build.sh", "SABLONA.md"].every(f => fs.existsSync(path.join(KIT, f))));
 ok("stránka motoru nemá skript přímo v HTML", !/<script(?![^>]*\bsrc=)[^>]*>/i.test(fs.readFileSync(path.join(KIT, "engine/index.html"), "utf8")));
 
+// ořez ticha a cvaknutí v hlasu (tools/tts.py). Potřebuje python s numpy (pracovní prostředí sady), jinak se přeskočí.
+{
+  const { spawnSync } = require("child_process");
+  const py = [path.join(KIT, "work/env/bin/python"), "python3"].find(p => spawnSync(p, ["-c", "import numpy"]).status === 0);
+  if (py) {
+    const r = spawnSync(py, [path.join(__dirname, "tts-trim.py"), path.join(KIT, "tools/tts.py")], { encoding: "utf8" });
+    ok("hlas: ořez odstraní ticho i osamocené cvaknutí na konci věty, slova nechá", r.status === 0, (r.stdout + r.stderr).trim());
+  } else console.log("- test ořezu hlasu přeskočen (chybí python s numpy, spusť bash video-kit/build.sh setup)");
+}
+
 console.log("");
 console.log("Sada na videa – úspěšných: " + passed + ", neúspěšných: " + failed);
 process.exit(failed ? 1 : 0);

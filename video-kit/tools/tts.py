@@ -14,8 +14,20 @@ if os.path.exists(out_dir + "/vo.json"):
 
 
 def trim(a, sr):
-    idx = np.where(np.abs(a) > 0.01)[0]
-    return a[max(0, idx[0] - int(0.03 * sr)): min(len(a), idx[-1] + int(0.08 * sr))]
+    # ořízne ticho na začátku a konci; řeč = okna 20 ms s hlasitostí nad prahem.
+    # Osamocené cvaknutí (kratší než 60 ms, za tichem delším než 0,3 s) se nepočítá za řeč a odřízne se.
+    w = int(0.02 * sr); n = len(a) // w
+    if n == 0: return a
+    loud = np.sqrt((a[: n * w].reshape(n, w) ** 2).mean(axis=1)) > 0.01
+    on = np.where(loud)[0]
+    if len(on) == 0: return a
+    runs, s0 = [], on[0]
+    for p, q in zip(on[:-1], on[1:]):
+        if q - p > 1: runs.append((s0, p)); s0 = q
+    runs.append((s0, on[-1]))
+    keep = [r for i, r in enumerate(runs) if r[1] - r[0] + 1 >= 3
+            or not ((i == 0 or r[0] - runs[i - 1][1] > 15) and (i == len(runs) - 1 or runs[i + 1][0] - r[1] > 15))] or runs
+    return a[max(0, keep[0][0] * w - int(0.03 * sr)): min(len(a), (keep[-1][1] + 1) * w + int(0.08 * sr))]
 
 
 def eleven(i, key):
@@ -53,6 +65,8 @@ for i, key in enumerate(keys):
     text = sc["lines"][key]["say"]; wav = f"{out_dir}/{key}.wav"
     if key in old and old[key]["text"] == text and os.path.exists(wav):
         a, sr = sf.read(wav, dtype="float32"); note = "beze změny"
+        t = trim(a, sr)
+        if len(t) < len(a): a = t; sf.write(wav, a, sr); note = "oříznuto ticho / cvaknutí"
     else:
         a, sr = gen(i, key); a = trim(a, sr); sf.write(wav, a, sr); chars += len(text); note = "nově"
     lines.append({"key": key, "text": text, "dur": round(len(a) / sr, 3)})
