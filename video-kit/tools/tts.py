@@ -49,6 +49,26 @@ def eleven(i, key):
     return sf.read(f"{out_dir}/{key}.wav", dtype="float32")
 
 
+def shorten_pauses(a, sr, cap):
+    # zkrátí ticha uvnitř věty na nejvýš `cap` sekund (vystřihne prostředek ticha, na švu krátké prolnutí)
+    w = int(0.02 * sr); n = len(a) // w
+    if not cap or n == 0: return a
+    quiet = np.sqrt((a[: n * w].reshape(n, w) ** 2).mean(axis=1)) < 0.008
+    out, last, i, keep, f = [], 0, 0, int(cap * sr / 2), int(0.01 * sr)
+    while i < n:
+        if not quiet[i]: i += 1; continue
+        j = i
+        while j < n and quiet[j]: j += 1
+        s0, s1 = i * w, j * w
+        if 0 < i and j < n and s1 - s0 > cap * sr:
+            out.append(a[last: s0 + keep].copy()); last = s1 - keep
+            out[-1][-f:] *= np.linspace(1, 0, f, dtype=np.float32)
+            out.append(a[last: last + f] * np.linspace(0, 1, f, dtype=np.float32)); last += f
+        i = j
+    out.append(a[last:])
+    return np.concatenate(out).astype(np.float32)
+
+
 _k = None
 def kokoro(i, key):
     # náhradní hlas bez klíče: pip install kokoro-onnx, modely z GitHub releases thewh1teagle/kokoro-onnx (model-files-v1.0)
@@ -60,15 +80,16 @@ def kokoro(i, key):
 
 
 gen = {"elevenlabs": eleven, "kokoro": kokoro}[vo["provider"]]
+CAP = sc.get("timing", {}).get("max_pause")   # nejdelší pauza uvnitř věty v sekundách (nepovinné)
 lines, chars, sr = [], 0, 44100
 for i, key in enumerate(keys):
     text = sc["lines"][key]["say"]; wav = f"{out_dir}/{key}.wav"
     if key in old and old[key]["text"] == text and os.path.exists(wav):
         a, sr = sf.read(wav, dtype="float32"); note = "beze změny"
-        t = trim(a, sr)
-        if len(t) < len(a): a = t; sf.write(wav, a, sr); note = "oříznuto ticho / cvaknutí"
+        t = shorten_pauses(trim(a, sr), sr, CAP)
+        if len(t) < len(a): a = t; sf.write(wav, a, sr); note = "oříznuto ticho / zkráceny pauzy"
     else:
-        a, sr = gen(i, key); a = trim(a, sr); sf.write(wav, a, sr); chars += len(text); note = "nově"
+        a, sr = gen(i, key); a = shorten_pauses(trim(a, sr), sr, CAP); sf.write(wav, a, sr); chars += len(text); note = "nově"
     lines.append({"key": key, "text": text, "dur": round(len(a) / sr, 3)})
     print(f"{key:10s} {len(a)/sr:5.2f} s  {note}", flush=True)
 json.dump({"voice": vo, "sr": sr, "lines": lines}, open(out_dir + "/vo.json", "w", encoding="utf-8"), indent=1, ensure_ascii=False)

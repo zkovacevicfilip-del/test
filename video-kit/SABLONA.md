@@ -265,6 +265,7 @@ Platí všechno výše, jen s těmito rozdíly:
 | Délka | 25 až 33 s, 3 až 4 akty, 5 až 7 vět, 60 až 85 slov |
 | Stavba | hook → jedna myšlenka s jedním číslem → důkaz nebo srovnání → jedna rada. Žádné druhé téma |
 | Začátek | `"lead": 0.15` v `timing`: hlas i první text naskočí hned, žádné ticho na úvod |
+| Pauzy | `"max_pause": 0.35` v `timing`: pauzy uvnitř věty delší než 0,35 s se zkrátí (hlas jinak u „?“ a „!“ dělá nepřirozeně dlouhé ticho). Hlas se negeneruje znovu |
 | Hlas | živější: `stability 0.26 · similarity 0.8 · style 0.65 · speed 1.1`. Krátké věty, otázky a vykřičníky (hlas podle nich mění melodii) |
 | Hook | nejvýš 16 slov, `"captions": false`, velký text ve scéně, hlavní slovo fialově |
 
