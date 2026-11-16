@@ -149,7 +149,7 @@ async function runWidth(browser, base, width) {
         purple: wm ? getComputedStyle(wm).color : "", old: /Aero pozice/.test(document.body.innerText + document.title + JSON.stringify(m)) };
     });
     ok(T + "aplikace se všude jmenuje wattIF (titulek, plocha, patička s fialovým IF), starý název nikde",
-      /^wattIF/.test(name.title) && name.short === "wattIF" && /^wattIF/.test(name.full) && /^wattIF · verze/.test(name.foot) && name.purple === "rgb(139, 61, 255)" && !name.old, JSON.stringify(name));
+      /^wattIF/.test(name.title) && name.short === "wattIF" && name.full === "wattIF" && /^wattIF · verze/.test(name.foot) && name.purple === "rgb(139, 61, 255)" && !name.old, JSON.stringify(name));
     const legal = await page.evaluate(async () => {
       const get = async u => new DOMParser().parseFromString(await (await fetch(u, { cache: "no-store" })).text(), "text/html");
       const out = {};
