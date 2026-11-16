@@ -1,0 +1,31 @@
+{
+  "title": "same-power-3-minutes",
+  "format": "short",
+  "voice": {
+    "provider": "elevenlabs",
+    "name": "Liam - Energetic, Social Media Creator",
+    "voice_id": "TX3LPaxmHKxFdv7VOQHJ",
+    "model": "eleven_multilingual_v2",
+    "settings": { "stability": 0.26, "similarity_boost": 0.8, "style": 0.65, "use_speaker_boost": true, "speed": 1.1 }
+  },
+  "timing": { "lead": 0.15, "gap_line": 0.32, "gap_act": 0.62, "tail": 1.90 },
+  "acts": [
+    { "id": "hook", "lines": ["hook"] },
+    { "id": "race", "lines": ["same", "only", "speeds", "gap"] },
+    { "id": "why", "lines": ["why"] }
+  ],
+  "lines": {
+    "hook": { "say": "Two riders. Same power. One finishes three and a half minutes ahead. Why?", "captions": false,
+      "chunks": ["Two riders.", "Same power.", "One finishes", ["3½ minutes ahead.", "THREE"], "Why?"] },
+    "same": { "say": "Both hold two hundred fifty watts for forty kilometers.",
+      "chunks": ["Both hold", ["250 watts", "TWO"], ["for 40 km.", "FOR"]] },
+    "only": { "say": "The only difference is C-D-A: how much air each rider has to push aside.",
+      "chunks": ["The only difference", ["is CdA:", "IS"], "how much air", "each rider", "has to push aside."] },
+    "speeds": { "say": "Lower C-D-A, same watts: over two kilometers per hour faster!",
+      "chunks": [["Lower CdA,", "LOWER"], "same watts:", ["over 2 km/h faster!", "OVER"]] },
+    "gap": { "say": "By the finish, that's three and a half minutes.",
+      "chunks": ["By the finish,", ["that's 3½ minutes.", "THAT'S"]] },
+    "why": { "say": "The faster rider isn't fitter. Just lower, and narrower on the bike.",
+      "chunks": ["The faster rider", "isn't fitter.", "Just lower,", "and narrower", "on the bike."] }
+  }
+}

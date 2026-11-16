@@ -32,7 +32,16 @@ function check(dir, name) {
     }
   }
   ok(`[${name}] titulky mají kotvu a rozumnou délku, čísla v hlase jsou slovy`, bad.length === 0, bad.join("; "));
-  ok(`[${name}] scénář má 120 až 180 slov (asi 55 až 70 s)`, words >= 120 && words <= 180, words + " slov");
+  // krátká verze ("format": "short", asi 30 s) má jiný rozsah a hook musí být krátký a velký přímo ve scéně
+  if (sc.format === "short") {
+    ok(`[${name}] krátký scénář má 55 až 90 slov (asi 25 až 33 s)`, words >= 55 && words <= 90, words + " slov");
+    const hook = sc.lines[keys[0]];
+    ok(`[${name}] hook je první věta, má nejvýš 16 slov a text přímo ve scéně`,
+      hook.captions === false && hook.say.trim().split(/\s+/).length <= 16, hook.say);
+  } else {
+    ok(`[${name}] formát je buď vynechaný, nebo "short"`, sc.format === undefined, String(sc.format));
+    ok(`[${name}] scénář má 120 až 180 slov (asi 55 až 70 s)`, words >= 120 && words <= 180, words + " slov");
+  }
   ok(`[${name}] hlas je Liam z ElevenLabs`, sc.voice.provider === "elevenlabs" && sc.voice.voice_id === "TX3LPaxmHKxFdv7VOQHJ");
 
   // scenes.js jen definuje funkce a tři tabulky, takže jde načíst bez prohlížeče

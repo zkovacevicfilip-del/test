@@ -1,0 +1,31 @@
+{
+  "title": "lighter-bike-myth",
+  "format": "short",
+  "voice": {
+    "provider": "elevenlabs",
+    "name": "Liam - Energetic, Social Media Creator",
+    "voice_id": "TX3LPaxmHKxFdv7VOQHJ",
+    "model": "eleven_multilingual_v2",
+    "settings": { "stability": 0.26, "similarity_boost": 0.8, "style": 0.65, "use_speaker_boost": true, "speed": 1.1 }
+  },
+  "timing": { "lead": 0.15, "gap_line": 0.32, "gap_act": 0.62, "tail": 1.90 },
+  "acts": [
+    { "id": "hook", "lines": ["hook"] },
+    { "id": "compare", "lines": ["kilo", "two", "shrink", "eight"] },
+    { "id": "verdict", "lines": ["verdict"] }
+  ],
+  "lines": {
+    "hook": { "say": "Stop spending money on a lighter bike! Look at this first.", "captions": false,
+      "chunks": ["Stop", "spending money", "on a lighter bike!", "Look at this first."] },
+    "kilo": { "say": "On a flat road, one kilo less saves you about half a watt.",
+      "chunks": ["On a flat road,", ["1 kg less", "ONE"], "saves you about", "half a watt."] },
+    "two": { "say": "Over forty kilometers? About two seconds.",
+      "chunks": [["Over 40 km?", "OVER"], ["About 2 seconds.", "ABOUT"]] },
+    "shrink": { "say": "Now shrink your drag area by just one hundredth of a square meter.",
+      "chunks": ["Now shrink", "your drag area", "by just", ["0.01 m².", "ONE"]] },
+    "eight": { "say": "That's eight and a half watts: almost twenty times more! And about forty-five seconds.",
+      "chunks": [["That's 8.5 watts:", "THAT'S"], ["almost 20× more!", "ALMOST"], ["And about 45 seconds.", "AND"]] },
+    "verdict": { "say": "Weight wins on steep climbs. Everywhere else, aero wins. And a better position is free!",
+      "chunks": ["Weight wins", "on steep climbs.", "Everywhere else,", ["aero wins.", "AERO|ARROW"], "And a better position", "is free!"] }
+  }
+}

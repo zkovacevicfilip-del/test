@@ -1,0 +1,30 @@
+{
+  "title": "three-free-fixes",
+  "format": "short",
+  "voice": {
+    "provider": "elevenlabs",
+    "name": "Liam - Energetic, Social Media Creator",
+    "voice_id": "TX3LPaxmHKxFdv7VOQHJ",
+    "model": "eleven_multilingual_v2",
+    "settings": { "stability": 0.26, "similarity_boost": 0.8, "style": 0.65, "use_speaker_boost": true, "speed": 1.1 }
+  },
+  "timing": { "lead": 0.15, "gap_line": 0.32, "gap_act": 0.62, "tail": 1.90 },
+  "acts": [
+    { "id": "hook", "lines": ["hook"] },
+    { "id": "air", "lines": ["air"] },
+    { "id": "fixes", "lines": ["fixes", "worth"] },
+    { "id": "end", "lines": ["end"] }
+  ],
+  "lines": {
+    "hook": { "say": "You're wasting watts on every single ride! Here are three free fixes.", "captions": false,
+      "chunks": ["You're wasting", "watts", "on every single ride!", "Here are", ["3 free fixes.", "THREE"]] },
+    "air": { "say": "At forty kilometers per hour, about eighty-five percent of your effort just pushes air.",
+      "chunks": [["At 40 km/h,", "AT"], ["about 85%", "ABOUT"], "of your effort", "just pushes air."] },
+    "fixes": { "say": "One: lower your back. Two: bring your elbows in. Three: tuck your head.",
+      "chunks": ["One: lower your back.", "Two: bring your elbows in.", "Three: tuck your head."] },
+    "worth": { "say": "Every hundredth of a square meter you shave off is worth over eight watts.",
+      "chunks": ["Every hundredth", "of a square meter", "you shave off", ["is worth over 8 watts.", "IS"]] },
+    "end": { "say": "No new bike. No extra training. Just less of you in the wind!",
+      "chunks": ["No new bike.", "No extra training.", "Just less of you", "in the wind!"] }
+  }
+}

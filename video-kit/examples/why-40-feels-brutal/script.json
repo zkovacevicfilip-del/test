@@ -1,0 +1,30 @@
+{
+  "title": "why-40-feels-brutal",
+  "format": "short",
+  "voice": {
+    "provider": "elevenlabs",
+    "name": "Liam - Energetic, Social Media Creator",
+    "voice_id": "TX3LPaxmHKxFdv7VOQHJ",
+    "model": "eleven_multilingual_v2",
+    "settings": { "stability": 0.26, "similarity_boost": 0.8, "style": 0.65, "use_speaker_boost": true, "speed": 1.1 }
+  },
+  "timing": { "lead": 0.15, "gap_line": 0.32, "gap_act": 0.62, "tail": 1.90 },
+  "acts": [
+    { "id": "hook", "lines": ["hook"] },
+    { "id": "watts", "lines": ["because", "watts"] },
+    { "id": "cube", "lines": ["cube"] },
+    { "id": "tip", "lines": ["tip"] }
+  ],
+  "lines": {
+    "hook": { "say": "Why does forty kilometers per hour feel twice as hard as thirty?", "captions": false,
+      "chunks": ["Why does", ["40 km/h", "FORTY"], "feel twice as hard", "as thirty?"] },
+    "because": { "say": "Because it is! Actually, it's even worse.", "captions": false,
+      "chunks": ["Because it is!", "Actually, it's even worse."] },
+    "watts": { "say": "At thirty, you need about one hundred thirty-five watts. At forty? Almost three hundred!",
+      "chunks": [["At 30,", "AT"], "you need about", ["135 watts.", "ONE"], ["At 40?", "AT"], ["Almost 300!", "ALMOST"]] },
+    "cube": { "say": "The power to push through air grows with your speed, cubed. Double the speed: eight times the power!",
+      "chunks": ["The power to push", "through air", "grows with", "your speed, cubed.", "Double the speed:", ["8× the power!", "EIGHT"]] },
+    "tip": { "say": "So don't just push harder. Get smaller! Lower, narrower: same watts, more speed.",
+      "chunks": ["So don't just", "push harder.", "Get smaller!", "Lower, narrower:", "same watts,", "more speed."] }
+  }
+}

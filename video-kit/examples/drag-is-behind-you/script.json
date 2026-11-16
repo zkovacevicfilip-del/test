@@ -1,0 +1,32 @@
+{
+  "title": "drag-is-behind-you",
+  "format": "short",
+  "voice": {
+    "provider": "elevenlabs",
+    "name": "Liam - Energetic, Social Media Creator",
+    "voice_id": "TX3LPaxmHKxFdv7VOQHJ",
+    "model": "eleven_multilingual_v2",
+    "settings": { "stability": 0.26, "similarity_boost": 0.8, "style": 0.65, "use_speaker_boost": true, "speed": 1.1 }
+  },
+  "timing": { "lead": 0.15, "gap_line": 0.32, "gap_act": 0.62, "tail": 1.90 },
+  "acts": [
+    { "id": "hook", "lines": ["hook"] },
+    { "id": "wake", "lines": ["wake", "pull"] },
+    { "id": "shapes", "lines": ["smooth"] },
+    { "id": "tip", "lines": ["you", "tip"] }
+  ],
+  "lines": {
+    "hook": { "say": "What slows you down on a bike isn't in front of you. It's behind you!", "captions": false,
+      "chunks": ["What slows you down", "on a bike", "isn't in front of you.", "It's behind you!"] },
+    "wake": { "say": "Air can't close in smoothly behind your body. It breaks away, and leaves a swirling, low-pressure wake.",
+      "chunks": ["Air can't close in", "smoothly behind your body.", "It breaks away,", "and leaves a swirling,", ["low-pressure wake.", "LOW"]] },
+    "pull": { "say": "That wake pulls you backwards. And it's most of your drag!",
+      "chunks": ["That wake", "pulls you backwards.", "And it's most", "of your drag!"] },
+    "smooth": { "say": "A smooth shape of the same width? About ten times less drag.",
+      "chunks": [["A smooth shape", "A|AH"], "of the same width?", ["About 10× less drag.", "ABOUT"]] },
+    "you": { "say": "But on a bike, the blunt shape is you: your body makes about seventy percent of the drag.",
+      "chunks": ["But on a bike,", "the blunt shape", "is you:", "your body makes", ["about 70%", "ABOUT"], "of the drag."] },
+    "tip": { "say": "So shrink your wake: flatten your back, and tuck your head in.",
+      "chunks": ["So shrink your wake:", "flatten your back,", "and tuck your head in."] }
+  }
+}

@@ -112,9 +112,9 @@ Spouští se jedním příkazem `npm test` v Claude Code (soubory `tests/run.js`
 - **Sada na videa:** `tests/video-kit.js` (součást `npm test`, běží do vteřiny) hlídá, že scénář a scény ve `video-kit/` k sobě sedí. Samotné video ani hlas nevyrábí.
 - **Co zatím nepokrývají:** měření úhlů z fotek a videí (detekce bodů těla), čelní plochu z fotky, výkon v pozici, CdA z jízdy a soubory `.fit`, databázi a sdílení dat, stránky Podmínek a Zásad (včetně správy vlastních dat), stažení zálohy, uložení pozice z výsledků, srovnání pozic a osobní model, instalaci na plochu, vzhled (testy neporovnávají snímky) a jiné prohlížeče než Chromium.
 
-## Výroba videí (`video-kit/`, stav 15. 11. 2026)
+## Výroba videí (`video-kit/`, stav 16. 11. 2026)
 
-Sada na vysvětlovací aero videa pro Instagram Reels (1080 × 1920, asi 60 s, anglicky, hlas ElevenLabs „Liam“). S aplikací nesouvisí a na webu se nepoužívá. Návod a pravidla stylu jsou ve `video-kit/SABLONA.md`, vzor (video „What is CdA“) ve `video-kit/examples/what-is-cda/`. Pro nové video se píše jen `script.json` a `scenes.js`, zbytek udělá `bash video-kit/build.sh`. Pracovní soubory a hotová videa (`video-kit/work/`) se do repozitáře neukládají.
+Sada na vysvětlovací aero videa pro Instagram Reels (1080 × 1920, asi 60 s nebo krátká verze asi 30 s, anglicky, hlas ElevenLabs „Liam“). S aplikací nesouvisí a na webu se nepoužívá. Návod a pravidla stylu jsou ve `video-kit/SABLONA.md`, vzor (video „What is CdA“) ve `video-kit/examples/what-is-cda/`. Krátká verze (oddíl 11 návodu, stav 16. 11. 2026) má pět vzorů s různými typy úvodní věty: `why-40-feels-brutal`, `lighter-bike-myth`, `drag-is-behind-you`, `same-power-3-minutes`, `three-free-fixes`. Pro nové video se píše jen `script.json` a `scenes.js`, zbytek udělá `bash video-kit/build.sh`. Pracovní soubory a hotová videa (`video-kit/work/`) se do repozitáře neukládají.
 
 ## Co nebylo ověřeno na skutečných datech
 

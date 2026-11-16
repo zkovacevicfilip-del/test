@@ -15,13 +15,14 @@ Téma: <o čem má video být>
 ```
 
 Nic dalšího není potřeba. Model má před renderem ukázat scénář a náhledové archy.
+Pro krátké video (asi 30 s) připiš „krátká verze“ a platí oddíl 11.
 
 ## 1. Co je pevně dané (neměnit, pokud o to autor výslovně neřekne)
 
 | Věc | Hodnota |
 |---|---|
 | Formát | 1080 × 1920 (9:16), 30 fps, MP4 H.264 + AAC, do 60 MB |
-| Délka | 55 až 70 s (příklad: 63,6 s). Kratší než 50 s nebo delší než 75 s = přepsat scénář |
+| Délka | 55 až 70 s (příklad: 63,6 s). Kratší než 50 s nebo delší než 75 s = přepsat scénář. Krátká verze: 25 až 33 s (oddíl 11) |
 | Jazyk | angličtina (hlas i texty na obraze) |
 | Barvy | pozadí Track black `#17191B`, text Chalk grey `#E4E3DE`, zvýraznění Electric purple `#8B3DFF`, tlumený text `#9A9A98`. Žádná jiná barva |
 | Písma | Unbounded 700/800 (velká čísla a nadpisy), Inter 600/700/800 (podnadpisy, popisky, titulky) |
@@ -252,3 +253,34 @@ z `video-kit/work/frames/` (začátek, střed, konec) a zkontroluj, že odpovíd
 - **Nezaručí:** kvalitu scénáře a nových scén. Ty píše model a slabší model je napíše hůř.
   Proto je tu povinný náhled a kontrolní seznam. Čím víc se nové video drží hotových vzorů scén, tím jistější výsledek.
 - Příprava v nové session trvá asi 12 minut (simulace se do repozitáře neukládají, mají 95 MB).
+
+## 11. Krátká verze (asi 30 s)
+
+Vzory: `examples/why-40-feels-brutal`, `lighter-bike-myth`, `drag-is-behind-you`, `same-power-3-minutes`, `three-free-fixes`.
+Platí všechno výše, jen s těmito rozdíly:
+
+| Věc | Krátká verze |
+|---|---|
+| `script.json` | navíc `"format": "short"` (test pak čeká 55 až 90 slov a krátký hook) |
+| Délka | 25 až 33 s, 3 až 4 akty, 5 až 7 vět, 60 až 85 slov |
+| Stavba | hook → jedna myšlenka s jedním číslem → důkaz nebo srovnání → jedna rada. Žádné druhé téma |
+| Začátek | `"lead": 0.15` v `timing`: hlas i první text naskočí hned, žádné ticho na úvod |
+| Hlas | živější: `stability 0.26 · similarity 0.8 · style 0.65 · speed 1.1`. Krátké věty, otázky a vykřičníky (hlas podle nich mění melodii) |
+| Hook | nejvýš 16 slov, `"captions": false`, velký text ve scéně, hlavní slovo fialově |
+
+**Typy hooků, které drží diváka (každé video jiný, ať se neopakují):**
+
+| Typ | Vzor | Příklad |
+|---|---|---|
+| otázka, kterou divák zná z vlastní zkušenosti | „Why does … feel …?“ | `why-40-feels-brutal` |
+| rozpor s tím, co si lidé myslí | „Stop …! Look at this first.“ | `lighter-bike-myth` |
+| mezera ve zvědavosti | „… isn't X. It's Y.“ | `drag-is-behind-you` |
+| záhada se srovnáním | „Two …. Same …. One … Why?“ | `same-power-3-minutes` |
+| skrytá chyba + slib počtu kroků | „You're wasting … Here are three free fixes.“ | `three-free-fixes` |
+
+Hook nesmí slibovat víc, než video hned potom vysvětlí. Odpověď přijde do 5 s, ne až na konci.
+
+**Víc videí najednou:** `build.sh` umí v jedné složce jen jedno video. Pro každé další udělej pracovní kopii
+`work/kits/<title>/` (zkopíruj `build.sh`, `engine`, `tools`, `sim`; do její složky `work/` dej odkazy na
+`env`, `fonts`, `sim`, `rider-art.svg.txt`, `icon-512.png` a model v `asr/`) a spouštěj ji s vlastním portem:
+`KIT_PORT=8141 bash video-kit/work/kits/<title>/build.sh preview`. Rendery pouštěj po jednom.
