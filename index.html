@@ -7,10 +7,10 @@
 <script src="boot.js?v=1"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Aero pozice – měření z fotek a videí</title>
-<link rel="manifest" href="manifest.webmanifest?v=9">
+<link rel="manifest" href="manifest.webmanifest?v=10">
 <meta name="theme-color" content="#17191B">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=9">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=9">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=10">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=10">
 <style>
 /* ---------- Aero pozice: minimalistický vzhled ----------
    Paleta: Track black #17191B (pozadí), Chalk grey #E4E3DE (text, tlačítka), Electric purple #8B3DFF (data).
@@ -40,15 +40,8 @@ b,strong{font-weight:600}
 
 /* hlavička */
 .hero{padding:4px 2px 16px}
-.hero .logo{display:block;width:46px;height:46px;border-radius:13px}
-.hero .lead{color:var(--ink-2);font-size:1.03rem;line-height:1.5;max-width:52ch;margin:0 0 6px}
-.about summary{list-style:none;cursor:pointer;color:var(--muted);font-size:.88rem;display:inline-flex;align-items:center;gap:9px;padding:6px 0;-webkit-user-select:none;user-select:none;transition:color .2s}
-.about summary::-webkit-details-marker{display:none}
-.about summary::after{content:"";width:7px;height:7px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .4s var(--ease)}
-.about[open] summary::after{transform:translateY(2px) rotate(225deg)}
-.about summary:hover{color:var(--ink)}
-.about p{max-width:64ch;line-height:1.65;margin:4px 0 0}
-.about[open] p{animation:fadeUp .4s var(--ease) both}
+.brand{margin:10px 0 2px;line-height:0}
+.brand img{display:block;width:143px;height:26px}
 
 /* hlavní menu: zvolené tlačítko se roztáhne a zbělá, ostatní odsune do stran */
 .navwrap{position:sticky;top:0;z-index:20;margin:0 -16px 10px;padding:10px 16px 18px;background:linear-gradient(to bottom,var(--bg) 0%,var(--bg) 58%,rgba(23,25,27,0) 100%)}
@@ -194,7 +187,7 @@ html.terms-needed body>:not(#termsGate):not(script){visibility:hidden}
 <body>
 <div id="termsGate" role="dialog" aria-modal="true" aria-labelledby="tgTitle" aria-describedby="tgLead" tabindex="-1">
   <div class="tg-in">
-    <div class="tg-head"><img src="icons/icon-192.png?v=9" alt="" width="40" height="40"><h2 id="tgTitle">Než začneš</h2></div>
+    <div class="tg-head"><img src="icons/icon-192.png?v=10" alt="" width="40" height="40"><h2 id="tgTitle">Než začneš</h2></div>
     <p class="tg-lead" id="tgLead">Aero pozice je bezplatná aplikace pro sportovní účely. Přečti si prosím Podmínky použití. Jak se zachází s osobními údaji, popisují <a href="soukromi.html" target="_blank" rel="noopener">Zásady ochrany osobních údajů</a>.</p>
     <div class="tg-doc" id="tgDoc" tabindex="0" aria-label="Podmínky použití"><p class="muted">Načítám podmínky…</p></div>
     <div class="tg-foot">
@@ -204,10 +197,7 @@ html.terms-needed body>:not(#termsGate):not(script){visibility:hidden}
   </div>
 </div>
 <header class="hero">
-  <img class="logo" src="icons/icon-192.png?v=9" alt="" width="46" height="46">
-  <h1>Aero pozice na časovkářském kole</h1>
-  <p class="lead">Úhly z fotek a videí, mobilita, CdA a watty. Vše běží v prohlížeči.</p>
-  <details class="about"><summary>Co aplikace umí</summary><p class="muted">Měření úhlů ze čtyř pohledů: levá strana, pravá strana, zepředu, zezadu. U každého pohledu můžeš nahrát fotku, nebo video celého cyklu šlapání. Body těla najde automaticky model v prohlížeči. Navíc můžeš nahrát fotky mobilitních testů a aplikace ověří, jestli pozice nepřesahuje tvoji mobilitu. V části Aero a výkon spočítáš watty z CdA, změříš čelní plochu, porovnáš výkon v pozicích a změříš CdA z jízdy. Bez tvého souhlasu se nic nikam neodesílá.</p></details>
+  <h1 class="brand"><img src="icons/wattif.svg?v=10" alt="wattIF" width="143" height="26"></h1>
 </header>
 
 <div class="card hidden" id="pwaCard">
@@ -292,7 +282,7 @@ html.terms-needed body>:not(#termsGate):not(script){visibility:hidden}
 </section>
 
 <script type="module" src="pos.js?v=2"></script>
-<p class="foot" id="appVer">Aero pozice · verze 8. 11. 2026 (logo 9, podmínky 1.0, zabezpečení 3)<br><a href="podminky.html">Podmínky použití</a> · <a href="soukromi.html">Ochrana osobních údajů</a> · <a href="licence.html">Licence</a></p>
+<p class="foot" id="appVer">Aero pozice · verze 16. 11. 2026 (logo 10, podmínky 1.0, zabezpečení 3)<br><a href="podminky.html">Podmínky použití</a> · <a href="soukromi.html">Ochrana osobních údajů</a> · <a href="licence.html">Licence</a></p>
 <script type="module" src="aero.js?v=18"></script>
 <script src="share.js?v=17"></script>
 <script src="history.js?v=17"></script>

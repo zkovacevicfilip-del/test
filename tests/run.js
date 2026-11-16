@@ -130,6 +130,21 @@ async function runWidth(browser, base, width) {
     ok(T + "po novém otevření se okno s podmínkami už neukáže", !(await visible("#termsGate")) && await visible("#s-mode"));
   });
 
+  // ----- logo a ikony (wattIF) -----
+  await step("logo a ikony", async () => {
+    const logo = await page.evaluate(() => {
+      const h = document.querySelector(".hero"), img = h && h.querySelector("h1.brand img"), r = img && img.getBoundingClientRect();
+      return img ? { alt: img.alt, w: img.naturalWidth, shown: r.width > 100 && r.height > 15, text: h.innerText.trim() } : null;
+    });
+    ok(T + "v hlavičce je jen logo wattIF (načtené, viditelné, bez dalšího textu)", !!logo && logo.alt === "wattIF" && logo.w > 0 && logo.shown && logo.text === "", JSON.stringify(logo));
+    const icons = await page.evaluate(async () => {
+      const m = await (await fetch(document.querySelector('link[rel="manifest"]').href)).json();
+      const extra = [...document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]')].map(l => ({ src: l.getAttribute("href"), sizes: l.getAttribute("sizes") || "180x180" }));
+      return Promise.all(m.icons.concat(extra).map(i => new Promise(res => { const im = new Image(); im.onload = () => res(i.src + " " + im.naturalWidth + "x" + im.naturalHeight + " ~ " + i.sizes); im.onerror = () => res(i.src + " NENAČTENO"); im.src = new URL(i.src, location.href); })));
+    });
+    ok(T + "všechny ikony (manifest, záložka, iPhone) se načtou ve správné velikosti", icons.every(s => { const m = s.match(/ (\d+x\d+) ~ (\d+x\d+)$/); return m && m[1] === m[2]; }), icons.join("; "));
+  });
+
   // ----- 2. hlavní menu -----
   await step("hlavní menu", async () => {
     const parts = { pos: "#s-mode", aero: "#s-aero", hist: "#s-hist" }, names = { pos: "Pozice a mobilita", aero: "Aero a výkon", hist: "Moje pozice" };
