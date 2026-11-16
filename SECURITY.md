@@ -1,8 +1,8 @@
 # Bezpečnost / Security
 
-Našli jste v aplikaci Aero pozice bezpečnostní chybu? Napište prosím na **aeroanalysisapp@gmail.com** s předmětem „Bezpečnost“. Chybu prosím nezveřejňujte, dokud nebude opravená, nespouštějte zátěžové testy a nepracujte s cizími daty.
+Našli jste v aplikaci wattIF (dříve Aero pozice) bezpečnostní chybu? Napište prosím na **aeroanalysisapp@gmail.com** s předmětem „Bezpečnost“. Chybu prosím nezveřejňujte, dokud nebude opravená, nespouštějte zátěžové testy a nepracujte s cizími daty.
 
-Found a security issue in Aero pozice? Please email **aeroanalysisapp@gmail.com** with the subject "Security". Please do not disclose it publicly before it is fixed, do not run load tests and do not access other people's data.
+Found a security issue in wattIF (formerly Aero pozice)? Please email **aeroanalysisapp@gmail.com** with the subject "Security". Please do not disclose it publicly before it is fixed, do not run load tests and do not access other people's data.
 
 ## Rozsah / Scope
 

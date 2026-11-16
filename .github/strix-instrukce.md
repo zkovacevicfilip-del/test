@@ -1,7 +1,7 @@
 <!-- Pokyny pro bezpečnostní test Strix. Používá je .github/workflows/strix.yml. Psáno anglicky, protože je čte AI. -->
 # Scope
 
-- Target: "Aero pozice", a static PWA (vanilla JavaScript, no build step) hosted on GitHub Pages at https://zkovacevicfilip-del.github.io/test/, and its source code in this repository.
+- Target: "wattIF" (formerly "Aero pozice"), a static PWA (vanilla JavaScript, no build step) hosted on GitHub Pages at https://zkovacevicfilip-del.github.io/test/, and its source code in this repository.
 - Backend: one Supabase project, https://mtkxpqvrlvwicnnraevw.supabase.co. The publishable key in `share.js` is public by design. The `anon` role may only INSERT into `public.submissions` and call the RPC functions `get_my_data(p_device uuid)` and `delete_my_data(p_device uuid)`. The database rules (RLS, grants, trigger with content checks and rate limits) are in `supabase/schema.sql`. Verify that these rules really hold.
 - Out of scope: the infrastructure of GitHub, Supabase and Google; denial of service; social engineering.
 

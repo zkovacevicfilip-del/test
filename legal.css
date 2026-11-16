@@ -1,5 +1,6 @@
 /* Společný vzhled právních stránek (podmínky, ochrana osobních údajů, licence) */
 /* Paleta jako v aplikaci: Track black #17191B, Chalk grey #E4E3DE, Electric purple #8B3DFF */
+.wm{white-space:nowrap}.wm i{font-style:normal;color:#8B3DFF}
 :root{color-scheme:dark;--bg:#17191B;--surface:#232526;--surface-2:#2C2E2F;--ink:#E4E3DE;--on:#17191B;--muted:#9A9A98;--line:#353738;--line-2:#454647;--pt:#8B3DFF}
 *{box-sizing:border-box}
 html{background:var(--bg);-webkit-text-size-adjust:100%}
@@ -35,7 +36,8 @@ body.embed{padding:0;max-width:none}
 body.embed .noembed{display:none}
 @media (max-width:560px){.toc{columns:1}}
 @media print{
-  :root{color-scheme:light;--bg:#fff;--surface:#fff;--ink:#000;--muted:#444;--line:#bbb;--line-2:#999}
+  .wm{white-space:nowrap}.wm i{font-style:normal;color:#8B3DFF}
+:root{color-scheme:light;--bg:#fff;--surface:#fff;--ink:#000;--muted:#444;--line:#bbb;--line-2:#999}
   body{padding:0}
   .noprint,.back{display:none!important}
   .card{border-radius:0;break-inside:avoid}

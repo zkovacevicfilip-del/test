@@ -5,7 +5,7 @@ if (window.top !== window.self) {
   try { window.top.location.replace(window.self.location.href); } catch (e) { /* cizí stránka to nedovolí, obsah zůstane skrytý */ }
 }
 // 2) Zda je potřeba zobrazit okno s Podmínkami použití (bez probliknutí aplikace).
-window.AERO_TERMS_VER = "2026-11-08";
+window.AERO_TERMS_VER = "2026-11-16";
 try {
   var t = JSON.parse(localStorage.getItem("aero.terms") || "null");
   if (!t || t.v !== window.AERO_TERMS_VER) document.documentElement.classList.add("terms-needed");

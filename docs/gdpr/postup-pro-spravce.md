@@ -35,7 +35,7 @@ delete from public.submissions where device_id = 'ID-UŽIVATELE';
 Bez ID zařízení data nenajdeš (to je v pořádku, vysvětli to). Vždy odpověz, i kdyby žádná data nebyla. E-mail se žádostí si nech nejdéle 3 roky.
 
 ### Vzor odpovědi
-> Dobrý den, děkuji za zprávu. Vaši žádost o [smazání / kopii] dat k anonymnímu ID [ID] jsem vyřídil dne [datum]. [Data jsem smazal. / Data posílám v příloze.] Další informace najdete v Zásadách ochrany osobních údajů aplikace Aero pozice. S pozdravem Filip Kovačević
+> Dobrý den, děkuji za zprávu. Vaši žádost o [smazání / kopii] dat k anonymnímu ID [ID] jsem vyřídil dne [datum]. [Data jsem smazal. / Data posílám v příloze.] Další informace najdete v Zásadách ochrany osobních údajů aplikace wattIF. S pozdravem Filip Kovačević
 
 ## 3. Únik dat nebo podezření na něj (čl. 33 a 34)
 

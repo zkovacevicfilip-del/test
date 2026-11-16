@@ -1,6 +1,6 @@
 {
-  "name": "Aero pozice na časovkářském kole",
-  "short_name": "Aero pozice",
+  "name": "wattIF – aero pozice na časovkářském kole",
+  "short_name": "wattIF",
   "description": "Měření aerodynamické pozice z fotek a videí, mobilita, CdA a watty. Běží v prohlížeči, data zůstávají v zařízení.",
   "lang": "cs",
   "id": "./",

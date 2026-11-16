@@ -1,7 +1,7 @@
 {
-  "name": "aero-pozice",
+  "name": "wattif",
   "private": true,
-  "description": "Aero pozice: statická webová aplikace. Tento soubor slouží jen ke spuštění testů (npm test), aplikace sama žádné balíčky nepotřebuje.",
+  "description": "wattIF: statická webová aplikace. Tento soubor slouží jen ke spuštění testů (npm test), aplikace sama žádné balíčky nepotřebuje.",
   "scripts": {
     "test": "node tests/run.js && node tests/video-kit.js"
   }

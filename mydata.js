@@ -18,7 +18,7 @@
         ? "Souhlas se sdílením je udělený (od " + when(c.at) + "). Data se odesílají jen tehdy, když v aplikaci klepneš na Odeslat anonymně."
         : "Souhlas se sdílením není udělený nebo byl odvolán, nic dalšího se neodesílá. Dříve odeslaná data si můžeš stáhnout nebo smazat.";
     $("md-get").disabled = !id; $("md-del").disabled = !id; $("md-revoke").disabled = !c;
-    if (id) $("mail").href = "mailto:aeroanalysisapp@gmail.com?subject=" + encodeURIComponent("Aero pozice – moje data") +
+    if (id) $("mail").href = "mailto:aeroanalysisapp@gmail.com?subject=" + encodeURIComponent("wattIF – moje data") +
       "&body=" + encodeURIComponent("Dobrý den,\nprosím o (doplňte: zaslání / smazání / opravu) mých dat.\nMoje anonymní ID: " + id + "\n");
   }
   const fail = (e, what) => msg(e && e.missing
@@ -32,7 +32,7 @@
       if (!rows.length) { msg("Ve výzkumné databázi nejsou žádná data z tohoto zařízení."); return; }
       const a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([JSON.stringify({ device_id: S.deviceId(), exported_at: new Date().toISOString(), records: rows }, null, 1)], { type: "application/json" }));
-      a.download = "aero-pozice-moje-data-" + today() + ".json"; document.body.appendChild(a); a.click();
+      a.download = "wattif-moje-data-" + today() + ".json"; document.body.appendChild(a); a.click();
       setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
       msg("Staženo záznamů: " + rows.length + ".");
     } catch (e) { fail(e, "Stažení"); }

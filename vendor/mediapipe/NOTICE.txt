@@ -1,4 +1,4 @@
-Komponenty třetích stran v aplikaci Aero pozice
+Komponenty třetích stran v aplikaci wattIF
 ===============================================
 
 1) MediaPipe Tasks Vision 0.10.14

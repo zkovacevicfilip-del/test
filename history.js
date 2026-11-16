@@ -274,7 +274,7 @@
     } else if (h === "export") {
       const a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([JSON.stringify(P, null, 1)], { type: "application/json" }));
-      a.download = "aero-pozice-zaloha-" + today() + ".json"; document.body.appendChild(a); a.click();
+      a.download = "wattif-zaloha-" + today() + ".json"; document.body.appendChild(a); a.click();
       setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
       bmsg("Záloha stažená.");
     }

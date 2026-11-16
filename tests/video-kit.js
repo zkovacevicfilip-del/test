@@ -55,7 +55,7 @@ function check(dir, name) {
     ids.every(id => typeof t.SCENES[id] === "function" && t.AMBIENT[id] >= 0 && t.AMBIENT[id] <= 0.5), ids.join(", "));
   ok(`[${name}] používá jen připravená proudění`, Object.keys(t.FLOWS).every(n => ["rider", "cyl", "drop"].includes(n)), Object.keys(t.FLOWS).join(", "));
   ok(`[${name}] scény nepoužívají náhodu ani skutečný čas`, !/Math\.random|Date\.now|new Date/.test(code));
-  ok(`[${name}] video nezmiňuje aplikaci`, !/aero pozice|logoImg/i.test(code + JSON.stringify(sc.lines)));
+  ok(`[${name}] video nezmiňuje aplikaci`, !/aero pozice|wattif|logoImg/i.test(code + JSON.stringify(sc.lines)));
 }
 
 check(KIT, "aktuální video");

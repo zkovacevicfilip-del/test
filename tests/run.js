@@ -142,6 +142,30 @@ async function runWidth(browser, base, width) {
       const extra = [...document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]')].map(l => ({ src: l.getAttribute("href"), sizes: l.getAttribute("sizes") || "180x180" }));
       return Promise.all(m.icons.concat(extra).map(i => new Promise(res => { const im = new Image(); im.onload = () => res(i.src + " " + im.naturalWidth + "x" + im.naturalHeight + " ~ " + i.sizes); im.onerror = () => res(i.src + " NENAČTENO"); im.src = new URL(i.src, location.href); })));
     });
+    const name = await page.evaluate(async () => {
+      const m = await (await fetch(document.querySelector('link[rel="manifest"]').href)).json();
+      const wm = document.querySelector("#appVer .wm i");
+      return { title: document.title, short: m.short_name, full: m.name, foot: document.getElementById("appVer").innerText,
+        purple: wm ? getComputedStyle(wm).color : "", old: /Aero pozice/.test(document.body.innerText + document.title + JSON.stringify(m)) };
+    });
+    ok(T + "aplikace se všude jmenuje wattIF (titulek, plocha, patička s fialovým IF), starý název nikde",
+      /^wattIF/.test(name.title) && name.short === "wattIF" && /^wattIF/.test(name.full) && /^wattIF · verze/.test(name.foot) && name.purple === "rgb(139, 61, 255)" && !name.old, JSON.stringify(name));
+    const legal = await page.evaluate(async () => {
+      const get = async u => new DOMParser().parseFromString(await (await fetch(u, { cache: "no-store" })).text(), "text/html");
+      const out = {};
+      for (const [u, ver] of [["podminky.html", "verze 1.1"], ["soukromi.html", "verze 2.3"], ["licence.html", "stav k"]]) {
+        const d = await get(u), head = d.querySelector("#doc .muted"), t = d.body.textContent;
+        out[u] = !!head && head.textContent.includes("Aplikace wattIF · " + ver) && !!head.querySelector(".wm i") && /– wattIF$/.test(d.title) && !/Aplikace Aero pozice|aplikace Aero pozice /.test(t);
+      }
+      return out;
+    });
+    ok(T + "právní stránky nesou název wattIF a novou verzi (Podmínky 1.1, Zásady 2.3)", Object.values(legal).every(Boolean), JSON.stringify(legal));
+    // kdo přijal podmínky 1.0, musí po přejmenování přijmout verzi 1.1
+    await page.evaluate(() => localStorage.setItem("aero.terms", JSON.stringify({ v: "2026-11-08", at: "2026-11-09T10:00:00.000Z" })));
+    await page.reload({ waitUntil: "load" });
+    const again = await visible("#termsGate");
+    await page.locator("#tgOk").check(); await page.locator("#tgGo").click(); await page.locator("#termsGate").waitFor({ state: "hidden" });
+    ok(T + "po přijetí starých podmínek (1.0) se okno ukáže znovu a jde přijmout", again && await page.evaluate(() => JSON.parse(localStorage.getItem("aero.terms")).v === "2026-11-16"));
     ok(T + "všechny ikony (manifest, záložka, iPhone) se načtou ve správné velikosti", icons.every(s => { const m = s.match(/ (\d+x\d+) ~ (\d+x\d+)$/); return m && m[1] === m[2]; }), icons.join("; "));
   });
 

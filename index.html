@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://mtkxpqvrlvwicnnraevw.supabase.co/rest/v1/ https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/1/deeplab_v3.tflite; worker-src 'self'; frame-src 'none'; font-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
-<script src="boot.js?v=1"></script>
+<script src="boot.js?v=2"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Aero pozice – měření z fotek a videí</title>
+<title>wattIF – aero pozice z fotek a videí</title>
 <link rel="manifest" href="manifest.webmanifest?v=10">
 <meta name="theme-color" content="#17191B">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=10">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=10">
 <style>
-/* ---------- Aero pozice: minimalistický vzhled ----------
+/* ---------- wattIF: minimalistický vzhled ----------
    Paleta: Track black #17191B (pozadí), Chalk grey #E4E3DE (text, tlačítka), Electric purple #8B3DFF (data).
    Odstíny šedé jsou smíchané z Track black a Chalk grey. */
 :root{
@@ -41,6 +41,7 @@ b,strong{font-weight:600}
 /* hlavička */
 .hero{padding:4px 2px 16px}
 .brand{margin:10px 0 2px;line-height:0}
+.wm{white-space:nowrap}.wm i{font-style:normal;color:#8B3DFF}
 .brand img{display:block;width:143px;height:26px}
 
 /* hlavní menu: zvolené tlačítko se roztáhne a zbělá, ostatní odsune do stran */
@@ -188,7 +189,7 @@ html.terms-needed body>:not(#termsGate):not(script){visibility:hidden}
 <div id="termsGate" role="dialog" aria-modal="true" aria-labelledby="tgTitle" aria-describedby="tgLead" tabindex="-1">
   <div class="tg-in">
     <div class="tg-head"><img src="icons/icon-192.png?v=10" alt="" width="40" height="40"><h2 id="tgTitle">Než začneš</h2></div>
-    <p class="tg-lead" id="tgLead">Aero pozice je bezplatná aplikace pro sportovní účely. Přečti si prosím Podmínky použití. Jak se zachází s osobními údaji, popisují <a href="soukromi.html" target="_blank" rel="noopener">Zásady ochrany osobních údajů</a>.</p>
+    <p class="tg-lead" id="tgLead"><span class="wm">watt<i>IF</i></span> je bezplatná aplikace pro sportovní účely. Přečti si prosím Podmínky použití. Jak se zachází s osobními údaji, popisují <a href="soukromi.html" target="_blank" rel="noopener">Zásady ochrany osobních údajů</a>.</p>
     <div class="tg-doc" id="tgDoc" tabindex="0" aria-label="Podmínky použití"><p class="muted">Načítám podmínky…</p></div>
     <div class="tg-foot">
       <label class="chk"><input type="checkbox" id="tgOk"><span>Přečetl(a) jsem si <a href="podminky.html" target="_blank" rel="noopener">Podmínky použití</a> a souhlasím s nimi. Je mi alespoň 15 let, nebo aplikaci používám se souhlasem zákonného zástupce.</span></label>
@@ -282,12 +283,12 @@ html.terms-needed body>:not(#termsGate):not(script){visibility:hidden}
 </section>
 
 <script type="module" src="pos.js?v=2"></script>
-<p class="foot" id="appVer">Aero pozice · verze 16. 11. 2026 (logo 10, podmínky 1.0, zabezpečení 3)<br><a href="podminky.html">Podmínky použití</a> · <a href="soukromi.html">Ochrana osobních údajů</a> · <a href="licence.html">Licence</a></p>
+<p class="foot" id="appVer"><span class="wm">watt<i>IF</i></span> · verze 16. 11. 2026 (logo 10, podmínky 1.1, zabezpečení 3)<br><a href="podminky.html">Podmínky použití</a> · <a href="soukromi.html">Ochrana osobních údajů</a> · <a href="licence.html">Licence</a></p>
 <script type="module" src="aero.js?v=18"></script>
 <script src="share.js?v=17"></script>
-<script src="history.js?v=17"></script>
+<script src="history.js?v=18"></script>
 <script src="pwa.js?v=15"></script>
 <script src="ui.js?v=15"></script>
-<script src="terms.js?v=2"></script>
+<script src="terms.js?v=3"></script>
 </body>
 </html>

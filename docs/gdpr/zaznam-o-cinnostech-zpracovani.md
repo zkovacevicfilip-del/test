@@ -2,7 +2,7 @@
 
 Interní dokument správce. Nemusí se zveřejňovat, ale na vyžádání ho musíš předložit Úřadu pro ochranu osobních údajů (čl. 30 odst. 4 GDPR). Aktualizuj ho při každé změně toho, jaká data aplikace sbírá.
 
-- **Správce:** Filip Kovačević, fyzická osoba, provozovatel aplikace Aero pozice
+- **Správce:** Filip Kovačević, fyzická osoba, provozovatel aplikace wattIF (dříve Aero pozice)
 - **Kontakt:** aeroanalysisapp@gmail.com
 - **Pověřenec pro ochranu osobních údajů:** nejmenován (není povinný podle čl. 37 GDPR: správce není orgán veřejné moci a jeho hlavní činností není rozsáhlé zpracování zvláštních kategorií údajů ani rozsáhlé systematické monitorování)
 - **Zástupce v EU:** nevyžaduje se (správce je usazen v EU)

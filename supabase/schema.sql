@@ -1,4 +1,4 @@
--- Tabulka pro anonymní data z aplikace Aero pozice.
+-- Tabulka pro anonymní data z aplikace wattIF (dříve Aero pozice).
 -- Vlož celé do Supabase: SQL Editor -> New query -> Run.
 create table if not exists public.submissions (
   id bigint generated always as identity primary key,
