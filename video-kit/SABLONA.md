@@ -265,6 +265,7 @@ z `video-kit/work/frames/` (začátek, střed, konec) a zkontroluj, že odpovíd
 ## 11. Krátká verze (asi 30 s)
 
 Vzory: `examples/why-40-feels-brutal`, `lighter-bike-myth`, `drag-is-behind-you`, `same-power-3-minutes`, `three-free-fixes`.
+Dalších pět vzorů ze série „What if“ je v `examples/what-if-*`.
 Platí všechno výše, jen s těmito rozdíly:
 
 | Věc | Krátká verze |
@@ -288,8 +289,14 @@ Platí všechno výše, jen s těmito rozdíly:
 | mezera ve zvědavosti | „… isn't X. It's Y.“ | `drag-is-behind-you` |
 | záhada se srovnáním | „Two …. Same …. One … Why?“ | `same-power-3-minutes` |
 | skrytá chyba + slib počtu kroků | „You're wasting … Here are three free fixes.“ | `three-free-fixes` |
+| série se stejným začátkem „What if …?“ | „What if + tvrzení proti intuici nebo malá věc s konkrétním číslem?“ | `what-if-headwind`, `what-if-draft`, `what-if-hand-patch`, `what-if-lower-is-slower`, `what-if-weaker-rider-wins` |
 
 Hook nesmí slibovat víc, než video hned potom vysvětlí. Odpověď přijde do 5 s, ne až na konci.
+
+**Série „What if“:** každé video začíná slovy „What if“ (odkaz na slovní hříčku v názvu aplikace). Ve scéně je kreslí
+pomůcka `whatIf(t, kdy, y)` ze vzorů `what-if-*`: bílé „what“ a fialové „IF“ písmem Unbounded 800, tedy ve stylu loga.
+Samotný název aplikace ani logo ve videu dál nejsou. Čísla s protivětrem se počítají stejným modelem jako `physics.py`,
+jen odpor vzduchu je `0,5 · ρ · CdA · (rychlost + vítr)²` (výpočet je v komentáři `what-if-headwind/scenes.js`).
 
 **Víc videí najednou:** `build.sh` umí v jedné složce jen jedno video. Pro každé další udělej pracovní kopii
 `work/kits/<title>/` (zkopíruj `build.sh`, `engine`, `tools`, `sim`; do její složky `work/` dej odkazy na

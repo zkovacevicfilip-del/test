@@ -1,0 +1,142 @@
+{
+ "title": "what-if-hand-patch",
+ "format": "short",
+ "voice": {
+  "provider": "elevenlabs",
+  "name": "Liam - Energetic, Social Media Creator",
+  "voice_id": "TX3LPaxmHKxFdv7VOQHJ",
+  "model": "eleven_multilingual_v2",
+  "settings": {
+   "stability": 0.26,
+   "similarity_boost": 0.8,
+   "style": 0.65,
+   "use_speaker_boost": true,
+   "speed": 1.1
+  }
+ },
+ "timing": {
+  "lead": 0.15,
+  "max_pause": 0.35,
+  "gap_line": 0.32,
+  "gap_act": 0.62,
+  "tail": 0.9
+ },
+ "acts": [
+  {
+   "id": "hook",
+   "lines": [
+    "hook"
+   ]
+  },
+  {
+   "id": "square",
+   "lines": [
+    "square",
+    "cost"
+   ]
+  },
+  {
+   "id": "body",
+   "lines": [
+    "body",
+    "tip"
+   ]
+  }
+ ],
+ "lines": {
+  "hook": {
+   "say": "What if a patch of air the size of your hand costs you eight watts?",
+   "captions": false,
+   "chunks": [
+    "What if",
+    [
+     "a patch of air",
+     "PATCH"
+    ],
+    "the size of your hand",
+    "costs you",
+    [
+     "8 watts?",
+     "EIGHT"
+    ]
+   ]
+  },
+  "square": {
+   "say": "Picture a ten by ten centimeter square, facing the wind. That's about one hundredth of a square meter of drag area.",
+   "chunks": [
+    "Picture a",
+    [
+     "10 × 10 cm square,",
+     "TEN"
+    ],
+    "facing the wind.",
+    "That's about",
+    [
+     "0.01 m²",
+     "ONE"
+    ],
+    [
+     "of drag area.",
+     "DRAG"
+    ]
+   ]
+  },
+  "cost": {
+   "say": "At forty kilometers per hour, it costs eight and a half watts. Over forty kilometers: about forty-five seconds! From one little square.",
+   "chunks": [
+    [
+     "At 40 km/h,",
+     "AT"
+    ],
+    "it costs",
+    [
+     "8.5 watts.",
+     "EIGHT"
+    ],
+    [
+     "Over 40 km:",
+     "OVER"
+    ],
+    [
+     "about 45 seconds!",
+     "ABOUT"
+    ],
+    "From one little square."
+   ]
+  },
+  "body": {
+   "say": "Now look at your elbows, your head, your shoulders. Each one is a few of those squares.",
+   "chunks": [
+    [
+     "Now look at",
+     "NOW|AND"
+    ],
+    [
+     "your elbows,",
+     "ELBOWS"
+    ],
+    [
+     "your head,",
+     "HEAD"
+    ],
+    [
+     "your shoulders.",
+     "SHOULDERS"
+    ],
+    "Each one is",
+    [
+     "a few of those squares.",
+     "FEW"
+    ]
+   ]
+  },
+  "tip": {
+   "say": "Tuck them in, and keep them in. That's free speed!",
+   "chunks": [
+    "Tuck them in,",
+    "and keep them in.",
+    "That's free speed!"
+   ]
+  }
+ }
+}

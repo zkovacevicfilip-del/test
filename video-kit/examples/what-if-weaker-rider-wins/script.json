@@ -1,0 +1,131 @@
+{
+ "title": "what-if-weaker-rider-wins",
+ "format": "short",
+ "voice": {
+  "provider": "elevenlabs",
+  "name": "Liam - Energetic, Social Media Creator",
+  "voice_id": "TX3LPaxmHKxFdv7VOQHJ",
+  "model": "eleven_multilingual_v2",
+  "settings": {
+   "stability": 0.26,
+   "similarity_boost": 0.8,
+   "style": 0.65,
+   "use_speaker_boost": true,
+   "speed": 1.1
+  }
+ },
+ "timing": {
+  "lead": 0.15,
+  "max_pause": 0.35,
+  "gap_line": 0.32,
+  "gap_act": 0.62,
+  "tail": 0.9
+ },
+ "acts": [
+  {
+   "id": "hook",
+   "lines": [
+    "hook"
+   ]
+  },
+  {
+   "id": "race",
+   "lines": [
+    "setup",
+    "result"
+   ]
+  },
+  {
+   "id": "why",
+   "lines": [
+    "why",
+    "more",
+    "tip"
+   ]
+  }
+ ],
+ "lines": {
+  "hook": {
+   "say": "What if the weaker rider wins? Thirty watts less. Two minutes ahead.",
+   "captions": false,
+   "chunks": [
+    "What if",
+    "the weaker rider",
+    "wins?",
+    [
+     "30 watts less.",
+     "THIRTY"
+    ],
+    [
+     "2 minutes ahead.",
+     "TWO"
+    ]
+   ]
+  },
+  "setup": {
+   "say": "Rider one pushes two hundred eighty watts, sitting up. Rider two: just two hundred fifty, but low and narrow.",
+   "chunks": [
+    "Rider one pushes",
+    [
+     "280 watts,",
+     "TWO"
+    ],
+    "sitting up.",
+    [
+     "Rider two:",
+     "RIDER"
+    ],
+    [
+     "just 250,",
+     "JUST"
+    ],
+    "but low and narrow."
+   ]
+  },
+  "result": {
+   "say": "Over forty kilometers, the weaker rider finishes more than two minutes ahead!",
+   "chunks": [
+    [
+     "Over 40 km,",
+     "OVER"
+    ],
+    "the weaker rider",
+    "finishes",
+    [
+     "more than 2 minutes",
+     "MORE"
+    ],
+    "ahead!"
+   ]
+  },
+  "why": {
+   "say": "Because speed isn't about watts. It's watts per drag area.",
+   "chunks": [
+    "Because speed",
+    "isn't about watts.",
+    "It's watts",
+    "per drag area."
+   ]
+  },
+  "more": {
+   "say": "And the weaker rider has more of it.",
+   "chunks": [
+    "And the weaker rider",
+    "has more of it."
+   ]
+  },
+  "tip": {
+   "say": "You can train for months to gain thirty watts. Or work on your position this week.",
+   "chunks": [
+    "You can train for months",
+    [
+     "to gain 30 watts.",
+     "TO"
+    ],
+    "Or work on",
+    "your position",
+    "this week."
+   ]
+  }
+ }
+}

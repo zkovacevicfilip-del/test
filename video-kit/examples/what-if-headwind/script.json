@@ -1,0 +1,138 @@
+{
+ "title": "what-if-headwind",
+ "format": "short",
+ "voice": {
+  "provider": "elevenlabs",
+  "name": "Liam - Energetic, Social Media Creator",
+  "voice_id": "TX3LPaxmHKxFdv7VOQHJ",
+  "model": "eleven_multilingual_v2",
+  "settings": {
+   "stability": 0.26,
+   "similarity_boost": 0.8,
+   "style": 0.65,
+   "use_speaker_boost": true,
+   "speed": 1.1
+  }
+ },
+ "timing": {
+  "lead": 0.15,
+  "max_pause": 0.35,
+  "gap_line": 0.32,
+  "gap_act": 0.62,
+  "tail": 0.9
+ },
+ "acts": [
+  {
+   "id": "hook",
+   "lines": [
+    "hook"
+   ]
+  },
+  {
+   "id": "wind",
+   "lines": [
+    "air",
+    "drag"
+   ]
+  },
+  {
+   "id": "cost",
+   "lines": [
+    "watts",
+    "crawl"
+   ]
+  },
+  {
+   "id": "tip",
+   "lines": [
+    "tip"
+   ]
+  }
+ ],
+ "lines": {
+  "hook": {
+   "say": "What if a headwind doesn't add to your drag… it multiplies it?",
+   "captions": false,
+   "chunks": [
+    "What if",
+    [
+     "a headwind",
+     "HEADWIND|HEAD"
+    ],
+    "doesn't add",
+    "to your drag…",
+    "it multiplies it?"
+   ]
+  },
+  "air": {
+   "say": "Ride at thirty into a twenty kilometer per hour headwind, and the air hits you at fifty.",
+   "chunks": [
+    [
+     "Ride at 30",
+     "RIDE|RIGHT"
+    ],
+    [
+     "into a 20 km/h headwind,",
+     "INTO"
+    ],
+    "and the air",
+    [
+     "hits you at 50.",
+     "HITS"
+    ]
+   ]
+  },
+  "drag": {
+   "say": "Drag grows with air speed, squared. That's almost three times the drag!",
+   "chunks": [
+    "Drag grows",
+    "with air speed, squared.",
+    "That's almost",
+    [
+     "3× the drag!",
+     "THREE"
+    ]
+   ]
+  },
+  "watts": {
+   "say": "Same speed. One hundred thirty-five watts becomes over three hundred twenty!",
+   "chunks": [
+    "Same speed.",
+    [
+     "135 watts",
+     "ONE"
+    ],
+    "becomes",
+    [
+     "over 320!",
+     "OVER"
+    ]
+   ]
+  },
+  "crawl": {
+   "say": "Keep your usual power instead, and you drop to nineteen kilometers per hour.",
+   "chunks": [
+    "Keep your usual power",
+    "instead,",
+    "and you drop",
+    [
+     "to 19 km/h.",
+     "TO"
+    ]
+   ]
+  },
+  "tip": {
+   "say": "So in a headwind, get low. Every bit of aero is worth almost three times more.",
+   "chunks": [
+    "So in a headwind,",
+    "get low.",
+    "Every bit of aero",
+    "is worth almost",
+    [
+     "3× more.",
+     "THREE"
+    ]
+   ]
+  }
+ }
+}

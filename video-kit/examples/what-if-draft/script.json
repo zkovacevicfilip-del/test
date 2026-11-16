@@ -1,0 +1,130 @@
+{
+ "title": "what-if-draft",
+ "format": "short",
+ "voice": {
+  "provider": "elevenlabs",
+  "name": "Liam - Energetic, Social Media Creator",
+  "voice_id": "TX3LPaxmHKxFdv7VOQHJ",
+  "model": "eleven_multilingual_v2",
+  "settings": {
+   "stability": 0.26,
+   "similarity_boost": 0.8,
+   "style": 0.65,
+   "use_speaker_boost": true,
+   "speed": 1.1
+  }
+ },
+ "timing": {
+  "lead": 0.15,
+  "max_pause": 0.35,
+  "gap_line": 0.32,
+  "gap_act": 0.62,
+  "tail": 0.9
+ },
+ "acts": [
+  {
+   "id": "hook",
+   "lines": [
+    "hook"
+   ]
+  },
+  {
+   "id": "wake",
+   "lines": [
+    "true",
+    "wake"
+   ]
+  },
+  {
+   "id": "pair",
+   "lines": [
+    "lead",
+    "follow"
+   ]
+  },
+  {
+   "id": "tip",
+   "lines": [
+    "tip",
+    "group"
+   ]
+  }
+ ],
+ "lines": {
+  "hook": {
+   "say": "What if the rider sitting on your wheel is actually making you faster?",
+   "captions": false,
+   "chunks": [
+    "What if",
+    "the rider",
+    "sitting on your wheel",
+    "is actually",
+    "making you faster?"
+   ]
+  },
+  "true": {
+   "say": "Sounds wrong. But it's true!",
+   "captions": false,
+   "chunks": [
+    "Sounds wrong.",
+    "But it's true!"
+   ]
+  },
+  "wake": {
+   "say": "Behind you is a low-pressure wake that drags you back. A rider tucked in close fills part of it.",
+   "chunks": [
+    "Behind you",
+    "is a low-pressure wake",
+    "that drags you back.",
+    [
+     "A rider tucked in close",
+     "RIDER"
+    ],
+    "fills part of it."
+   ]
+  },
+  "lead": {
+   "say": "You get about two percent less drag.",
+   "chunks": [
+    "You get about",
+    [
+     "2% less drag.",
+     "TWO"
+    ]
+   ]
+  },
+  "follow": {
+   "say": "And the rider behind? About a quarter less drag: nearly seventy watts saved at forty kilometers per hour!",
+   "chunks": [
+    "And the rider behind?",
+    "About a quarter",
+    "less drag:",
+    [
+     "nearly 70 watts saved",
+     "NEARLY"
+    ],
+    [
+     "at 40 km/h!",
+     "AT"
+    ]
+   ]
+  },
+  "tip": {
+   "say": "So don't chase them off. Take turns, stay close, and you both go faster.",
+   "chunks": [
+    "So don't chase them off.",
+    "Take turns,",
+    "stay close,",
+    "and you both",
+    "go faster."
+   ]
+  },
+  "group": {
+   "say": "That's why a group beats a lone rider.",
+   "chunks": [
+    "That's why a group",
+    "beats a lone rider."
+   ]
+  }
+ }
+}

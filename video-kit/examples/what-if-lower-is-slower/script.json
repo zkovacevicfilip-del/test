@@ -1,0 +1,114 @@
+{
+ "title": "what-if-lower-is-slower",
+ "format": "short",
+ "voice": {
+  "provider": "elevenlabs",
+  "name": "Liam - Energetic, Social Media Creator",
+  "voice_id": "TX3LPaxmHKxFdv7VOQHJ",
+  "model": "eleven_multilingual_v2",
+  "settings": {
+   "stability": 0.26,
+   "similarity_boost": 0.8,
+   "style": 0.65,
+   "use_speaker_boost": true,
+   "speed": 1.1
+  }
+ },
+ "timing": {
+  "lead": 0.15,
+  "max_pause": 0.35,
+  "gap_line": 0.32,
+  "gap_act": 0.62,
+  "tail": 0.9
+ },
+ "acts": [
+  {
+   "id": "hook",
+   "lines": [
+    "hook"
+   ]
+  },
+  {
+   "id": "trade",
+   "lines": [
+    "gain",
+    "loss"
+   ]
+  },
+  {
+   "id": "rule",
+   "lines": [
+    "rule",
+    "tip"
+   ]
+  }
+ ],
+ "lines": {
+  "hook": {
+   "say": "What if getting lower on the bike is making you slower?",
+   "captions": false,
+   "chunks": [
+    "What if",
+    "getting lower",
+    "on the bike",
+    "is making you",
+    "slower?"
+   ]
+  },
+  "gain": {
+   "say": "Drop your back, and you cut drag. One hundredth of a square meter is about forty-five seconds over forty kilometers.",
+   "chunks": [
+    "Drop your back,",
+    "and you cut drag.",
+    [
+     "0.01 m² less",
+     "ONE"
+    ],
+    [
+     "is about 45 seconds",
+     "IS"
+    ],
+    [
+     "over 40 km.",
+     "OVER"
+    ]
+   ]
+  },
+  "loss": {
+   "say": "But fold too far, and your legs lose power. Lose just fifteen watts, and you finish thirty-seven seconds slower than before!",
+   "chunks": [
+    "But fold too far,",
+    "and your legs",
+    "lose power.",
+    [
+     "Lose just 15 watts,",
+     "LOSE"
+    ],
+    "and you finish",
+    [
+     "37 seconds slower",
+     "THIRTY"
+    ],
+    "than before!"
+   ]
+  },
+  "rule": {
+   "say": "The fastest position isn't the lowest. It's the lowest one you can still push full power in.",
+   "chunks": [
+    "The fastest position",
+    "isn't the lowest.",
+    "It's the lowest one",
+    "you can still",
+    "push full power in."
+   ]
+  },
+  "tip": {
+   "say": "So test it: same effort, both positions.",
+   "chunks": [
+    "So test it:",
+    "same effort,",
+    "both positions."
+   ]
+  }
+ }
+}
