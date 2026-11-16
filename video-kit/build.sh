@@ -9,8 +9,10 @@
 set -euo pipefail
 KIT="$(cd "$(dirname "$0")" && pwd)"; WORK="$KIT/work"; PY="$WORK/env/bin/python"; PORT="${KIT_PORT:-8140}"
 mkdir -p "$WORK"/{tts,asr,sim,stills,frames,out,fonts}
+# pomocný server, který si krok sám spustil, se na konci zase vypne (jinak příkaz zůstane viset)
+SRV=""; trap '[ -z "$SRV" ] || kill "$SRV" 2>/dev/null || true' EXIT
 
-server() { curl -s -o /dev/null "http://localhost:$PORT/engine/index.html" || { (cd "$KIT" && nohup python3 -m http.server "$PORT" >/dev/null 2>&1 &); sleep 1; }; }
+server() { curl -s -o /dev/null "http://localhost:$PORT/engine/index.html" || { (cd "$KIT" && exec python3 -m http.server "$PORT" </dev/null >/dev/null 2>&1) & SRV=$!; sleep 1; }; }
 need() { [ -e "$1" ] || { echo "CHYBÍ $1 → nejdřív spusť: bash video-kit/build.sh $2"; exit 1; }; }
 
 setup() {

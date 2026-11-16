@@ -8,7 +8,7 @@
     "model": "eleven_multilingual_v2",
     "settings": { "stability": 0.26, "similarity_boost": 0.8, "style": 0.65, "use_speaker_boost": true, "speed": 1.1 }
   },
-  "timing": { "lead": 0.15, "gap_line": 0.32, "gap_act": 0.62, "tail": 1.90 },
+  "timing": { "lead": 0.15, "max_pause": 0.35, "gap_line": 0.32, "gap_act": 0.62, "tail": 0.90 },
   "acts": [
     { "id": "hook", "lines": ["hook"] },
     { "id": "air", "lines": ["air"] },

@@ -207,7 +207,9 @@ Arch ukazuje prostředek a konec každé věty. U každého políčka ověř:
 - [ ] čísla na obraze = čísla v hlase = výstup `physics.py`,
 - [ ] jen tři barvy, žádná zmínka o aplikaci,
 - [ ] přepis z kroku `voice` odpovídá textu (zkratky a čísla přečtené správně),
-- [ ] délka 55 až 70 s.
+- [ ] délka 55 až 70 s (krátká verze 25 až 33 s),
+- [ ] ve výpisu `voice` není věta nápadně delší, než odpovídá počtu slov (asi 3 slova za sekundu). Delší = pauza nebo cvaknutí, viz oddíl 8,
+- [ ] na konci videa není víc než sekunda bez děje.
 
 Po renderu: `build.sh` musí vypsat `width=1080|height=1920` a `VIDEO: …`. Otevři 3 snímky
 z `video-kit/work/frames/` (začátek, střed, konec) a zkontroluj, že odpovídají archům.
@@ -234,8 +236,14 @@ z `video-kit/work/frames/` (začátek, střed, konec) a zkontroluj, že odpovíd
 | scéna po renderu po částech „poskočí“ | scéna používá `Math.random()` nebo čas mimo `t`. Vše musí záviset jen na `t` |
 | chybí simulace / časová osa | `build.sh` napíše, který krok spustit dřív |
 | preview vypíše `CHYBA … chybí scéna pro akt` | `id` aktu ve `script.json` nemá položku v `SCENES` nebo `AMBIENT` |
-| server na portu 8140 neodpovídá | `build.sh` si ho spustí sám, stačí krok zopakovat |
+| server na portu 8140 neodpovídá | `build.sh` si ho na dobu kroku spustí a pak zase vypne, stačí krok zopakovat |
 | preview vypíše `CHYBA … is not defined` nebo `Cannot read properties of undefined` | překlep ve `scenes.js` (jméno funkce, věty nebo proměnné). Klíče vět v `cs('…')` musí být stejné jako ve `script.json` |
+| ve videu je mezi větami cvaknutí a ticho | ElevenLabs občas přidá na konec věty ticho a cvak. `voice` to ořízne sám (vypíše „oříznuto“). Kdyby zůstalo, smaž `work/tts/<věta>.wav` a spusť `voice` znovu |
+| hlas dělá uvnitř věty dlouhé pauzy (za „?“ a „!“), nezní lidsky | do `timing` přidej `"max_pause": 0.35`. Hlas se negeneruje znovu |
+| na konci videa se sekundu a víc nic neděje | zmenši `tail` v `timing` (krátká verze 0,9) |
+| přepis má jiné slovo, které zní stejně (aero → ARROW, weight → WAIT, riders → WRITERS, a → AH) | výslovnost je v pořádku, jen doplň kotvu s oběma zápisy: `["aero wins.", "AERO\|ARROW"]`. Text `say` neměň |
+| velký text ve scéně a titulek říkají totéž | u té věty dej `"captions": false` (jako u hooku) |
+| po úpravě `tools/` se kopie sady ve `work/kits/` chová postaru | kopie má vlastní `tools/`: zkopíruj je znovu |
 | lineární pohyb | nepoužívej `clamp((t - a) / d)` pro pozici, jen pro průhlednost. Pozice vždy přes `tw` |
 
 ## 9. Odevzdání
@@ -264,7 +272,9 @@ Platí všechno výše, jen s těmito rozdíly:
 | `script.json` | navíc `"format": "short"` (test pak čeká 55 až 90 slov a krátký hook) |
 | Délka | 25 až 33 s, 3 až 4 akty, 5 až 7 vět, 60 až 85 slov |
 | Stavba | hook → jedna myšlenka s jedním číslem → důkaz nebo srovnání → jedna rada. Žádné druhé téma |
-| Začátek | `"lead": 0.15` v `timing`: hlas i první text naskočí hned, žádné ticho na úvod |
+| Časování | `"timing": { "lead": 0.15, "max_pause": 0.35, "gap_line": 0.32, "gap_act": 0.62, "tail": 0.90 }` (opiš přesně, hlídá to test) |
+| Začátek | `lead 0.15`: hlas i první text naskočí hned, žádné ticho na úvod |
+| Konec | `tail 0.90`: po poslední větě zůstane obraz necelou sekundu. Delší konec, kde se nic neděje, autor nechce |
 | Pauzy | `"max_pause": 0.35` v `timing`: pauzy uvnitř věty delší než 0,35 s se zkrátí (hlas jinak u „?“ a „!“ dělá nepřirozeně dlouhé ticho). Hlas se negeneruje znovu |
 | Hlas | živější: `stability 0.26 · similarity 0.8 · style 0.65 · speed 1.1`. Krátké věty, otázky a vykřičníky (hlas podle nich mění melodii) |
 | Hook | nejvýš 16 slov, `"captions": false`, velký text ve scéně, hlavní slovo fialově |

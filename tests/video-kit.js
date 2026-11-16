@@ -38,6 +38,9 @@ function check(dir, name) {
     const hook = sc.lines[keys[0]];
     ok(`[${name}] hook je první věta, má nejvýš 16 slov a text přímo ve scéně`,
       hook.captions === false && hook.say.trim().split(/\s+/).length <= 16, hook.say);
+    const T = sc.timing || {};
+    ok(`[${name}] krátké video: začátek do 0,2 s, pauzy ve větě nejvýš 0,5 s, dozvuk nejvýš 1 s`,
+      T.lead <= 0.2 && T.max_pause > 0 && T.max_pause <= 0.5 && T.tail <= 1.0, JSON.stringify(T));
   } else {
     ok(`[${name}] formát je buď vynechaný, nebo "short"`, sc.format === undefined, String(sc.format));
     ok(`[${name}] scénář má 120 až 180 slov (asi 55 až 70 s)`, words >= 120 && words <= 180, words + " slov");
