@@ -31,7 +31,7 @@ Pro krátké video (asi 30 s) připiš „krátká verze“ a platí oddíl 11.
 | Pohyb | rychlý nástup a pomalé dorovnání (`pop`, `popS`). **Nikdy lineární** nástup ani odchod |
 | Grafika | jednoduchá 2D, proudění = částice unášené simulovaným polem (pomalé fialové, rychlé světlé) |
 | Zvuk | jen hlas a tiché „whoosh“ na přechodech aktů. Žádná hudba |
-| Aplikace | video **nezmiňuje** aplikaci Aero pozice ani její logo (dokud autor neřekne jinak; pak uprav i kontrolu v `tests/video-kit.js`) |
+| Aplikace | video **nezmiňuje** aplikaci wattIF (dříve Aero pozice) ani její logo (dokud autor neřekne jinak; pak uprav i kontrolu v `tests/video-kit.js`) |
 | Čísla | každé číslo je spočítané (`tools/physics.py`) nebo učebnicové a má uvedený zdroj. Nic se neodhaduje |
 
 ## 2. Soubory
