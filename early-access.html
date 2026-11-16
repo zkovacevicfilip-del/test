@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>wattIF – early access</title>
+<meta name="description" content="Save 5 watts with your riding position, or pay nothing. Join the wattIF early-access list.">
+<meta property="og:title" content="Save 5 watts with your position. Or pay nothing.">
+<meta property="og:description" content="Join the wattIF early-access list: 50% off your first 3 position setups.">
+<meta property="og:image" content="https://zkovacevicfilip-del.github.io/test/icons/icon-512.png">
+<meta name="theme-color" content="#17191B">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action https://app.kit.com">
+<meta name="referrer" content="no-referrer">
+<script src="legal.js?v=1"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=10">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=10">
+<link rel="stylesheet" href="early-access.css?v=1">
+</head>
+<body>
+<main class="ea">
+  <img class="ea-logo" src="icons/icon.svg?v=10" alt="wattIF" width="64" height="64">
+
+  <p class="ea-tag">Early access</p>
+  <h1>Save 5 watts with your position. Or pay nothing.</h1>
+  <p class="ea-lead">We measure your riding position from photos and tune it to cut drag. No wind tunnel needed.</p>
+
+  <!-- Formulář odesílá e-mail přímo do Kitu (HTML embed, bez skriptu). KIT_FORM_ID nahraď číslem formuláře z Kitu. -->
+  <form class="ea-form" id="eaForm" action="https://app.kit.com/forms/KIT_FORM_ID/subscriptions" method="post">
+    <label class="sr" for="eaEmail">Your email</label>
+    <input class="ea-in" id="eaEmail" type="email" name="email_address" placeholder="Your email" autocomplete="email" inputmode="email" maxlength="254" required>
+    <button class="ea-btn" type="submit">Get early access</button>
+    <p class="ea-msg" id="eaMsg" role="status" aria-live="polite"></p>
+  </form>
+
+  <ul class="ea-list">
+    <li><span class="ea-dot" aria-hidden="true">1</span><span><b>50% off your first 3 position setups</b><span class="muted">For everyone on the early-access list.</span></span></li>
+    <li><span class="ea-dot" aria-hidden="true">2</span><span><b>5 watts saved, or a full refund</b><span class="muted">If we can't find you at least 5 W, you get your money back.</span></span></li>
+  </ul>
+
+  <p class="ea-fine">No payment now. This is a waitlist for a product that is still being built. We'll only email you about early access. Unsubscribe anytime. <a href="#privacy">Privacy</a></p>
+
+  <section class="ea-privacy" id="privacy">
+    <h2>Privacy</h2>
+    <p>Your email address is collected by Filip Kovačević, the maker of wattIF (contact: <a href="mailto:aeroanalysisapp@gmail.com">aeroanalysisapp@gmail.com</a>), only to tell you about early access.</p>
+    <p>It is stored with our email provider Kit (ConvertKit LLC, USA). We process it based on your consent, which you give by confirming your subscription in the email we send you. Without that confirmation you will not receive anything else.</p>
+    <p>You can unsubscribe with one click in any email, or write to us and we will delete your address. We don't sell or share it, and we use no cookies or tracking on this page.</p>
+  </section>
+</main>
+<script src="early-access.js?v=1"></script>
+</body>
+</html>

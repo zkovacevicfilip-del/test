@@ -110,25 +110,25 @@ Ruční nahrání (nouzově): na GitHubu Add file → Upload files → Commit ch
 
 Spouští se jedním příkazem `npm test` v Claude Code (soubory `tests/run.js` a `tests/data.js`, běh asi 15 s). Nic se neinstaluje, Playwright s prohlížečem je v cloudovém prostředí předinstalovaný. Na tabletu samotném spustit nejdou.
 
-- **Co kontrolují** (na šířce 412 a 1000 px): načtení bez chyb v konzoli a bez porušení CSP, okno s podmínkami (blokuje aplikaci, po přijetí zmizí), přepnutí tří částí hlavním menu, kalkulačku wattů proti nezávislému výpočtu v testu, načtení zálohy (platný soubor přijme, vadné odmítne).
+- **Co kontrolují** (na šířce 412 a 1000 px): landing page pro předběžný přístup, načtení bez chyb v konzoli a bez porušení CSP, okno s podmínkami (blokuje aplikaci, po přijetí zmizí), přepnutí tří částí hlavním menu, kalkulačku wattů proti nezávislému výpočtu v testu, načtení zálohy (platný soubor přijme, vadné odmítne).
 - **Testovací data** vyrábí skript `tests/data.js`, jsou to vymyšlená čísla.
 - **Sada na videa:** `tests/video-kit.js` (součást `npm test`, běží do vteřiny) hlídá, že scénář a scény ve `video-kit/` k sobě sedí. Samotné video ani hlas nevyrábí.
 - **Co zatím nepokrývají:** měření úhlů z fotek a videí (detekce bodů těla), čelní plochu z fotky, výkon v pozici, CdA z jízdy a soubory `.fit`, databázi a sdílení dat, stránky Podmínek a Zásad (včetně správy vlastních dat), stažení zálohy, uložení pozice z výsledků, srovnání pozic a osobní model, instalaci na plochu, vzhled (testy neporovnávají snímky) a jiné prohlížeče než Chromium.
 
+## Landing page pro předběžný přístup (`early-access.html`, stav 16. 11. 2026)
+
+Jednoduchá anglická stránka na sběr e-mailů zájemců o předběžný přístup (ověření zájmu, zatím žádný produkt ani platba). Adresa: https://zkovacevicfilip-del.github.io/test/early-access.html (odkaz do bia na Instagramu a Facebooku).
+
+- **Soubory:** `early-access.html`, `early-access.css`, `early-access.js`. Vzhled jako aplikace, logo je ikona wattIF (`icons/icon.svg`).
+- **Nabídka na stránce:** 50 % sleva na první 3 nastavení pozice a úspora aspoň 5 W, jinak vrácení peněz. Pod formulářem je věta, že se nic neplatí a jde o čekací listinu.
+- **Formulář** posílá e-mail přímo do služby Kit (HTML formulář bez cizího skriptu, CSP povoluje jen `form-action https://app.kit.com`). V adrese formuláře je `KIT_FORM_ID`: **nahradit číslem formuláře z Kitu**. Do té doby stránka e-mail neodešle a návštěvníkovi napíše, že registrace se otevře brzy.
+- **V Kitu musí být zapnuté dvojité potvrzení** (ochrana proti falešným adresám a doklad souhlasu). Text potvrzovacího e-mailu je v chatu ze 16. 11. 2026.
+- **Soukromí:** stránka má vlastní anglický odstavec Privacy (správce, účel, Kit v USA, odhlášení). České zásady (`soukromi.html`) sběr e-mailů na čekací listinu zatím nepopisují.
+- **Testy:** `tests/run.js`, část „landing page“ (texty, formulář, CSP, šířky 412 a 1000 px).
+
 ## Výroba videí (`video-kit/`, stav 16. 11. 2026)
 
 Sada na vysvětlovací aero videa pro Instagram Reels (1080 × 1920, asi 60 s nebo krátká verze asi 30 s, anglicky, hlas ElevenLabs „Liam“). S aplikací nesouvisí a na webu se nepoužívá. Návod a pravidla stylu jsou ve `video-kit/SABLONA.md`, vzor (video „What is CdA“) ve `video-kit/examples/what-is-cda/`. Krátká verze (oddíl 11 návodu, stav 16. 11. 2026) má pět vzorů s různými typy úvodní věty: `why-40-feels-brutal`, `lighter-bike-myth`, `drag-is-behind-you`, `same-power-3-minutes`, `three-free-fixes`. Pro nové video se píše jen `script.json` a `scenes.js`, zbytek udělá `bash video-kit/build.sh`. Pracovní soubory a hotová videa (`video-kit/work/`) se do repozitáře neukládají.
-
-## Co nebylo ověřeno na skutečných datech
-
-Tohle prostředí nemá přístup ke stahování modelů a Claude nemá k dispozici skutečné fotky ani soubory autora. Otestováno bylo na simulovaných `.fit` souborech se známým CdA (aplikace je vrátila přesně) a na testovacím obrázku s náhradním segmentačním modelem. Neověřeno zůstává:
-- načtení modelu MediaPipe a automatická detekce těla na skutečných fotkách (s helmou a kombinézou),
-- zpracování videa na tabletu (výkon a přetáčení),
-- obrys těla z modelu DeepLab,
-- skutečné `.fit` soubory z Garminu (obsahují víc typů zpráv než testovací),
-- oprava ručního výběru bodů zepředu (klepnutí chytalo sousední bod, opraveno, uživatel zatím nepotvrdil).
-
-Chybové hlášky se zobrazují přímo pod náhledem. Když se objeví, je nejlepší opsat jejich text.
 
 ## Známá omezení
 

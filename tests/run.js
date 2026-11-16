@@ -249,7 +249,42 @@ async function runWidth(browser, base, width) {
     ok(L + "načtené pozice zůstanou i po novém otevření aplikace", await cards() === 4, "karet: " + await cards());
   });
 
-  // ----- 5. chyby za celý průchod -----
+  // ----- 5. landing page pro předběžný přístup (early-access.html) -----
+  await step("landing page: načtení a formulář", async () => {
+    const L = T + "landing page: ";
+    await page.goto(base + "/early-access.html", { waitUntil: "load" });
+    const info = await page.evaluate(() => {
+      const f = document.getElementById("eaForm"), i = document.getElementById("eaEmail"), logo = document.querySelector(".ea-logo");
+      return {
+        lang: document.documentElement.lang, h1: document.querySelector("h1").textContent, text: document.body.innerText,
+        action: f.getAttribute("action"), method: f.method, type: i.type, name: i.name, required: i.required,
+        logo: logo.getAttribute("src"), logoOk: logo.complete && logo.naturalWidth > 0,
+        inline: document.querySelectorAll("script:not([src]), [onclick], [onsubmit], [style]").length,
+        overflow: document.documentElement.scrollWidth - window.innerWidth
+      };
+    });
+    ok(L + "je anglicky a má hlavní slib v nadpisu", info.lang === "en" && /5 watts/.test(info.h1), info.lang + " / " + info.h1);
+    ok(L + "logo je ikona wattIF a načte se, starý název na stránce není", /icons\/icon\.svg/.test(info.logo) && info.logoOk && !/aero pos|aero poz/i.test(info.text), info.logo);
+    ok(L + "říká, že se nic neplatí a jde o čekací listinu", /No payment now/.test(info.text) && /waitlist/.test(info.text) && /Unsubscribe anytime/.test(info.text));
+    ok(L + "uvádí nabídku (50 % na první 3 nastavení, 5 W nebo vrácení peněz)", /50% off your first 3 position setups/.test(info.text) && /5 watts saved, or a full refund/.test(info.text));
+    ok(L + "uvádí, kdo e-mail sbírá a kde je uložený", /Filip Kovačević/.test(info.text) && /Kit \(ConvertKit LLC, USA\)/.test(info.text));
+    ok(L + "formulář posílá jen e-mail do Kitu", /^https:\/\/app\.kit\.com\/forms\/(\d+|KIT_FORM_ID)\/subscriptions$/.test(info.action) && info.method === "post" && info.type === "email" && info.name === "email_address" && info.required, JSON.stringify(info));
+    ok(L + "žádný kód ani styl přímo v HTML", info.inline === 0, "nalezeno: " + info.inline);
+    ok(L + "nic nepřetéká do šířky", info.overflow <= 0, "o " + info.overflow + " px");
+
+    // špatně zadaný e-mail prohlížeč neodešle
+    await page.fill("#eaEmail", "tohle-neni-email");
+    ok(L + "neplatný e-mail formulář nepustí", await page.evaluate(() => !document.getElementById("eaForm").checkValidity()));
+    // dokud chybí číslo formuláře z Kitu, e-mail se nikam neodešle a stránka to řekne
+    if (/KIT_FORM_ID/.test(info.action)) {
+      await page.fill("#eaEmail", "jezdec@example.com");
+      await page.click(".ea-btn");
+      await page.waitForFunction(() => document.getElementById("eaMsg").textContent.length > 0);
+      ok(L + "bez čísla formuláře se nic neodešle a stránka to oznámí", /early-access\.html/.test(page.url()) && /Sign-ups open very soon/.test(await page.locator("#eaMsg").innerText()));
+    }
+  });
+
+  // ----- 6. chyby za celý průchod -----
   await page.waitForTimeout(300);
   const csp = problems.filter(p => p.startsWith("CSP:") || /Content Security Policy/i.test(p));
   const other = problems.filter(p => !csp.includes(p));
