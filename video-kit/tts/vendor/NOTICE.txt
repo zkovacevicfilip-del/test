@@ -10,3 +10,5 @@ Soubory v této složce jsou beze změny převzaté z balíčků npm. Stránka `
 Zdrojový kód eSpeak NG: https://github.com/espeak-ng/espeak-ng. Zdrojový kód phonemizer: https://github.com/xenova/phonemizer.
 
 Model a hlas nejsou v repozitáři: prohlížeč je načte z Hugging Face, model [onnx-community/Kokoro-82M-v1.0-ONNX](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX) (licence Apache-2.0, původní model [hexgrad/Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M)).
+
+Soubor `../voice-mix.bin` je vážený průměr hlasů Kokoro am_fenrir (50 %), am_puck (25 %) a bm_lewis (25 %) z balíčku kokoro-js 1.2.1 (licence Apache-2.0).

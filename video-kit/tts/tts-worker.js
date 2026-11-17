@@ -4,7 +4,15 @@ import { KokoroTTS, TextSplitterStream, env } from "./vendor/kokoro.web.js";
 import { shape } from "./prosody.mjs?v=3";
 
 const MODEL = "onnx-community/Kokoro-82M-v1.0-ONNX";
-const VOICE = "am_fenrir";   // jediný hlas stránky (nejpodobnější stylu videí podle srovnání výšky a barvy hlasu)
+// Jediný hlas stránky: směs hlasů Kokoro 50 % am_fenrir + 25 % am_puck + 25 % bm_lewis (soubor voice-mix.bin, licence Apache-2.0).
+// Proti čistému Fenrirovi je hlubší a mužnější (nižší F0 a formanty, blíž Liamovi), viz README.
+// Knihovna umí jen hlasy ze svého seznamu, proto směs nastoupí na místo hlasu am_santa, který stránka jinak nepoužívá:
+// stažení am_santa se přesměruje na voice-mix.bin a starý obsah mezipaměti pro tenhle hlas se při startu smaže.
+const VOICE = "am_santa";
+const SLOT_URL = "https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/main/voices/am_santa.bin";
+const MIX_URL = new URL("./voice-mix.bin?v=1", import.meta.url).href;
+const realFetch = self.fetch.bind(self);
+self.fetch = (input, init) => realFetch((typeof input === "string" ? input : input.url) === SLOT_URL ? MIX_URL : input, init);
 const GAP = 0.29;            // pauza mezi větami v sekundách (medián u Liama)
 env.wasmPaths = new URL("./vendor/", import.meta.url).href;   // výpočetní jádro z vlastního webu, ne z cizího serveru
 
@@ -12,6 +20,7 @@ let tts = null, loading = null;
 function load() {
   if (tts) return Promise.resolve(tts);
   if (!loading) {
+    const clear = (self.caches ? caches.open("kokoro-voices").then(c => c.delete(SLOT_URL)) : Promise.resolve()).catch(() => {});
     const files = {};
     loading = KokoroTTS.from_pretrained(MODEL, {
       dtype: "q8", device: "wasm",
@@ -22,7 +31,7 @@ function load() {
           postMessage({ type: "load", loaded: a, total: b });
         }
       }
-    }).then(m => (tts = m)).catch(e => { loading = null; throw e; });
+    }).then(m => clear.then(() => (tts = m))).catch(e => { loading = null; throw e; });
   }
   return loading;
 }

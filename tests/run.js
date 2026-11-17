@@ -308,6 +308,9 @@ async function runWidth(browser, base, width) {
     const ver = fs.readFileSync(path.join(ROOT, "video-kit/tts/vendor/ort-wasm-simd-threaded.jsep.mjs"), "utf8").length > 1000 &&
       fs.readFileSync(path.join(ROOT, "video-kit/tts/vendor/kokoro.web.js"), "utf8").includes("1.22.0-dev.20250409-89f8206ba4");
     ok(L + "převzaté soubory jsou na místě a ve správné verzi", ver && fs.statSync(path.join(ROOT, "video-kit/tts/vendor/ort-wasm-simd-threaded.jsep.wasm")).size > 1e7);
+    // namíchaný hlas: 510 × 256 čísel float32, žádné prázdné ani neplatné hodnoty
+    const mixBuf = fs.readFileSync(path.join(ROOT, "video-kit/tts/voice-mix.bin")), mix = new Float32Array(mixBuf.buffer, mixBuf.byteOffset, mixBuf.byteLength / 4);
+    ok(L + "namíchaný hlas má správnou velikost a platná čísla", mix.length === 510 * 256 && mix.every(Number.isFinite) && mix.some(v => v !== 0), mix.length + " čísel");
   });
   // stránka smí sahat jen pro model Kokoro na Hugging Face (test ho zablokoval); tyhle pokusy se do „aplikace se nepřipojuje“ nepočítají
   const ttsForeign = foreign.splice(foreignBefore);
