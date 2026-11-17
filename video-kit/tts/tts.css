@@ -20,6 +20,9 @@ textarea:focus{outline:none;border-color:var(--ink)}
 .row .lbl{margin-bottom:4px}
 output{font-variant-numeric:tabular-nums;color:var(--muted)}
 input[type=range]{width:100%;accent-color:var(--pt);margin:4px 0 6px}
+.check{display:flex;gap:10px;align-items:flex-start;margin:16px 0 0;font-size:.95rem;font-weight:600;cursor:pointer}
+.check input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--pt);flex:none}
+.check .muted{font-weight:400}
 .btn{display:block;width:100%;font:inherit;font-weight:600;text-align:center;text-decoration:none;padding:14px 18px;margin-top:16px;border-radius:999px;border:1px solid var(--ink);background:var(--ink);color:var(--on);cursor:pointer;transition:transform .15s cubic-bezier(.22,1,.36,1)}
 .btn:active{transform:scale(.98)}
 .btn:disabled{opacity:.4;cursor:default;transform:none}

@@ -5,7 +5,7 @@
   if (window.top !== window.self) { document.documentElement.classList.add("framed"); try { window.top.location.replace(window.self.location.href); } catch (e) { } }
   const $ = id => document.getElementById(id);
   const text = $("ttsText"), speed = $("ttsSpeed"), speedOut = $("ttsSpeedOut"), go = $("ttsGo"), bar = $("ttsBar"), fill = $("ttsFill"),
-    status = $("ttsStatus"), out = $("ttsOut"), audio = $("ttsAudio"), dl = $("ttsDl"), count = $("ttsCount");
+    status = $("ttsStatus"), natural = $("ttsNatural"), out = $("ttsOut"), audio = $("ttsAudio"), dl = $("ttsDl"), count = $("ttsCount");
   let worker = null, url = null, t0 = 0;
 
   const say = (s, err) => { status.textContent = s; status.classList.toggle("err", !!err); };
@@ -28,13 +28,13 @@
     const t = text.value.trim();
     if (!t) { say("Napiš nejdřív nějaký text.", true); return; }
     if (!worker) {
-      try { worker = new Worker("tts-worker.js?v=1", { type: "module" }); }
+      try { worker = new Worker("tts-worker.js?v=4", { type: "module" }); }
       catch (e) { say("Tenhle prohlížeč neumí spustit model (" + e.message + ").", true); return; }
       worker.onmessage = onMsg;
       worker.onerror = e => { say("Chyba při spuštění modelu: " + (e.message || "neznámá"), true); go.disabled = false; progress(null); };
     }
     go.disabled = true; t0 = performance.now(); say("Připravuji hlas…"); progress(0);
-    worker.postMessage({ text: t, speed: +speed.value });
+    worker.postMessage({ text: t, speed: +speed.value, natural: natural.checked });
   }
   function onMsg(e) {
     const m = e.data;

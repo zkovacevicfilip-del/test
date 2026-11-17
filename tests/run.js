@@ -294,8 +294,10 @@ async function runWidth(browser, base, width) {
       inline: document.querySelectorAll("script:not([src]), [onclick], [style]").length,
       csp: (document.querySelector('meta[http-equiv="Content-Security-Policy"]') || {}).content || "",
       overflow: document.documentElement.scrollWidth - window.innerWidth,
-      speed: document.getElementById("ttsSpeedOut").textContent
+      speed: document.getElementById("ttsSpeedOut").textContent,
+      natural: !!(document.getElementById("ttsNatural") || {}).checked
     }));
+    ok(L + "živý přednes (podle Liama) je zapnutý", info.natural);
     ok(L + "žádný kód ani styl přímo v HTML", info.inline === 0, "nalezeno: " + info.inline);
     ok(L + "připojit se smí jen k vlastnímu webu a k Hugging Face", /connect-src 'self' https:\/\/huggingface\.co https:\/\/\*\.hf\.co;/.test(info.csp) && /script-src 'self' 'wasm-unsafe-eval';/.test(info.csp), info.csp);
     ok(L + "nic nepřetéká do šířky a rychlost ukazuje 1.15×", info.overflow <= 0 && info.speed === "1.15×", info.overflow + " / " + info.speed);

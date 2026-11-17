@@ -3,6 +3,6 @@
   "private": true,
   "description": "wattIF: statická webová aplikace. Tento soubor slouží jen ke spuštění testů (npm test), aplikace sama žádné balíčky nepotřebuje.",
   "scripts": {
-    "test": "node tests/run.js && node tests/video-kit.js"
+    "test": "node tests/run.js && node tests/video-kit.js && node tests/tts-prosody.mjs"
   }
 }

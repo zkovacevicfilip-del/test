@@ -1,10 +1,11 @@
 // Převod textu na řeč v samostatném vlákně (aby stránka během výpočtu nezamrzla).
 // Model Kokoro-82M se stáhne z Hugging Face při prvním použití a prohlížeč si ho uloží do mezipaměti.
-import { KokoroTTS, env } from "./vendor/kokoro.web.js";
+import { KokoroTTS, TextSplitterStream, env } from "./vendor/kokoro.web.js";
+import { shape } from "./prosody.mjs?v=3";
 
 const MODEL = "onnx-community/Kokoro-82M-v1.0-ONNX";
 const VOICE = "am_fenrir";   // jediný hlas stránky (nejpodobnější stylu videí podle srovnání výšky a barvy hlasu)
-const GAP = 0.25;            // pauza mezi větami v sekundách
+const GAP = 0.29;            // pauza mezi větami v sekundách (medián u Liama)
 env.wasmPaths = new URL("./vendor/", import.meta.url).href;   // výpočetní jádro z vlastního webu, ne z cizího serveru
 
 let tts = null, loading = null;
@@ -38,18 +39,25 @@ function split(text) {
 }
 
 onmessage = async e => {
-  const { text, speed } = e.data;
+  const { text, speed, natural } = e.data;
   try {
     const m = await load();
     const parts = split(text); if (!parts.length) throw new Error("Prázdný text.");
     const chunks = []; let sr = 24000;
     for (let i = 0; i < parts.length; i++) {
       postMessage({ type: "part", i, n: parts.length });
-      const a = await m.generate(parts[i], { voice: VOICE, speed });
-      sr = a.sampling_rate; chunks.push(a.audio);
+      // stream vrací i fonetický přepis, podle kterého se odhadne, kde které slovo je
+      // s textem místo proudu by stream čekal na další text donekonečna, proto vlastní proud, který se hned uzavře
+      const sp = new TextSplitterStream(); sp.push(parts[i]); sp.close();
+      for await (const x of m.stream(sp, { voice: VOICE, speed })) {
+        sr = x.audio.sampling_rate;
+        chunks.push(natural ? shape(x.audio.audio, sr, x.text, x.phonemes) : x.audio.audio);
+      }
     }
     const gap = Math.round(GAP * sr), len = chunks.reduce((s, c) => s + c.length, 0) + gap * (chunks.length - 1), audio = new Float32Array(len);
     let o = 0; chunks.forEach((c, i) => { audio.set(c, o); o += c.length + (i < chunks.length - 1 ? gap : 0); });
+    // vyrovnání hlasitosti: špička na −1 dB (úprava přednesu může místy zesilovat)
+    let pk = 0; for (const v of audio) pk = Math.max(pk, Math.abs(v)); if (pk > 0) { const k = 0.89 / pk; for (let j = 0; j < audio.length; j++) audio[j] *= k; }
     postMessage({ type: "done", audio, sr, parts: parts.length }, [audio.buffer]);
   } catch (err) {
     postMessage({ type: "error", message: String(err && err.message || err) });
