@@ -126,9 +126,9 @@ Jednoduchá anglická stránka na sběr e-mailů zájemců o předběžný pří
 - **Soukromí:** stránka má vlastní anglický odstavec Privacy (správce, účel, Kit v USA, odhlášení). České zásady (`soukromi.html`) sběr e-mailů na čekací listinu zatím nepopisují.
 - **Testy:** `tests/run.js`, část „landing page“ (texty, formulář, CSP, šířky 412 a 1000 px).
 
-## Výroba videí (`video-kit/`, stav 16. 11. 2026)
+## Výroba videí (`video-kit/`, stav 17. 11. 2026)
 
-Sada na vysvětlovací aero videa pro Instagram Reels (1080 × 1920, asi 60 s nebo krátká verze asi 30 s, anglicky, hlas ElevenLabs „Liam“). S aplikací nesouvisí a na webu se nepoužívá. Návod a pravidla stylu jsou ve `video-kit/SABLONA.md`, vzor (video „What is CdA“) ve `video-kit/examples/what-is-cda/`. Krátká verze (oddíl 11 návodu, stav 16. 11. 2026) má pět vzorů s různými typy úvodní věty: `why-40-feels-brutal`, `lighter-bike-myth`, `drag-is-behind-you`, `same-power-3-minutes`, `three-free-fixes`. Pro nové video se píše jen `script.json` a `scenes.js`, zbytek udělá `bash video-kit/build.sh`. Pracovní soubory a hotová videa (`video-kit/work/`) se do repozitáře neukládají.
+Sada na vysvětlovací aero videa pro Instagram Reels (1080 × 1920, asi 60 s nebo krátká verze asi 30 s, anglicky, hlas ElevenLabs „Liam“). S aplikací nesouvisí a na webu se nepoužívá. Návod a pravidla stylu jsou ve `video-kit/SABLONA.md`, vzor (video „What is CdA“) ve `video-kit/examples/what-is-cda/`. Krátká verze (oddíl 11 návodu, stav 16. 11. 2026) má pět vzorů s různými typy úvodní věty: `why-40-feels-brutal`, `lighter-bike-myth`, `drag-is-behind-you`, `same-power-3-minutes`, `three-free-fixes`. Pro nové video se píše jen `script.json` a `scenes.js`, zbytek udělá `bash video-kit/build.sh`. Víc videí najednou se vyrábí z popisů a hotových bloků ve `video-kit/series/` (oddíl 12 návodu): série „What if“ má 30 popisů v `video-kit/series/what-if/`. **Stav 17. 11. 2026: vyrobeno 16 z 30 videí (01 až 16), zbylých 14 má hotový popis i zkušební náhled bez hlasu a čeká na obnovení kvóty ElevenLabs (10 000 znaků, vyčerpáno).** Dokončení: `bash video-kit/series/batch.sh all video-kit/series/what-if/{17..30}-*.js`, potom kontrola přepisu a náhledů. Pracovní soubory a hotová videa (`video-kit/work/`) se do repozitáře neukládají.
 
 ## Známá omezení
 

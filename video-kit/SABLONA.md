@@ -302,3 +302,42 @@ jen odpor vzduchu je `0,5 · ρ · CdA · (rychlost + vítr)²` (výpočet je v 
 `work/kits/<title>/` (zkopíruj `build.sh`, `engine`, `tools`, `sim`; do její složky `work/` dej odkazy na
 `env`, `fonts`, `sim`, `rider-art.svg.txt`, `icon-512.png` a model v `asr/`) a spouštěj ji s vlastním portem:
 `KIT_PORT=8141 bash video-kit/work/kits/<title>/build.sh preview`. Rendery pouštěj po jednom.
+
+## 12. Série z bloků (`series/`): hodně videí najednou
+
+Když má vzniknout víc krátkých videí ve stejném stylu (série „What if“ má 30 dílů), nepíše se `scenes.js` ručně.
+Každé video je jeden **popis** ve složce `series/<série>/` a scény se poskládají z hotových bloků.
+
+```
+video-kit/series/
+  blocks.js     hotové scény (hook, text, bars, rows, race, rider, flow, curve) a nadpisy
+  physics.js    výpočty čísel: výkon, rychlost, čas, vítr, sklon, teplota, výška, tlak, vlhkost, dojezd
+  make.js       z popisu vyrobí script.json a scenes.js
+  run.sh        jedno video: připraví pracovní kopii sady a spustí krok (voice, preview, render, all, dry)
+  batch.sh      víc videí za sebou
+  asrdiff.py    porovná přepis hlasu s textem a vypíše jen rozdíly
+  dry.js        zkušební časová osa bez hlasu (náhled scén, když dojde kvóta hlasu)
+  what-if/      30 popisů videí série „What if“
+```
+
+**Postup:**
+1. Příprava jako vždy: `bash video-kit/build.sh setup && bash video-kit/build.sh sims`.
+2. Napiš popis (opiš některý z `series/what-if/`). Obsahuje `title`, `about` (česky, o čem video je), `acts`, `lines`
+   (stejné jako ve `script.json`), `scenes` (typ scény a nadpisy pro každý akt), `facts` a `sources`.
+3. `node video-kit/series/make.js --facts <popis.js>`: ověří, že čísla ve videu sedí s výpočtem.
+4. `bash video-kit/series/batch.sh voice <popisy…>`, potom `python3 video-kit/series/asrdiff.py <název videa…>`.
+   Rozdíly jako aero → ARROW jsou jen stejně znějící slova: doplň kotvu titulku (oddíl 8).
+5. `bash video-kit/series/batch.sh preview <popisy…>` a prohlédni každý arch
+   `work/kits/<název>/work/stills/sheet-1.jpg` podle oddílu 6.
+6. `bash video-kit/series/batch.sh render <popisy…>`. Videa jsou ve `work/out/`.
+
+**Pravidla popisu:**
+- Časy se nepíšou číslem, ale odkazem na titulek: `'veta:2'` (začátek 3. titulku věty), `'veta'` (začátek věty),
+  `'veta$'` (konec věty), volitelně s posunem `'veta:2+0.3'`.
+- `facts`: každé číslo, které ve videu zazní nebo je vidět, má řádek `[popis, výpočet, číslo ve videu, tolerance]`.
+  Když nesedí, `make.js` video nevyrobí a `npm test` selže. Čísla z literatury patří do `sources`.
+- Nadpisy (`heads`) se střídají samy: předchozí zmizí těsně před dalším. Velký text má rezervu do šířky kvůli překmitu.
+- Vlastní kresba, kterou bloky neumí, jde přidat funkcí `draw(t, a, dy)` v popisu aktu (viz `12-one-percent`, `29-bigger-has-less-drag`).
+- Hlas hlídej: jedno video je asi 430 znaků. **Před větší dávkou si spočítej znaky a ověř, že na ně stačí kvóta ElevenLabs.**
+  Když kvóta dojde (chyba `quota_exceeded`), udělej zatím náhledy bez hlasu: `bash video-kit/series/batch.sh dry <popisy…>`.
+  Z takového náhledu video vyrenderovat nejde, po obnovení kvóty spusť `voice` a pokračuj.

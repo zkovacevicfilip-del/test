@@ -60,6 +60,39 @@ function check(dir, name) {
 
 check(KIT, "aktuální video");
 for (const ex of fs.readdirSync(path.join(KIT, "examples"))) check(path.join(KIT, "examples", ex), "vzor " + ex);
+
+// série z bloků (video-kit/series/): každý popis se převede na script.json a scenes.js a projde stejnou kontrolou,
+// navíc musí čísla ve videu sedět s výpočtem (series/physics.js) a časy scén musí odkazovat na existující titulky
+{
+  const os = require("os");
+  const S = path.join(KIT, "series"), make = require(path.join(S, "make.js")), P = require(path.join(S, "physics.js"));
+  const near = (a, b, tol) => Math.abs(a - b) <= tol;
+  ok("fyzika série dává stejná čísla jako tools/physics.py (250 W: 37,8 a 40,0 km/h, rozdíl 3,5 min na 40 km)",
+    near(P.kmh(250, { cda: 0.30 }), 37.80, 0.01) && near(P.kmh(250), 40.04, 0.01) && near((P.time(250, 40, { cda: 0.30 }) - P.time(250, 40)) / 60, 3.55, 0.02));
+  ok("fyzika série: protivítr a stoupání zpomalují, řidší vzduch zrychluje, bez vzduchu zbývá jen valivý odpor",
+    P.kmh(250, { wind: 5 }) < P.kmh(250) && P.kmh(250, { grade: 0.02 }) < P.kmh(250) && P.kmh(250, { alt: 2000 }) > P.kmh(250) &&
+    near(P.watts(40, { rho: 0 }), 0.004 * 84 * 9.80665 * (40 / 3.6) / 0.975, 0.01));
+  const titles = new Set();
+  for (const series of fs.readdirSync(S).filter(d => fs.statSync(path.join(S, d)).isDirectory())) {
+    for (const f of fs.readdirSync(path.join(S, series)).filter(f => f.endsWith(".js")).sort()) {
+      const spec = require(path.join(S, series, f)), name = "série " + series + "/" + f.replace(/\.js$/, ""), out = make.build(spec);
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "kit-"));
+      fs.writeFileSync(path.join(dir, "script.json"), JSON.stringify(out.script)); fs.writeFileSync(path.join(dir, "scenes.js"), out.scenes);
+      check(dir, name);
+      fs.rmSync(dir, { recursive: true, force: true });
+      const bad = out.facts.filter(x => !x.ok);
+      ok(`[${name}] čísla ve videu sedí s výpočtem`, bad.length === 0, bad.map(x => x.label + ": spočteno " + x.calc.toFixed(3) + ", ve videu " + x.shown).join("; "));
+      // každý odkaz na čas ('věta:2', 'věta', 'věta$+0.3') musí mířit na existující větu a titulek
+      const refs = [], walk = v => { if (typeof v === "string") refs.push(v); else if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === "object") for (const k in v) { if (["at", "out", "subAt", "bigAt", "numAt", "leftAt", "rightAt", "labAt", "showAt", "start", "end", "finishAt", "speedAt", "fillAt"].includes(k) && typeof v[k] === "string") refs.push("@" + v[k]); else if (k === "pose") Object.values(v[k]).forEach(x => { if (typeof x === "string") refs.push("@" + x); else if (Array.isArray(x)) refs.push("@" + x[0]); }); else if (typeof v[k] === "object") walk(v[k]); } };
+      walk(spec.scenes);
+      const wrong = refs.filter(r => r[0] === "@").map(r => r.slice(1)).filter(r => { const m = /^([A-Za-z0-9_]+)(?::(\d+))?(\$)?([+-]\d*\.?\d+)?$/.exec(r); return !m || !spec.lines[m[1]] || (m[2] != null && !spec.lines[m[1]].chunks[+m[2]]); });
+      const hookItems = Object.values(spec.scenes).filter(x => x.type === "hook" || x.type === "text").flatMap(x => x.items.filter(i => i.i != null).map(i => [x.line, i.i])).filter(([l, i]) => !spec.lines[l] || !spec.lines[l].chunks[i]);
+      ok(`[${name}] časy scén odkazují na existující věty a titulky`, wrong.length === 0 && hookItems.length === 0, wrong.concat(hookItems.map(String)).join(", "));
+      ok(`[${name}] název je jedinečný a video začíná slovy „What if“`, !titles.has(spec.title) && /^What if /.test(out.script.lines[out.script.acts[0].lines[0]].say), spec.title);
+      titles.add(spec.title);
+    }
+  }
+}
 ok("motor a nástroje sady jsou na místě", ["engine/engine.js", "engine/render.js", "engine/index.html", "tools/tts.py", "tools/align.py", "tools/timeline.py",
   "tools/audio.py", "tools/sheet.py", "tools/physics.py", "sim/lbm.py", "sim/potential.py", "sim/mkmask.js", "build.sh", "SABLONA.md"].every(f => fs.existsSync(path.join(KIT, f))));
 ok("stránka motoru nemá skript přímo v HTML", !/<script(?![^>]*\bsrc=)[^>]*>/i.test(fs.readFileSync(path.join(KIT, "engine/index.html"), "utf8")));
