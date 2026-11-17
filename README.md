@@ -142,6 +142,16 @@ Jednoduchá stránka na převod anglického textu na řeč: https://zkovacevicfi
 - **Převzaté soubory a licence:** `video-kit/tts/vendor/NOTICE.txt` (kokoro-js, Transformers.js, onnxruntime-web, phonemizer s eSpeak NG pod GPL-3.0).
 - **Testy:** `tests/run.js`, část „hlas pro videa“ (bez internetu: načtení, CSP, chybová hláška, verze převzatých souborů).
 
+## Zkoušení oblečení (`obleceni/`, stav 17. 11. 2026)
+
+Osobní stránka autora, s aplikací nesouvisí a nevede na ni odkaz: https://zkovacevicfilip-del.github.io/test/obleceni/ Zadají se tělesné míry a fotky (zepředu, zezadu, oba boky), pak fotka kusu oblečení a jeho míry z tabulky velikostí. Stránka ukáže verdikt (sedí, těsné, volné, krátké, dlouhé, nevejde se a kolik cm chybí) a koláž kusu na fotce zepředu.
+
+- **Bez AI (rozhodnutí z 17. 11. 2026):** realistický obrázek by uměla jen placená AI (Gemini, asi 1 Kč za obrázek, nutná karta). Autor zvolil variantu zdarma. Míry z tabulky se proto opisují ručně a odkaz na produkt nefunguje (prohlížeč cizí e-shop nenačte).
+- **Verdikt:** rezerva = míra oblečení − míra těla. Hranice „těsné“ a „volné“ jsou orientační pravidla (`MIRY` v `obleceni.js`). Míry naplocho se zdvojí. U tabulky postavy se bere horní hranice rozsahu plus obvyklá rezerva, takže jde jen o odhad. Pružný materiál se natáhne nejvýš o 8 % obvodu.
+- **Koláž:** pozadí kusu se odstraní podle barvy rohů, takže to funguje jen na jednobarevném pozadí. Na fotce postavy se klepnutím označí 6 bodů (temeno, chodidla, okraje hrudníku a pasu), na kusu 2 (okraje v podpaží nebo konce pasu). Šířka kusu = šířka těla na fotce × poměr obvodů, délka odpovídá skutečným cm (měřítko podle výšky). Kus musí být vyfocený naplocho, fotka na modelu dá špatné měřítko. Záhyby ani napnutí látky koláž neukáže a rukávy zůstanou v poloze z fotky. Boční a zadní fotky se jen ukládají.
+- **Data:** jen v prohlížeči (localStorage, fotky zmenšené na 1200 px). Nic se neposílá, CSP zakazuje všechna spojení.
+- **Testy:** `tests/obleceni.js` (součást `npm test`) s umělou postavou a umělým tričkem: výpočet, odstranění pozadí, poloha a velikost v koláži, uložení. Na tabletu ani na skutečných fotkách zatím neověřeno.
+
 ## Známá omezení
 
 - Čelní plocha se nepočítá z pozice kostry, ale z obrysu a jen na fotce zepředu. Odhad CdA platí jen pro malé změny pozice, ne pro jinou helmu nebo kombinézu.

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zkoušení oblečení</title>
+<meta name="theme-color" content="#17191B">
+<meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png?v=10">
+<link rel="stylesheet" href="obleceni.css?v=1">
+</head>
+<body>
+<main class="wrap">
+  <h1>Zkoušení oblečení</h1>
+  <p class="muted">Zadej svoje míry a fotky, pak míry kusu z tabulky velikostí. Stránka spočítá, jestli se do něj vejdeš, a přiloží ho na tvou fotku ve správné velikosti. Všechno zůstává v tomhle zařízení.</p>
+  <p class="status err" id="stav" role="status" aria-live="polite"></p>
+
+  <section class="card">
+    <h2>1. Tvoje míry (cm)</h2>
+    <div class="grid" id="teloMiry"></div>
+  </section>
+
+  <section class="card">
+    <h2>2. Tvoje fotky</h2>
+    <p class="muted small">Celá postava od hlavy po chodidla, stůj rovně, ruce kousek od těla, přiléhavé oblečení. Na koláž se používá fotka zepředu.</p>
+    <div class="fotky">
+      <label class="foto"><span>Zepředu</span><img id="nahled-predek" alt=""><input type="file" accept="image/*" data-foto="predek"></label>
+      <label class="foto"><span>Zezadu</span><img id="nahled-zezadu" alt=""><input type="file" accept="image/*" data-foto="zezadu"></label>
+      <label class="foto"><span>Levý bok</span><img id="nahled-levy" alt=""><input type="file" accept="image/*" data-foto="levy"></label>
+      <label class="foto"><span>Pravý bok</span><img id="nahled-pravy" alt=""><input type="file" accept="image/*" data-foto="pravy"></label>
+    </div>
+    <h3>Body na fotce zepředu</h3>
+    <p class="status" id="teloKrok"></p>
+    <canvas id="teloPlatno" class="platno hidden"></canvas>
+    <button class="btn ghost" id="teloZnovu" type="button">Označit body znovu</button>
+  </section>
+
+  <section class="card">
+    <h2>3. Oblečení</h2>
+    <label class="lbl" for="kusFoto">Fotka nebo screenshot kusu</label>
+    <input type="file" accept="image/*" id="kusFoto">
+    <p class="muted small">Nejlépe kus položený naplocho, zepředu, na jednobarevném pozadí. Screenshot nejdřív ořízni jen na oblečení.</p>
+    <label class="lbl" for="kusDil">Druh</label>
+    <select id="kusDil">
+      <option value="horni">Horní díl (tričko, košile, mikina, bunda)</option>
+      <option value="dolni">Dolní díl (kalhoty, šortky)</option>
+    </select>
+    <label class="check"><input type="checkbox" id="kusNaplocho"><span>Míry jsou naplocho (šířka), ne obvod</span></label>
+    <label class="check"><input type="checkbox" id="kusPostava"><span>Tabulka udává míry postavy, ne oblečení</span></label>
+    <label class="check"><input type="checkbox" id="kusPruzne"><span>Pružný materiál (elastan, úplet)</span></label>
+    <p class="muted small mezera">Opiš míry své velikosti z tabulky e-shopu. Rozsah jako 96–100 můžeš napsat celý. Prázdná pole se přeskočí.</p>
+    <div class="grid" id="kusMiry"></div>
+    <h3>Body na oblečení</h3>
+    <p class="status" id="kusKrok"></p>
+    <canvas id="kusPlatno" class="platno sachovnice hidden"></canvas>
+    <button class="btn ghost" id="kusZnovu" type="button">Označit body znovu</button>
+  </section>
+
+  <section class="card">
+    <h2>4. Výsledek</h2>
+    <p class="verdikt" id="verdikt"></p>
+    <table class="tabulka" id="tabulka"></table>
+    <p class="muted small" id="kolazInfo"></p>
+    <canvas id="kolaz" class="platno hidden"></canvas>
+    <div class="row">
+      <label class="lbl" for="kryti">Krytí oblečení</label>
+      <output id="krytiOut" for="kryti">100 %</output>
+    </div>
+    <input type="range" id="kryti" min="0.3" max="1" step="0.05" value="1">
+    <p class="muted small">Koláž ukazuje šířku a délku podle měr, ne záhyby a napnutí látky. Hranice „těsné“ a „volné“ jsou orientační.</p>
+  </section>
+</main>
+<script src="obleceni.js?v=1"></script>
+</body>
+</html>
