@@ -1,0 +1,50 @@
+/* Zkoušení oblečení. Paleta jako aplikace: Track black, Chalk grey, Electric purple. */
+:root{color-scheme:dark;--bg:#17191B;--surface:#232526;--ink:#E4E3DE;--on:#17191B;--muted:#9A9A98;--line:#353738;--line-2:#454647;--pt:#8B3DFF;--pt-text:#A66FF5;--ok:#5BC08A;--warn:#E5B454;--bad:#F06A6A}
+*{box-sizing:border-box}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+html.framed body{display:none!important}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.hidden{display:none!important}
+.wrap{max-width:720px;margin:0 auto;padding:22px 16px calc(48px + env(safe-area-inset-bottom))}
+h1{font-size:clamp(1.8rem,6.4vw,2.4rem);line-height:1.06;letter-spacing:-.035em;font-weight:700;margin:10px 0 10px}
+h2{font-size:1.2rem;margin:0 0 12px}
+h3{font-size:1rem;margin:20px 0 6px}
+p{margin:0 0 10px}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.mezera{margin-top:16px}
+.lbl{display:block;font-weight:600;font-size:.95rem;margin:14px 0 6px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px;margin-top:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px 12px}
+.pole{display:flex;flex-direction:column;justify-content:flex-end;gap:4px;font-size:.85rem;color:var(--muted)}
+input[type=number],input[type=text],select{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line-2);border-radius:12px;padding:10px 12px}
+input:focus,select:focus{outline:none;border-color:var(--ink)}
+input[type=file]{width:100%;font-size:.85rem;color:var(--muted)}
+.check{display:flex;gap:10px;align-items:flex-start;margin:12px 0 0;font-size:.95rem;cursor:pointer}
+.check input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--pt);flex:none}
+.fotky{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.foto{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:.9rem}
+.foto img{width:100%;aspect-ratio:3/4;object-fit:contain;background:var(--bg);border:1px solid var(--line);border-radius:12px}
+.foto img:not([src]){display:none}
+.platno{display:block;max-width:100%;max-height:75vh;margin:8px auto 0;border-radius:12px;cursor:crosshair;touch-action:manipulation}
+.sachovnice{background:repeating-conic-gradient(#2c2e30 0 25%,#3a3c3e 0 50%) 0 0/24px 24px}
+#kolaz{cursor:default}
+.btn{display:block;width:100%;font:inherit;font-weight:600;text-align:center;padding:12px 18px;margin-top:12px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--ink);cursor:pointer}
+.btn:active{transform:scale(.98)}
+.row{display:flex;justify-content:space-between;align-items:baseline}
+output{font-variant-numeric:tabular-nums;color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--pt);margin:4px 0 10px}
+.status{min-height:1.5em;font-size:.92rem;color:var(--muted)}
+.status.err{color:var(--bad);min-height:0}
+.verdikt{font-size:1.25rem;font-weight:700;line-height:1.3}
+.verdikt.nevejde{color:var(--bad)}
+.verdikt.tesne{color:var(--warn)}
+.verdikt.sedi{color:var(--ok)}
+.tabulka{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums;margin-bottom:10px}
+.tabulka th,.tabulka td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}
+.tabulka th{color:var(--muted);font-weight:600}
+.s-nevejde{color:var(--bad);font-weight:600}
+.s-tesne,.s-kratke{color:var(--warn)}
+.s-sedi{color:var(--ok)}
