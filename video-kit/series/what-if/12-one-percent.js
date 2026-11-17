@@ -37,6 +37,8 @@ module.exports = {
         const p = popS(t, TR('why:3'), null); pill('1% slope', 800, y - 100, { a: p.a, s: p.s, size: 36, bg: C.ink, c: C.bg, ls: 0 });
       } }
   },
+  // styl 6 (vybraný autorem 17. 11. 2026) a úvodní nápis watt+IF místo what+IF
+  style: { hook: 'watt', camera: 'drift', text: 'reveal', overlay: 'wipe', bg: 'paths' },
   facts: P => [
     ['35 km/h po rovině, CdA 0,25, W', P.watts(35), 175, 0.6],
     ['35 km/h do stoupání 1 %, W', P.watts(35, { grade: 0.01 }), 257, 0.6],

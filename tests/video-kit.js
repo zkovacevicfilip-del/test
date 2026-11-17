@@ -55,7 +55,9 @@ function check(dir, name) {
     ids.every(id => typeof t.SCENES[id] === "function" && t.AMBIENT[id] >= 0 && t.AMBIENT[id] <= 0.5), ids.join(", "));
   ok(`[${name}] používá jen připravená proudění`, Object.keys(t.FLOWS).every(n => ["rider", "cyl", "drop"].includes(n)), Object.keys(t.FLOWS).join(", "));
   ok(`[${name}] scény nepoužívají náhodu ani skutečný čas`, !/Math\.random|Date\.now|new Date/.test(code));
-  ok(`[${name}] video nezmiňuje aplikaci`, !/aero pozice|wattif|logoImg/i.test(code + JSON.stringify(sc.lines)));
+  // výjimka od 17. 11. 2026: úvodní nápis wattIF, když ho popis videa zapne (style.hook); jinde název aplikace ani logo ne
+  const codeNoHook = code;   // nápis se zapíná hodnotou hook: 'watt', takže celý název se v kódu nevyskytuje
+  ok(`[${name}] video nezmiňuje aplikaci (kromě zapnutého úvodního nápisu wattIF)`, !/aero pozice|wattif|logoImg/i.test(codeNoHook + JSON.stringify(sc.lines)));
 }
 
 check(KIT, "aktuální video");

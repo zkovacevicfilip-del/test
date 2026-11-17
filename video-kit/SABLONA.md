@@ -31,7 +31,7 @@ Pro krátké video (asi 30 s) připiš „krátká verze“ a platí oddíl 11.
 | Pohyb | rychlý nástup a pomalé dorovnání (`pop`, `popS`). **Nikdy lineární** nástup ani odchod |
 | Grafika | jednoduchá 2D, proudění = částice unášené simulovaným polem (pomalé fialové, rychlé světlé) |
 | Zvuk | jen hlas a tiché „whoosh“ na přechodech aktů. Žádná hudba |
-| Aplikace | video **nezmiňuje** aplikaci wattIF (dříve Aero pozice) ani její logo (dokud autor neřekne jinak; pak uprav i kontrolu v `tests/video-kit.js`) |
+| Aplikace | video **nezmiňuje** aplikaci wattIF (dříve Aero pozice) ani její logo. Jediná výjimka (autor 17. 11. 2026): úvodní nápis **wattIF** místo whatIF u videí ze série, která ho mají zapnutý v popisu (`style.hook: 'watt'`); hlas dál říká „What if“. Jiné zmínky jen na výslovné přání autora (pak uprav i kontrolu v `tests/video-kit.js`) |
 | Čísla | každé číslo je spočítané (`tools/physics.py`) nebo učebnicové a má uvedený zdroj. Nic se neodhaduje |
 
 ## 2. Soubory
@@ -363,6 +363,7 @@ Video ze série může mít v popisu `style`, který změní pohyb a efekty, ne 
 | | `slot` | číslice velkých čísel se protočí jako válečky automatu (Kokonut UI Dynamic Text), nadpisy jako `words` |
 | | `reveal` | slova vyjedou zdola zpoza neviditelné hrany |
 | `overlay` | `wipe` | fialový pruh přes celý obraz přejede mezi akty a zakryje střih |
+| `hook` | `watt` | úvodní nápis „wattIF“ místo „whatIF“ (hlas beze změny) |
 
 - **GSAP** (`engine/vendor/gsap.min.js`, licence „Standard No Charge“, zdarma i komerčně) dělá kameru a náběhy. Časové osy jsou pozastavené a pro každý snímek se posunou na čas t, takže render po částech dá vždy stejný obraz.
 - **Kokonut UI** (MIT) je knihovna pro React. Efekty jsou přepsané do našeho kreslení na plátno, React se nepoužívá. Barvy zůstávají naše tři.

@@ -27,6 +27,8 @@ module.exports = {
     tip: { type: 'rider', amb: 0.16, pose: { back: 'tip:2', elbows: 'tip:2+0.3', head: 'tip:2+0.15' },
       heads: [{ at: 'tip:0', title: 'Stop chasing', big: 'watts alone', bigAt: 'tip:1', c: 'ink' }, { at: 'tip:2', title: 'Cheaper speed', big: 'Cut your drag' }] }
   },
+  // styl 6 (vybraný autorem 17. 11. 2026) a úvodní nápis watt+IF místo what+IF
+  style: { hook: 'watt', camera: 'drift', text: 'reveal', overlay: 'wipe', bg: 'paths' },
   facts: P => [
     ['250 W, CdA 0,25, km/h', P.kmh(250), 40.0, 0.05],
     ['500 W, km/h', P.kmh(500), 51.5, 0.05],

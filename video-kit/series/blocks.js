@@ -19,14 +19,16 @@ const fin = (tpl, c) => c ? tpl.replace('#', num(c[1], c[2])) : tpl;
 const left = (parts, x, y, o) => { const w = parts.reduce((s, p) => s + width(p[0], o), 0); rich(parts, x + w / 2, y, o); };
 
 // úvodní „what IF“ ve stylu loga: bílé „what“, fialové „IF“
-function whatIf(t, tin, y, size) { const p = popS(t, tin, null, 0.7); rich([['what', C.ink], ['IF', C.pu]], 540, y, { size: size || 170, w: 800, f: F.U, a: p.a, s: p.s, ls: -5 }); }
+// úvodní slovo: „what“, nebo „watt“ (slovní hříčka s názvem aplikace), když to popis videa zapne: style.hook = 'watt'
+const hookWord = () => ((typeof STYLE === 'object' && STYLE && STYLE.hook === 'watt') ? 'watt' : 'what');
+function whatIf(t, tin, y, size) { const p = popS(t, tin, null, 0.7); rich([[hookWord(), C.ink], ['IF', C.pu]], 540, y, { size: size || 170, w: 800, f: F.U, a: p.a, s: p.s, ls: -5 }); }
 
 // ---------- sloupec textů na střed (hook a textové akty) ----------
 // items: { whatIf } | { t, i | at, dt, size, c, big, plain, gap, count }
 function stack(t, s, dy, outT) {
   const its = s.items.map(it => {
     const base = it.whatIf ? { size: 170, w: 800, f: F.U, ls: -5 } : it.big ? { size: it.size || 200, w: 800, f: F.U, ls: -6 } : it.plain ? { size: it.size || 52, w: 700 } : { size: it.size || 64, w: 700, f: F.U, ls: -2 };
-    return { it, fo: fit(it.whatIf ? 'whatIF' : fin(it.t, it.count), base, it.whatIf || it.big ? 780 : 860) };
+    return { it, fo: fit(it.whatIf ? hookWord() + 'IF' : fin(it.t, it.count), base, it.whatIf || it.big ? 780 : 860) };
   });
   let H = 0;
   its.forEach((x, k) => { x.cap = x.fo.size * 0.74; x.gap = k < its.length - 1 ? Math.max(40, 0.34 * Math.max(x.fo.size, its[k + 1].fo.size)) + (x.it.gap || 0) : 0; H += x.cap + x.gap; });
@@ -205,7 +207,7 @@ function makeFlows(V) {
 }
 
 // ---------- STYL (nepovinný): kamera z GSAP, efekty textu a pozadí podle Kokonut UI ----------
-// V popisu videa: style: { camera: 'whip' | 'punch' | 'drift' | 'flip', text: 'words' | 'marker' | 'slot' | 'reveal' | 'flap' | 'glitch',
+// V popisu videa: style: { hook: 'watt' (úvodní nápis watt+IF místo what+IF), camera: 'whip' | 'punch' | 'drift' | 'flip', text: 'words' | 'marker' | 'slot' | 'reveal' | 'flap' | 'glitch',
 //   sub: 'typing', bg: 'dots' | 'halftone' | 'paths', overlay: 'wipe' }.
 // GSAP (engine/vendor/gsap.min.js) tu slouží jako stroj na náběhy a časové osy: časové osy jsou pozastavené
 // a pro každý snímek se jen posunou na čas t (seek), takže vykreslení po částech dá vždy stejný obraz.
