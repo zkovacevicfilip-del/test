@@ -30,7 +30,7 @@ function build(spec) {
   const scenes = head.join('\n') + '\n\n' + blocks + '\n// ---------- popis tohoto videa ----------\nconst V = ' + ser(spec.scenes) + ';\n' +
     'const STYLE = ' + ser(spec.style || {}) + ';\n' +
     'const SCENES = {}, AMBIENT = {};\nfor (const id in V) { SCENES[id] = makeScene(V[id]); AMBIENT[id] = V[id].amb == null ? 0.2 : V[id].amb; }\nconst FLOWS = makeFlows(V);\n' +
-    'const CAMERA = STYLE.camera ? makeCamera(STYLE, V) : undefined;\nconst BACKGROUND = STYLE.bg ? makeBackground(STYLE) : undefined;\n';
+    'const CAMERA = STYLE.camera ? makeCamera(STYLE, V) : undefined;\nconst BACKGROUND = STYLE.bg ? makeBackground(STYLE) : undefined;\nconst OVERLAY = STYLE.overlay ? makeOverlay(STYLE) : undefined;\n';
   return { script, scenes, facts: fl };
 }
 module.exports = { build, facts, VOICE, TIMING };

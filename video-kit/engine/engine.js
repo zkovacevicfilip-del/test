@@ -170,11 +170,13 @@ window.renderFrame = f => {
   ctx.save(); ctx.translate(540, 905); ctx.scale(ZOOM, ZOOM); ctx.translate(-540, -905);
   // kamera (nepovinné): CAMERA(t) vrací {x, y, s, r}; pohybuje scénou, titulky zůstávají v klidu
   ctx.save();
-  if (typeof CAMERA === 'function') { const c = CAMERA(t) || {}; ctx.translate(540 + (c.x || 0), 905 + (c.y || 0)); ctx.rotate(c.r || 0); ctx.scale(c.s || 1, c.s || 1); ctx.translate(-540, -905); }
+  if (typeof CAMERA === 'function') { const c = CAMERA(t) || {}; ctx.translate(540 + (c.x || 0), 905 + (c.y || 0)); ctx.rotate(c.r || 0); ctx.scale((c.s || 1) * (c.sx == null ? 1 : c.sx), (c.s || 1) * (c.sy == null ? 1 : c.sy)); ctx.translate(-540, -905); }
   for (const a of TL.acts) if (t >= a.start && t < a.end) SCENES[a.id](t, a);
   ctx.restore();
   captions(t);
   ctx.restore();
+  // překryv přes celý obraz (nepovinné): OVERLAY(t), třeba stírací přechod mezi akty
+  if (typeof OVERLAY === 'function') { ctx.save(); OVERLAY(t); ctx.restore(); ctx.globalAlpha = 1; }
   const vg = ctx.createRadialGradient(540, 900, 520, 540, 960, 1250); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.42)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
   return true;
 };

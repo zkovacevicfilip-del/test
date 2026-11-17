@@ -344,7 +344,7 @@ video-kit/series/
 
 ## 13. Styl: GSAP a efekty z Kokonut UI (zkouška 17. 11. 2026)
 
-Video ze série může mít v popisu `style`, který změní pohyb a efekty, ne obsah ani hlas. Vzory: `series/styl-test/` (tři varianty videa what-if-no-air).
+Video ze série může mít v popisu `style`, který změní pohyb a efekty, ne obsah ani hlas. Vzory: `series/styl-test/` (šest variant videa what-if-no-air; autorovi se zatím nejvíc líbí styl 1).
 
 | Klíč | Hodnota | Co dělá |
 |---|---|---|
@@ -357,9 +357,15 @@ Video ze série může mít v popisu `style`, který změní pohyb a efekty, ne 
 | `sub` | `typing` | podnadpisy se píšou po písmenech s fialovým kurzorem |
 | `bg` | `dots` | vlnící se tečkové pole místo proudu vzduchu (Kokonut UI Dot Field) |
 | | `halftone` | polotónové kruhy v pohybu |
+| | `paths` | plující vlnovky (Kokonut UI Background Paths) |
+| `camera` | `flip` | nový akt se otočí jako karta (roztažení z úzkého proužku) a během aktu pomalé přiblížení |
+| `text` | `marker` | jako `words`, pod velkým číslem nebo slovem se natáhne fialový pruh (Kokonut UI Marker Text) |
+| | `slot` | číslice velkých čísel se protočí jako válečky automatu (Kokonut UI Dynamic Text), nadpisy jako `words` |
+| | `reveal` | slova vyjedou zdola zpoza neviditelné hrany |
+| `overlay` | `wipe` | fialový pruh přes celý obraz přejede mezi akty a zakryje střih |
 
 - **GSAP** (`engine/vendor/gsap.min.js`, licence „Standard No Charge“, zdarma i komerčně) dělá kameru a náběhy. Časové osy jsou pozastavené a pro každý snímek se posunou na čas t, takže render po částech dá vždy stejný obraz.
 - **Kokonut UI** (MIT) je knihovna pro React. Efekty jsou přepsané do našeho kreslení na plátno, React se nepoužívá. Barvy zůstávají naše tři.
-- **Motor** má dva nepovinné háčky: `CAMERA(t)` vrací `{x, y, s, r}` a hýbe scénou (titulky stojí), `BACKGROUND(t, síla)` kreslí pozadí místo proudu vzduchu. Videa bez stylu se nemění.
+- **Motor** má tři nepovinné háčky: `CAMERA(t)` vrací `{x, y, s, r, sx, sy}` a hýbe scénou (titulky stojí), `BACKGROUND(t, síla)` kreslí pozadí místo proudu vzduchu, `OVERLAY(t)` kreslí přes celý obraz (přechody). Videa bez stylu se nemění.
 - **Pozor na okraje:** kamera zvětšuje scénu, text u okraje (řádky s pruhem, x 110 až 970) snese přiblížení nejvýš asi 1,5 %. `preview` a `render` hlásí `PŘETÉKÁ MIMO OBRAZ`.
 - **Hlas pro varianty se nekupuje znovu:** do `work/kits/<nový název>/work/tts/` zkopíruj hlas původního videa, krok `voice` ho převezme („beze změny“, 0 znaků).

@@ -205,7 +205,8 @@ function makeFlows(V) {
 }
 
 // ---------- STYL (nepovinný): kamera z GSAP, efekty textu a pozadí podle Kokonut UI ----------
-// V popisu videa: style: { camera: 'whip' | 'punch' | 'drift', text: 'words' | 'flap' | 'glitch', sub: 'typing', bg: 'dots' | 'halftone' }.
+// V popisu videa: style: { camera: 'whip' | 'punch' | 'drift' | 'flip', text: 'words' | 'marker' | 'slot' | 'reveal' | 'flap' | 'glitch',
+//   sub: 'typing', bg: 'dots' | 'halftone' | 'paths', overlay: 'wipe' }.
 // GSAP (engine/vendor/gsap.min.js) tu slouží jako stroj na náběhy a časové osy: časové osy jsou pozastavené
 // a pro každý snímek se jen posunou na čas t (seek), takže vykreslení po částech dá vždy stejný obraz.
 const STY = () => (typeof STYLE === 'object' && STYLE) || {};
@@ -222,12 +223,44 @@ function fxText(s, x, y, o, at, kind, t) {
   const base = Object.assign({}, o, { align: 'left', s: 1 });
   ctx.save();
   if (sc !== 1) { ctx.translate(x, y - o.size * 0.35); ctx.scale(sc, sc); ctx.translate(-x, -(y - o.size * 0.35)); }
-  if (mode === 'words' && kind !== 'sub') {
-    // kinetická slova (GSAP back.out): každé slovo vyskočí zdola s malým natočením, 70 ms po předchozím
+  // kinetická slova (GSAP back.out): každé slovo vyskočí zdola s malým natočením, 70 ms po předchozím
+  const kinetic = (b) => {
     const words = s.split(' '), e = ease('back.out(2.2)'); let cx = x0;
     words.forEach((w, i) => {
       const ww = width(w + (i < words.length - 1 ? ' ' : ''), o), lt = dt - i * 0.07, k = e(clamp(lt / 0.45)), a = clamp(lt / 0.12);
-      if (a > 0) { ctx.save(); ctx.translate(cx, y + (1 - k) * 60); ctx.rotate((1 - k) * -0.12); ctx.scale(0.7 + 0.3 * k, 0.7 + 0.3 * k); txt(w, 0, 0, Object.assign({}, base, { a: (o.a == null ? 1 : o.a) * a })); ctx.restore(); }
+      if (a > 0) { ctx.save(); ctx.translate(cx, y + (1 - k) * 60); ctx.rotate((1 - k) * -0.12); ctx.scale(0.7 + 0.3 * k, 0.7 + 0.3 * k); txt(w, 0, 0, Object.assign({}, b, { a: (o.a == null ? 1 : o.a) * a })); ctx.restore(); }
+      cx += ww;
+    });
+  };
+  if (mode === 'words' && kind !== 'sub') kinetic(base);
+  else if (mode === 'marker' && kind !== 'sub') {
+    // zvýrazňovač (Kokonut Marker Text): pod velkým číslem nebo slovem se zleva natáhne fialový pruh, text na něm je křídový
+    if (kind === 'big') {
+      const k = ease('power3.out')(clamp((dt - 0.1) / 0.45)), pad = o.size * 0.16;
+      if (k > 0) { ctx.save(); ctx.globalAlpha *= o.a == null ? 1 : o.a; ctx.fillStyle = C.pu; ctx.beginPath(); ctx.roundRect(x0 - pad, y - o.size * 0.84, (full + 2 * pad) * k, o.size * 1.04, o.size * 0.14); ctx.fill(); ctx.restore(); }
+      kinetic(Object.assign({}, base, { c: C.ink }));
+    } else kinetic(base);
+  } else if (mode === 'slot' && kind !== 'sub') {
+    // počítadlo (Kokonut Dynamic Text): číslice se protočí zdola jako válečky automatu, každá o 50 ms později (GSAP expo.out)
+    if (kind === 'big') {
+      const chars = [...s], lh = o.size * 1.05;
+      chars.forEach((c, i) => {
+        const cx = x0 + width(s.slice(0, i), o), cw = width(c, o) + 2, lt = dt - i * 0.05, e = ease('expo.out')(clamp(lt / 0.75)), a = (o.a == null ? 1 : o.a) * clamp(lt / 0.08);
+        if (a <= 0) return;
+        if (/[0-9]/.test(c)) {
+          const steps = 10 + +c, pos = steps * e;
+          ctx.save(); ctx.beginPath(); ctx.rect(cx - 2, y - o.size * 0.9, cw + 4, o.size * 1.18); ctx.clip();
+          for (let k = Math.floor(pos) - 1; k <= Math.floor(pos) + 1; k++) if (k >= 0 && k <= steps) txt(String(k % 10), cx, y + (k - pos) * lh, Object.assign({}, base, { a, ls: 0 }));
+          ctx.restore();
+        } else txt(c, cx, y + (1 - e) * o.size * 0.5, Object.assign({}, base, { a, ls: 0 }));
+      });
+    } else kinetic(base);
+  } else if (mode === 'reveal' && kind !== 'sub') {
+    // odkrytí zpod linky: každé slovo vyjede zdola zpoza neviditelné hrany, 60 ms po předchozím (GSAP expo.out)
+    const words = s.split(' '); let cx = x0;
+    words.forEach((w, i) => {
+      const ww = width(w + (i < words.length - 1 ? ' ' : ''), o), wo = width(w, o), lt = dt - i * 0.06, k = ease('expo.out')(clamp(lt / 0.6));
+      if (lt > 0) { ctx.save(); ctx.beginPath(); ctx.rect(cx - o.size * 0.1, y - o.size * 1.0, wo + o.size * 0.2, o.size * 1.3); ctx.clip(); txt(w, cx, y + (1 - k) * o.size * 1.25, base); ctx.restore(); }
       cx += ww;
     });
   } else if (mode === 'typing') {
@@ -291,6 +324,14 @@ function makeBackground(st) {
         const n = noise3(x / 240, y / 240, t * 0.35), wave = 0.5 + 0.5 * Math.sin(y / 140 - t * 1.6 + x / 400), v = clamp((n - 0.35) * 2.2) * 0.75 + wave * 0.25;
         ctx.globalAlpha = (0.05 + 0.32 * v) * k; ctx.fillStyle = v > 0.72 ? C.pu : C.ink; ctx.beginPath(); ctx.arc(x, y, 1.6 + 1.6 * v, 0, 7); ctx.fill();
       }
+    } else if (st.bg === 'paths') {
+      // plující čáry (Kokonut Background Paths): 28 vlnovek přes celou výšku, každá se pomalu vlní jinou fází
+      ctx.lineWidth = 1.6;
+      for (let j = 0; j < 28; j++) {
+        const y0 = 80 + j * 66; ctx.beginPath();
+        for (let x = -20; x <= W + 20; x += 20) { const yy = y0 + 60 * Math.sin(x / 260 + t * 0.35 + j * 0.7) + 26 * Math.sin(x / 115 - t * 0.5 + j); if (x < 0) ctx.moveTo(x, yy); else ctx.lineTo(x, yy); }
+        ctx.globalAlpha = (j % 7 === 3 ? 0.22 : 0.09) * k; ctx.strokeStyle = j % 7 === 3 ? C.pu : C.ink; ctx.stroke();
+      }
     } else if (st.bg === 'halftone') {
       const step = 26;
       for (let y = 0; y < H + step; y += step) for (let x = (y / step % 2) * step / 2; x < W + step; x += step) {
@@ -305,7 +346,7 @@ function makeBackground(st) {
 
 // kamera z GSAP: pozastavená časová osa nad obyčejným objektem {x, y, s, r}, pro snímek se posune na čas t
 function makeCamera(st, V) {
-  let tl = null; const cam = { x: 0, y: 0, s: 1, r: 0 };
+  let tl = null; const cam = { x: 0, y: 0, s: 1, r: 0, sx: 1 };
   const build = () => {
     tl = gsap.timeline({ paused: true });
     TL.acts.forEach((a, i) => {
@@ -314,7 +355,11 @@ function makeCamera(st, V) {
         const d = i % 2 ? 1 : -1;
         tl.fromTo(cam, { x: 260 * d, r: 0.035 * d }, { x: 0, r: 0, duration: 0.5, ease: 'expo.out', immediateRender: false }, a.start);
       }
-      if (st.camera === 'whip' || st.camera === 'drift') {
+      if (st.camera === 'flip' && i > 0) {
+        // nový akt se otočí jako karta: scéna se roztáhne z úzkého proužku, s malým překmitem (GSAP back.out)
+        tl.fromTo(cam, { sx: 0.03 }, { sx: 1, duration: 0.55, ease: 'back.out(1.4)', immediateRender: false }, a.start);
+      }
+      if (st.camera === 'whip' || st.camera === 'drift' || st.camera === 'flip') {
         // pomalé přiblížení během aktu (push-in)
         tl.fromTo(cam, { s: 1 }, { s: st.camera === 'drift' ? 1.012 : 1.018, duration: Math.max(0.5, a.end - a.start), ease: 'power1.inOut', immediateRender: false }, a.start);
       }
@@ -328,4 +373,17 @@ function makeCamera(st, V) {
     }
   };
   return function (t) { if (!tl) build(); tl.seek(t, false); return cam; };
+}
+
+// překryv: fialový pruh přes celý obraz přejede zleva doprava a zakryje střih mezi akty (GSAP power3.inOut)
+function makeOverlay(st) {
+  return function (t) {
+    if (st.overlay !== 'wipe') return;
+    const e = ease('power3.inOut');
+    TL.acts.forEach((a, i) => {
+      if (!i) return; const u = (t - (a.start - 0.32)) / 0.64; if (u <= 0 || u >= 1) return;
+      const left = -W + 2 * W * e(u);
+      ctx.fillStyle = C.pu; ctx.fillRect(left, 0, W, H); ctx.fillStyle = C.ink; ctx.fillRect(left + W - 4, 0, 14, H);
+    });
+  };
 }
