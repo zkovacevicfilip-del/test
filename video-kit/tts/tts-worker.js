@@ -4,13 +4,13 @@ import { KokoroTTS, TextSplitterStream, env } from "./vendor/kokoro.web.js";
 import { shape } from "./prosody.mjs?v=3";
 
 const MODEL = "onnx-community/Kokoro-82M-v1.0-ONNX";
-// Jediný hlas stránky: směs hlasů Kokoro 50 % am_fenrir + 25 % am_puck + 25 % bm_lewis (soubor voice-mix.bin, licence Apache-2.0).
-// Proti čistému Fenrirovi je hlubší a mužnější (nižší F0 a formanty, blíž Liamovi), viz README.
+// Jediný hlas stránky: směs amerických hlasů Kokoro 50 % am_fenrir + 25 % am_puck + 25 % am_onyx (soubor voice-mix.bin, licence Apache-2.0).
+// Proti čistému Fenrirovi je hlubší (F0 119 místo 141 Hz) a bez britského hlasu ve směsi (ten dával cizí přízvuk), viz README.
 // Knihovna umí jen hlasy ze svého seznamu, proto směs nastoupí na místo hlasu am_santa, který stránka jinak nepoužívá:
 // stažení am_santa se přesměruje na voice-mix.bin a starý obsah mezipaměti pro tenhle hlas se při startu smaže.
 const VOICE = "am_santa";
 const SLOT_URL = "https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/main/voices/am_santa.bin";
-const MIX_URL = new URL("./voice-mix.bin?v=1", import.meta.url).href;
+const MIX_URL = new URL("./voice-mix.bin?v=2", import.meta.url).href;
 const realFetch = self.fetch.bind(self);
 self.fetch = (input, init) => realFetch((typeof input === "string" ? input : input.url) === SLOT_URL ? MIX_URL : input, init);
 const GAP = 0.29;            // pauza mezi větami v sekundách (medián u Liama)
