@@ -284,7 +284,36 @@ async function runWidth(browser, base, width) {
     }
   });
 
-  // ----- 6. chyby za celý průchod -----
+  // ----- 6. stránka pro převod textu na řeč (video-kit/tts) -----
+  // Test běží bez internetu: model z Hugging Face se nestáhne, stránka to ale musí oznámit, ne spadnout.
+  const foreignBefore = foreign.length;
+  await step("převod textu na řeč: načtení a chyba bez sítě", async () => {
+    const L = T + "hlas pro videa: ";
+    await page.goto(base + "/video-kit/tts/index.html", { waitUntil: "load" });
+    const info = await page.evaluate(() => ({
+      inline: document.querySelectorAll("script:not([src]), [onclick], [style]").length,
+      csp: (document.querySelector('meta[http-equiv="Content-Security-Policy"]') || {}).content || "",
+      overflow: document.documentElement.scrollWidth - window.innerWidth,
+      speed: document.getElementById("ttsSpeedOut").textContent
+    }));
+    ok(L + "žádný kód ani styl přímo v HTML", info.inline === 0, "nalezeno: " + info.inline);
+    ok(L + "připojit se smí jen k vlastnímu webu a k Hugging Face", /connect-src 'self' https:\/\/huggingface\.co https:\/\/\*\.hf\.co;/.test(info.csp) && /script-src 'self' 'wasm-unsafe-eval';/.test(info.csp), info.csp);
+    ok(L + "nic nepřetéká do šířky a rychlost ukazuje 1.15×", info.overflow <= 0 && info.speed === "1.15×", info.overflow + " / " + info.speed);
+    await page.click("#ttsGo");
+    await page.waitForFunction(() => document.getElementById("ttsStatus").classList.contains("err") && !document.getElementById("ttsGo").disabled, null, { timeout: 20000 });
+    ok(L + "bez sítě ukáže chybu a tlačítko jde použít znovu", /Nepovedlo se/.test(await page.locator("#ttsStatus").innerText()));
+    // převzaté soubory musí patřit k sobě: výpočetní jádro ve stejné verzi, jakou čeká kokoro.web.js
+    const ver = fs.readFileSync(path.join(ROOT, "video-kit/tts/vendor/ort-wasm-simd-threaded.jsep.mjs"), "utf8").length > 1000 &&
+      fs.readFileSync(path.join(ROOT, "video-kit/tts/vendor/kokoro.web.js"), "utf8").includes("1.22.0-dev.20250409-89f8206ba4");
+    ok(L + "převzaté soubory jsou na místě a ve správné verzi", ver && fs.statSync(path.join(ROOT, "video-kit/tts/vendor/ort-wasm-simd-threaded.jsep.wasm")).size > 1e7);
+  });
+  // stránka smí sahat jen pro model Kokoro na Hugging Face (test ho zablokoval); tyhle pokusy se do „aplikace se nepřipojuje“ nepočítají
+  const ttsForeign = foreign.splice(foreignBefore);
+  ok(T + "hlas pro videa: mimo vlastní web chce jen model Kokoro z Hugging Face", ttsForeign.length > 0 && ttsForeign.every(u => u.startsWith("https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/")), ttsForeign.slice(0, 3).join(" | "));
+  // chyby z téhle stránky jsou při běhu bez internetu očekávané (zablokované stažení modelu), nepočítají se
+  for (let i = problems.length - 1; i >= 0; i--) if (/huggingface|Failed to fetch|net::ERR_FAILED|ERR_BLOCKED_BY_CLIENT/i.test(problems[i])) problems.splice(i, 1);
+
+  // ----- 7. chyby za celý průchod -----
   await page.waitForTimeout(300);
   const csp = problems.filter(p => p.startsWith("CSP:") || /Content Security Policy/i.test(p));
   const other = problems.filter(p => !csp.includes(p));

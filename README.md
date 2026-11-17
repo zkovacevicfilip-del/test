@@ -130,6 +130,16 @@ Jednoduchá anglická stránka na sběr e-mailů zájemců o předběžný pří
 
 Sada na vysvětlovací aero videa pro Instagram Reels (1080 × 1920, asi 60 s nebo krátká verze asi 30 s, anglicky, hlas ElevenLabs „Liam“). S aplikací nesouvisí a na webu se nepoužívá. Návod a pravidla stylu jsou ve `video-kit/SABLONA.md`, vzor (video „What is CdA“) ve `video-kit/examples/what-is-cda/`. Krátká verze (oddíl 11 návodu, stav 16. 11. 2026) má pět vzorů s různými typy úvodní věty: `why-40-feels-brutal`, `lighter-bike-myth`, `drag-is-behind-you`, `same-power-3-minutes`, `three-free-fixes`. Pro nové video se píše jen `script.json` a `scenes.js`, zbytek udělá `bash video-kit/build.sh`. Víc videí najednou se vyrábí z popisů a hotových bloků ve `video-kit/series/` (oddíl 12 návodu): série „What if“ má 30 popisů v `video-kit/series/what-if/`. **Stav 17. 11. 2026: vyrobeno 16 z 30 videí (01 až 16), zbylých 14 má hotový popis i zkušební náhled bez hlasu a čeká na obnovení kvóty ElevenLabs (10 000 znaků, vyčerpáno).** Dokončení: `bash video-kit/series/batch.sh all video-kit/series/what-if/{17..30}-*.js`, potom kontrola přepisu a náhledů. Pracovní soubory a hotová videa (`video-kit/work/`) se do repozitáře neukládají.
 
+## Hlas pro videa (`video-kit/tts/`, stav 17. 11. 2026)
+
+Jednoduchá stránka na převod anglického textu na řeč: https://zkovacevicfilip-del.github.io/test/video-kit/tts/ (v aplikaci na ni nevede odkaz). Napíše se text, klepne na Přečíst, zvuk se přehraje a jde stáhnout jako WAV.
+
+- **Hlas:** jediný, „am_fenrir“ z volně licencovaného modelu Kokoro-82M (Apache-2.0). Ze všech mužských hlasů Kokoro je podle měření výšky, melodie a barvy hlasu nejblíž Liamovi z ElevenLabs, ale Liam to není. Hlas Liam se podle rozhodnutí z 17. 11. 2026 nenapodobuje (hlas skutečného člověka bez jeho souhlasu).
+- **Jak to běží:** model se spouští přímo v prohlížeči (`tts-worker.js`, knihovna kokoro-js ve `vendor/`). Text se nikam neposílá. Model (asi 92 MB) a hlas se při prvním použití stáhnou z Hugging Face a prohlížeč si je uloží. CSP povoluje připojení jen k vlastnímu webu, `huggingface.co` a `*.hf.co`.
+- **Rychlost:** v cloudovém prohlížeči asi 3 s výpočtu na 1 s zvuku (první použití navíc stahuje model). Na tabletu neověřeno.
+- **Převzaté soubory a licence:** `video-kit/tts/vendor/NOTICE.txt` (kokoro-js, Transformers.js, onnxruntime-web, phonemizer s eSpeak NG pod GPL-3.0).
+- **Testy:** `tests/run.js`, část „hlas pro videa“ (bez internetu: načtení, CSP, chybová hláška, verze převzatých souborů).
+
 ## Známá omezení
 
 - Čelní plocha se nepočítá z pozice kostry, ale z obrysu a jen na fotce zepředu. Odhad CdA platí jen pro malé změny pozice, ne pro jinou helmu nebo kombinézu.

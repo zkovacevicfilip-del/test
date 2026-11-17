@@ -1,0 +1,12 @@
+# Převzaté soubory (převod textu na řeč)
+
+Soubory v této složce jsou beze změny převzaté z balíčků npm. Stránka `video-kit/tts/` je používá jen ke spuštění modelu v prohlížeči.
+
+| Soubor | Původ | Licence |
+|---|---|---|
+| `kokoro.web.js` | [kokoro-js](https://www.npmjs.com/package/kokoro-js) 1.2.1 (webová verze). Obsahuje [Transformers.js](https://github.com/huggingface/transformers.js) 3.5.1 (Apache-2.0), [phonemizer](https://www.npmjs.com/package/phonemizer) 1.2.1 (Apache-2.0) a v něm [eSpeak NG](https://github.com/espeak-ng/espeak-ng) přeložený do WebAssembly (GPL-3.0) | Apache-2.0, eSpeak NG GPL-3.0 |
+| `ort-wasm-simd-threaded.jsep.mjs`, `.wasm` | [onnxruntime-web](https://www.npmjs.com/package/onnxruntime-web) 1.22.0-dev.20250409-89f8206ba4 | MIT |
+
+Zdrojový kód eSpeak NG: https://github.com/espeak-ng/espeak-ng. Zdrojový kód phonemizer: https://github.com/xenova/phonemizer.
+
+Model a hlas nejsou v repozitáři: prohlížeč je načte z Hugging Face, model [onnx-community/Kokoro-82M-v1.0-ONNX](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX) (licence Apache-2.0, původní model [hexgrad/Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M)).
