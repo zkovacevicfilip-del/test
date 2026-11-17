@@ -1,0 +1,4 @@
+GSAP 3.15.1 (https://gsap.com), soubor gsap.min.js beze změny z balíčku npm „gsap“.
+Licence: Standard "No Charge" GSAP License, https://gsap.com/standard-license
+Copyright 2026, GreenSock (Webflow). Použití zdarma včetně komerčního; zakázané je jen použití v nástrojích,
+které konkurují Webflow (vizuální editory animací bez kódu). Upozornění na autorská práva v souboru se nesmí odstranit.

@@ -88,12 +88,13 @@ for (const ex of fs.readdirSync(path.join(KIT, "examples"))) check(path.join(KIT
       const wrong = refs.filter(r => r[0] === "@").map(r => r.slice(1)).filter(r => { const m = /^([A-Za-z0-9_]+)(?::(\d+))?(\$)?([+-]\d*\.?\d+)?$/.exec(r); return !m || !spec.lines[m[1]] || (m[2] != null && !spec.lines[m[1]].chunks[+m[2]]); });
       const hookItems = Object.values(spec.scenes).filter(x => x.type === "hook" || x.type === "text").flatMap(x => x.items.filter(i => i.i != null).map(i => [x.line, i.i])).filter(([l, i]) => !spec.lines[l] || !spec.lines[l].chunks[i]);
       ok(`[${name}] časy scén odkazují na existující věty a titulky`, wrong.length === 0 && hookItems.length === 0, wrong.concat(hookItems.map(String)).join(", "));
+      if (spec.style) ok(`[${name}] styl zapne kameru nebo pozadí jen přes háčky motoru (CAMERA, BACKGROUND)`, /const CAMERA = STYLE\.camera \? makeCamera/.test(out.scenes) && /const BACKGROUND = STYLE\.bg \? makeBackground/.test(out.scenes) && ["whip", "punch", "drift", undefined].includes(spec.style.camera) && ["words", "flap", "glitch", "typing", undefined].includes(spec.style.text) && ["dots", "halftone", undefined].includes(spec.style.bg), JSON.stringify(spec.style));
       ok(`[${name}] název je jedinečný a video začíná slovy „What if“`, !titles.has(spec.title) && /^What if /.test(out.script.lines[out.script.acts[0].lines[0]].say), spec.title);
       titles.add(spec.title);
     }
   }
 }
-ok("motor a nástroje sady jsou na místě", ["engine/engine.js", "engine/render.js", "engine/index.html", "tools/tts.py", "tools/align.py", "tools/timeline.py",
+ok("motor a nástroje sady jsou na místě", ["engine/engine.js", "engine/render.js", "engine/index.html", "engine/vendor/gsap.min.js", "engine/vendor/LICENSE-gsap.txt", "tools/tts.py", "tools/align.py", "tools/timeline.py",
   "tools/audio.py", "tools/sheet.py", "tools/physics.py", "sim/lbm.py", "sim/potential.py", "sim/mkmask.js", "build.sh", "SABLONA.md"].every(f => fs.existsSync(path.join(KIT, f))));
 ok("stránka motoru nemá skript přímo v HTML", !/<script(?![^>]*\bsrc=)[^>]*>/i.test(fs.readFileSync(path.join(KIT, "engine/index.html"), "utf8")));
 

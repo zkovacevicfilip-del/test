@@ -28,7 +28,9 @@ function build(spec) {
     .concat(fl.map(f => '// Číslo: ' + f.label + ' = ' + (+f.calc.toFixed(3)) + ' (ve videu ' + f.shown + ')'))
     .concat(spec.sources ? ['// Zdroje: ' + spec.sources] : []);
   const scenes = head.join('\n') + '\n\n' + blocks + '\n// ---------- popis tohoto videa ----------\nconst V = ' + ser(spec.scenes) + ';\n' +
-    'const SCENES = {}, AMBIENT = {};\nfor (const id in V) { SCENES[id] = makeScene(V[id]); AMBIENT[id] = V[id].amb == null ? 0.2 : V[id].amb; }\nconst FLOWS = makeFlows(V);\n';
+    'const STYLE = ' + ser(spec.style || {}) + ';\n' +
+    'const SCENES = {}, AMBIENT = {};\nfor (const id in V) { SCENES[id] = makeScene(V[id]); AMBIENT[id] = V[id].amb == null ? 0.2 : V[id].amb; }\nconst FLOWS = makeFlows(V);\n' +
+    'const CAMERA = STYLE.camera ? makeCamera(STYLE, V) : undefined;\nconst BACKGROUND = STYLE.bg ? makeBackground(STYLE) : undefined;\n';
   return { script, scenes, facts: fl };
 }
 module.exports = { build, facts, VOICE, TIMING };

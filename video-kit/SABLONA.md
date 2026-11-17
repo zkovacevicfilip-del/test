@@ -341,3 +341,25 @@ video-kit/series/
 - Hlas hlídej: jedno video je asi 430 znaků. **Před větší dávkou si spočítej znaky a ověř, že na ně stačí kvóta ElevenLabs.**
   Když kvóta dojde (chyba `quota_exceeded`), udělej zatím náhledy bez hlasu: `bash video-kit/series/batch.sh dry <popisy…>`.
   Z takového náhledu video vyrenderovat nejde, po obnovení kvóty spusť `voice` a pokračuj.
+
+## 13. Styl: GSAP a efekty z Kokonut UI (zkouška 17. 11. 2026)
+
+Video ze série může mít v popisu `style`, který změní pohyb a efekty, ne obsah ani hlas. Vzory: `series/styl-test/` (tři varianty videa what-if-no-air).
+
+| Klíč | Hodnota | Co dělá |
+|---|---|---|
+| `camera` | `whip` | švih kamery do každého aktu ze strany a pomalé přiblížení během aktu |
+| | `drift` | pomalé přiblížení a jemný posun nahoru během aktu |
+| | `punch` | krátký „úder“ přiblížení s pružným návratem, když naskočí velké číslo nebo slovo |
+| `text` | `words` | velké texty a nadpisy naskakují po slovech s mírným natočením |
+| | `flap` | velká čísla a slova jako letištní tabule (Kokonut UI Split Flap Text) |
+| | `glitch` | velké texty a nadpisy naskočí s krátkou poruchou signálu (Kokonut UI Glitch Text) |
+| `sub` | `typing` | podnadpisy se píšou po písmenech s fialovým kurzorem |
+| `bg` | `dots` | vlnící se tečkové pole místo proudu vzduchu (Kokonut UI Dot Field) |
+| | `halftone` | polotónové kruhy v pohybu |
+
+- **GSAP** (`engine/vendor/gsap.min.js`, licence „Standard No Charge“, zdarma i komerčně) dělá kameru a náběhy. Časové osy jsou pozastavené a pro každý snímek se posunou na čas t, takže render po částech dá vždy stejný obraz.
+- **Kokonut UI** (MIT) je knihovna pro React. Efekty jsou přepsané do našeho kreslení na plátno, React se nepoužívá. Barvy zůstávají naše tři.
+- **Motor** má dva nepovinné háčky: `CAMERA(t)` vrací `{x, y, s, r}` a hýbe scénou (titulky stojí), `BACKGROUND(t, síla)` kreslí pozadí místo proudu vzduchu. Videa bez stylu se nemění.
+- **Pozor na okraje:** kamera zvětšuje scénu, text u okraje (řádky s pruhem, x 110 až 970) snese přiblížení nejvýš asi 1,5 %. `preview` a `render` hlásí `PŘETÉKÁ MIMO OBRAZ`.
+- **Hlas pro varianty se nekupuje znovu:** do `work/kits/<nový název>/work/tts/` zkopíruj hlas původního videa, krok `voice` ho převezme („beze změny“, 0 znaků).

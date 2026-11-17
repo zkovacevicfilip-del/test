@@ -34,8 +34,8 @@ function stack(t, s, dy, outT) {
   its.forEach(x => {
     const it = x.it, at = (it.at ? TR(it.at) : cs(s.line, it.i)) + (it.dt || 0); y += x.cap; const yy = y + dy; y += x.gap;
     if (it.whatIf) whatIf(t, at, yy, x.fo.size);
-    else if (it.big) { const p = popS(t, at, outT, 0.7); txt(live(it.t, it.count, t, at), 540, yy + p.dy, Object.assign({}, x.fo, { c: COL(it.c || 'pu'), a: p.a, s: p.s })); }
-    else { const p = pop(t, at, outT); txt(it.t, 540, yy + p.dy, Object.assign({}, x.fo, { c: COL(it.c), a: p.a })); }
+    else if (it.big) { const p = STY().text ? { a: clamp((t - at) / 0.05), s: 1, dy: 0 } : popS(t, at, outT, 0.7); fxText(live(it.t, it.count, t, at), 540, yy + p.dy, Object.assign({}, x.fo, { c: COL(it.c || 'pu'), a: p.a, s: p.s }), at, 'big', t); }
+    else { const p = STY().text ? { a: clamp((t - at) / 0.05), dy: 0 } : pop(t, at, outT); fxText(it.t, 540, yy + p.dy, Object.assign({}, x.fo, { c: COL(it.c), a: p.a }), at, 'title', t); }
   });
 }
 
@@ -49,13 +49,13 @@ function heads(t, list, dy) {
     if (h.label) { const q = pop(t, at, out); txt(h.label, 540, 306 + q.dy + dy, Object.assign(fit(h.label, { size: 32, w: 800, ls: 4 }, 860), { c: C.muted, a: q.a })); }
     if (h.title) {
       const two = !!h.big, fo = fit(h.title, { size: h.tsize || (two ? 60 : 74), w: 700, f: F.U, ls: -2 }, 860), p = pop(t, at, out);
-      txt(h.title, 540, (two ? 350 : h.sub ? 392 : 430) + p.dy + dy, Object.assign({}, fo, { c: COL(h.tc), a: p.a }));
+      fxText(h.title, 540, (two ? 350 : h.sub ? 392 : 430) + (STY().text ? (p.o ? p.dy : 0) : p.dy) + dy, Object.assign({}, fo, { c: COL(h.tc), a: p.a }), at, 'title', t);
     }
     if (h.big) {
       const bAt = h.bigAt ? TR(h.bigAt) : at, fo = fit(fin(h.big, h.count), { size: h.size || (h.title ? 116 : 150), w: 800, f: F.U, ls: -4 }, 780), p = popS(t, bAt, out, 0.7);
-      txt(live(h.big, h.count, t, bAt), 540, (h.title ? 482 : h.label ? 452 : h.sub ? 392 : 430) + p.dy + dy, Object.assign({}, fo, { c: COL(h.c || 'pu'), a: p.a, s: p.s }));
+      fxText(live(h.big, h.count, t, bAt), 540, (h.title ? 482 : h.label ? 452 : h.sub ? 392 : 430) + p.dy + dy, Object.assign({}, fo, { c: COL(h.c || 'pu'), a: p.a, s: STY().text ? (p.dy ? p.s : 1) : p.s }), bAt, 'big', t);
     }
-    if (h.sub) { const q = pop(t, h.subAt ? TR(h.subAt) : (h.bigAt ? TR(h.bigAt) : at) + 0.2, out); txt(h.sub, 540, (h.label ? 516 : 470) + q.dy + dy, Object.assign(fit(h.sub, { size: 46, w: 700 }, 860), { c: COL(h.subC || 'muted'), a: q.a })); }
+    if (h.sub) { const sAt = h.subAt ? TR(h.subAt) : (h.bigAt ? TR(h.bigAt) : at) + 0.2, q = pop(t, sAt, out); fxText(h.sub, 540, (h.label ? 516 : 470) + q.dy + dy, Object.assign(fit(h.sub, { size: 46, w: 700 }, 860), { c: COL(h.subC || 'muted'), a: q.a }), sAt, 'sub', t); }
   });
 }
 
@@ -202,4 +202,130 @@ function makeFlows(V) {
   for (const id in V) if (V[id].type === 'flow') panelsOf(V[id]).forEach(p => (use[p.flow] = use[p.flow] || []).push(id));
   for (const n in use) { const ids = use[n]; out[n] = { count: n === 'rider' ? 3400 : 3000, from: () => ACT[ids[0]].start, to: () => ACT[ids[ids.length - 1]].end }; }
   return out;
+}
+
+// ---------- STYL (nepovinný): kamera z GSAP, efekty textu a pozadí podle Kokonut UI ----------
+// V popisu videa: style: { camera: 'whip' | 'punch' | 'drift', text: 'words' | 'flap' | 'glitch', sub: 'typing', bg: 'dots' | 'halftone' }.
+// GSAP (engine/vendor/gsap.min.js) tu slouží jako stroj na náběhy a časové osy: časové osy jsou pozastavené
+// a pro každý snímek se jen posunou na čas t (seek), takže vykreslení po částech dá vždy stejný obraz.
+const STY = () => (typeof STYLE === 'object' && STYLE) || {};
+const ease = name => (typeof gsap !== 'undefined' ? gsap.parseEase(name) : E.expo);
+// deterministická „náhoda“ ze zadaného čísla (bez skutečné náhody, kvůli renderu po částech)
+const hash = n => { let x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+// text s efektem podle stylu; kind = 'big' (hlavní číslo nebo slovo), 'title', 'sub'; at = čas, kdy text naskočí
+function fxText(s, x, y, o, at, kind, t) {
+  const st = STY(), mode = kind === 'sub' ? st.sub : st.text, dt = t - at;
+  if (!mode || dt < 0 || (kind === 'sub' && mode !== 'typing') || (mode === 'typing' && kind === 'big') || (mode === 'flap' && kind !== 'big')) return txt(s, x, y, o);
+  ctx.save(); ctx.font = font(o); ctx.letterSpacing = (o.ls || 0) + 'px'; const full = ctx.measureText(s).width; ctx.restore();
+  const sc = o.s || 1, x0 = (o.align === 'left' ? x : o.align === 'right' ? x - full : x - full / 2);
+  const base = Object.assign({}, o, { align: 'left', s: 1 });
+  ctx.save();
+  if (sc !== 1) { ctx.translate(x, y - o.size * 0.35); ctx.scale(sc, sc); ctx.translate(-x, -(y - o.size * 0.35)); }
+  if (mode === 'words' && kind !== 'sub') {
+    // kinetická slova (GSAP back.out): každé slovo vyskočí zdola s malým natočením, 70 ms po předchozím
+    const words = s.split(' '), e = ease('back.out(2.2)'); let cx = x0;
+    words.forEach((w, i) => {
+      const ww = width(w + (i < words.length - 1 ? ' ' : ''), o), lt = dt - i * 0.07, k = e(clamp(lt / 0.45)), a = clamp(lt / 0.12);
+      if (a > 0) { ctx.save(); ctx.translate(cx, y + (1 - k) * 60); ctx.rotate((1 - k) * -0.12); ctx.scale(0.7 + 0.3 * k, 0.7 + 0.3 * k); txt(w, 0, 0, Object.assign({}, base, { a: (o.a == null ? 1 : o.a) * a })); ctx.restore(); }
+      cx += ww;
+    });
+  } else if (mode === 'typing') {
+    // psaní po písmenech (Kokonut Typing Text) s fialovým kurzorem, 34 znaků za sekundu
+    const n = Math.min(s.length, Math.floor(dt * 34)), part = s.slice(0, n), pw = width(part, o);
+    txt(part, x0, y, base);
+    if (n < s.length || Math.floor(dt * 2.5) % 2 === 0 && dt < s.length / 34 + 1.2) { ctx.save(); ctx.globalAlpha *= o.a == null ? 1 : o.a; ctx.fillStyle = C.pu; ctx.fillRect(x0 + pw + 4, y - o.size * 0.78, Math.max(4, o.size * 0.09), o.size * 0.92); ctx.restore(); }
+  } else if (mode === 'flap') {
+    // letištní tabule (Kokonut Split Flap Text): každé písmeno ve vlastní dlaždici se přetáčí k cíli.
+    // Pro video zrychlené: nejvýš 8 lístků na písmeno po 30 ms, posun mezi písmeny 30 ms; dlaždice se vejdou do 820 px.
+    const CH = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:.-/&!?', chars = [...s];
+    let fo = Object.assign({}, o, { ls: 0, s: 1 });
+    const layout = f => { const pad = f.size * 0.14, sp = f.size * 0.28; return chars.map(c => c === ' ' ? { w: sp, tile: false } : { w: width(c, f) + 2 * pad, tile: true }); };
+    let L = layout(fo), tot = L.reduce((q, r) => q + r.w, 0) + (chars.length - 1) * fo.size * 0.05;
+    if (tot > 820) { fo.size = Math.floor(fo.size * 820 / tot); L = layout(fo); tot = L.reduce((q, r) => q + r.w, 0) + (chars.length - 1) * fo.size * 0.05; }
+    let cx = o.align === 'left' ? x : o.align === 'right' ? x - tot : x - tot / 2;
+    chars.forEach((c, i) => {
+      const up = c.toUpperCase(), ti = CH.indexOf(up), lt = dt - i * 0.03, from = Math.max(0, (ti < 0 ? 8 : ti) - 8), flips = Math.floor(lt / 0.03);
+      const shown = lt < 0 ? ' ' : (ti < 0 ? (flips >= 8 ? c : CH[(from + flips) % CH.length]) : (from + flips >= ti ? c : CH[from + flips]));
+      const a = (o.a == null ? 1 : o.a) * clamp(lt / 0.06 + 0.001);
+      if (L[i].tile && a > 0) {
+        ctx.save(); ctx.globalAlpha *= a; ctx.fillStyle = C.surf; ctx.strokeStyle = C.line2; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.roundRect(cx, y - fo.size * 0.86, L[i].w, fo.size * 1.1, fo.size * 0.1); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = C.bg; ctx.fillRect(cx, y - fo.size * 0.32, L[i].w, Math.max(2, fo.size * 0.025)); ctx.restore();
+        txt(shown, cx + L[i].w / 2, y, Object.assign({}, fo, { align: 'center', a }));
+      }
+      cx += L[i].w + fo.size * 0.05;
+    });
+  } else if (mode === 'glitch' && kind !== 'sub') {
+    // signál s poruchou (Kokonut Glitch Text): při naskočení 6 snímků po 55 ms rozsekané do pruhů s posunem
+    // a dvojitým obrysem; barvy kanálů z naší palety (fialová a křídová místo červené a azurové)
+    const fr = Math.floor(dt / 0.055);
+    if (fr >= 6) txt(s, x0, y, base);
+    else {
+      const bands = 4, top = y - o.size * 0.86, h = o.size * 1.1, seed = Math.round(at * 100) + fr * 7;
+      for (let b = 0; b < bands; b++) {
+        const y0 = top + h * b / bands, sh = (hash(seed + b) - 0.5) * o.size * 0.36 * (hash(seed + b + 50) < 0.3 ? 0 : 1);
+        ctx.save(); ctx.beginPath(); ctx.rect(x0 - o.size, y0, full + 2 * o.size, h / bands + 1); ctx.clip();
+        txt(s, x0 + sh - 4, y, Object.assign({}, base, { c: C.pu, a: (o.a == null ? 1 : o.a) * 0.9 }));
+        txt(s, x0 + sh + 3, y, Object.assign({}, base, { c: C.muted, a: (o.a == null ? 1 : o.a) * 0.6 }));
+        txt(s, x0 + sh, y, base); ctx.restore();
+      }
+    }
+  } else txt(s, x, y, o);
+  ctx.restore();
+}
+
+// pozadí: tečkové pole (Kokonut Dot Field) nebo polotón (Kokonut Halftone), jemně v pohybu, hustota podle síly pozadí aktu
+function noise3(x, y, z) {
+  const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z), xf = x - xi, yf = y - yi, zf = z - zi, s = v => v * v * (3 - 2 * v);
+  const h = (a, b, c) => hash(a * 157 + b * 113 + c * 271);
+  let r = 0; for (let dz = 0; dz < 2; dz++) for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++)
+    r += h(xi + dx, yi + dy, zi + dz) * (dx ? s(xf) : 1 - s(xf)) * (dy ? s(yf) : 1 - s(yf)) * (dz ? s(zf) : 1 - s(zf));
+  return r;
+}
+function makeBackground(st) {
+  return function (t, amb) {
+    const k = clamp(amb / 0.34) * 0.9 + 0.1;
+    if (st.bg === 'dots') {
+      for (let y = 18; y < H; y += 36) for (let x = 18; x < W; x += 36) {
+        const n = noise3(x / 240, y / 240, t * 0.35), wave = 0.5 + 0.5 * Math.sin(y / 140 - t * 1.6 + x / 400), v = clamp((n - 0.35) * 2.2) * 0.75 + wave * 0.25;
+        ctx.globalAlpha = (0.05 + 0.32 * v) * k; ctx.fillStyle = v > 0.72 ? C.pu : C.ink; ctx.beginPath(); ctx.arc(x, y, 1.6 + 1.6 * v, 0, 7); ctx.fill();
+      }
+    } else if (st.bg === 'halftone') {
+      const step = 26;
+      for (let y = 0; y < H + step; y += step) for (let x = (y / step % 2) * step / 2; x < W + step; x += step) {
+        const d1 = Math.hypot(x - 540 - 260 * Math.sin(t * 0.35), y - 620 - 180 * Math.cos(t * 0.27)), d2 = Math.hypot(x - 300 - 200 * Math.cos(t * 0.21), y - 1400);
+        const v = clamp(1 - Math.min(d1 / 620, d2 / 520));
+        if (v < 0.04) continue;
+        ctx.globalAlpha = 0.28 * k; ctx.fillStyle = v > 0.6 ? C.pu : C.line2; ctx.beginPath(); ctx.arc(x, y, step * 0.46 * Math.sqrt(v), 0, 7); ctx.fill();
+      }
+    }
+  };
+}
+
+// kamera z GSAP: pozastavená časová osa nad obyčejným objektem {x, y, s, r}, pro snímek se posune na čas t
+function makeCamera(st, V) {
+  let tl = null; const cam = { x: 0, y: 0, s: 1, r: 0 };
+  const build = () => {
+    tl = gsap.timeline({ paused: true });
+    TL.acts.forEach((a, i) => {
+      if (st.camera === 'whip' && i > 0) {
+        // švihnutí do nového aktu: ze strany (střídavě), s pootočením, doběh expo.out
+        const d = i % 2 ? 1 : -1;
+        tl.fromTo(cam, { x: 260 * d, r: 0.035 * d }, { x: 0, r: 0, duration: 0.5, ease: 'expo.out', immediateRender: false }, a.start);
+      }
+      if (st.camera === 'whip' || st.camera === 'drift') {
+        // pomalé přiblížení během aktu (push-in)
+        tl.fromTo(cam, { s: 1 }, { s: st.camera === 'drift' ? 1.012 : 1.018, duration: Math.max(0.5, a.end - a.start), ease: 'power1.inOut', immediateRender: false }, a.start);
+      }
+      if (st.camera === 'drift') tl.fromTo(cam, { y: 14 }, { y: -14, duration: Math.max(0.5, a.end - a.start), ease: 'sine.inOut', immediateRender: false }, a.start);
+    });
+    if (st.camera === 'punch') {
+      // „úder“ kamery ve chvíli, kdy naskočí velké číslo nebo slovo: přiblížení a pružný návrat (elastic.out)
+      const hits = [];
+      for (const id in V) { (V[id].heads || []).forEach(h => { if (h.big) hits.push(TR(h.bigAt || h.at)); }); (V[id].items || []).forEach(it => { if (it.big) hits.push(it.at ? TR(it.at) : cs(V[id].line, it.i)); }); }
+      hits.sort((p, q) => p - q).forEach((h, i) => { if (i && h - hits[i - 1] < 0.6) return; tl.fromTo(cam, { s: 1.015, r: (i % 2 ? 1 : -1) * 0.004 }, { s: 1, r: 0, duration: 0.8, ease: 'elastic.out(1, 0.45)', immediateRender: false }, h); });
+    }
+  };
+  return function (t) { if (!tl) build(); tl.seek(t, false); return cam; };
 }

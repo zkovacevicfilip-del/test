@@ -163,10 +163,16 @@ window.renderFrame = f => {
   stepAll(f); lastFrame = f; const t = f / FPS;
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
   let amb = 0; for (const a of TL.acts) if (t >= a.start && t < a.end) { const en = clamp((t - a.start) / 0.5), prev = TL.acts[TL.acts.indexOf(a) - 1]; amb = lerp(prev ? AMBIENT[prev.id] : AMBIENT[a.id], AMBIENT[a.id], en); }
-  if (amb > 0.003) { ctx.globalAlpha = amb; ctx.drawImage(FLOW.amb.c, 0, 0); ctx.globalAlpha = 1; }
+  if (amb > 0.003 && typeof BACKGROUND !== 'function') { ctx.globalAlpha = amb; ctx.drawImage(FLOW.amb.c, 0, 0); ctx.globalAlpha = 1; }
+  // vlastní pozadí scén (nepovinné): BACKGROUND(t, síla) místo jemného proudu vzduchu
+  if (typeof BACKGROUND === 'function') { ctx.save(); BACKGROUND(t, amb); ctx.restore(); ctx.globalAlpha = 1; }
   // zvětšení celé scény, aby vyplnila výšku obrazovky 9:16
   ctx.save(); ctx.translate(540, 905); ctx.scale(ZOOM, ZOOM); ctx.translate(-540, -905);
+  // kamera (nepovinné): CAMERA(t) vrací {x, y, s, r}; pohybuje scénou, titulky zůstávají v klidu
+  ctx.save();
+  if (typeof CAMERA === 'function') { const c = CAMERA(t) || {}; ctx.translate(540 + (c.x || 0), 905 + (c.y || 0)); ctx.rotate(c.r || 0); ctx.scale(c.s || 1, c.s || 1); ctx.translate(-540, -905); }
   for (const a of TL.acts) if (t >= a.start && t < a.end) SCENES[a.id](t, a);
+  ctx.restore();
   captions(t);
   ctx.restore();
   const vg = ctx.createRadialGradient(540, 900, 520, 540, 960, 1250); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.42)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
