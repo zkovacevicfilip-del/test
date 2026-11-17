@@ -31,5 +31,15 @@ const T = P.wordTimes(long, SR, P.words(text), "");
 ok("pauza se přiřadí ke slovu s čárkou a časy slov jdou po sobě", T.cut.has(1) && T.times.every((t, i) => t[0] <= t[1] && (i === 0 || t[0] >= T.times[i - 1][1] - 1e-9)), JSON.stringify([...T.cut.keys()]));
 ok("jedno slovo nebo prázdný zvuk projde beze změny", P.shape(tone(0.3), SR, "Hello.", "").length === Math.round(0.3 * SR) && P.shape(new Float32Array(0), SR, "Hello there.", "").length === 0);
 
+// otázky: posun výšky (PSOLA) zvedne tón, délku zachová a mimo úsek nic nezmění
+const harm = (f, s) => { const n = Math.round(s * SR), a = new Float32Array(n); let ph = 0; for (let i = 0; i < n; i++) { ph += 2 * Math.PI * f / SR; a[i] = 0.4 * (Math.sin(ph) + 0.5 * Math.sin(2 * ph) + 0.25 * Math.sin(3 * ph)); } return a; };
+const pitch = (x, c) => { const N = 960, r = []; for (let k = 60; k <= 343; k++) { let s = 0, e = 0; for (let i = 0; i < N; i++) { s += x[c + i] * x[c + i + k]; e += x[c + i] * x[c + i]; } r[k] = s / e; } const b = Math.max(...r.filter(Number.isFinite)); for (let k = 61; k < 343; k++) if (r[k] >= 0.9 * b && r[k] >= r[k - 1] && r[k] >= r[k + 1]) return SR / k; return 0; };
+const tone120 = harm(120, 0.8), up = P.pitchShift(tone120, SR, 0.2 * SR, 0.8 * SR, s => (s / SR < 0.4 ? 0 : 7));
+ok("posun výšky o 7 půltónů: 120 Hz → asi 180 Hz, délka stejná", Math.abs(pitch(up, Math.round(0.6 * SR)) - 120 * Math.pow(2, 7 / 12)) < 5 && up.length === tone120.length, pitch(up, Math.round(0.6 * SR)).toFixed(1) + " Hz");
+ok("mimo upravovaný úsek zůstane zvuk beze změny", up.slice(0, Math.round(0.19 * SR)).every((v, i) => v === tone120[i]));
+const sent = join([harm(110, 0.3), harm(110, 0.3), harm(110, 0.35)]);
+const q = P.shape(sent, SR, "How fast now?", ""), d = P.shape(sent, SR, "How fast now.", "");
+ok("otázka skončí výš, oznamovací věta ne", pitch(q, q.length - 1400) > 130 && Math.abs(pitch(d, d.length - 1400) - 110) < 4, pitch(q, q.length - 1400).toFixed(0) + " / " + pitch(d, d.length - 1400).toFixed(0) + " Hz");
+
 console.log("\nPřednes – úspěšných: " + passed + ", neúspěšných: " + failed);
 process.exit(failed ? 1 : 0);

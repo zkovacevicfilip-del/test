@@ -1,7 +1,7 @@
 // Převod textu na řeč v samostatném vlákně (aby stránka během výpočtu nezamrzla).
 // Model Kokoro-82M se stáhne z Hugging Face při prvním použití a prohlížeč si ho uloží do mezipaměti.
 import { KokoroTTS, TextSplitterStream, env } from "./vendor/kokoro.web.js";
-import { shape } from "./prosody.mjs?v=3";
+import { shape } from "./prosody.mjs?v=4";
 
 const MODEL = "onnx-community/Kokoro-82M-v1.0-ONNX";
 // Jediný hlas stránky: směs amerických hlasů Kokoro 50 % am_fenrir + 25 % am_puck + 25 % am_onyx (soubor voice-mix.bin, licence Apache-2.0).

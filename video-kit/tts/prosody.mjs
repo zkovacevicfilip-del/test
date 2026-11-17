@@ -100,10 +100,110 @@ export function gainOf(ws, i, R = RULES) {
   return Math.max(-R.max, Math.min(R.max, g));
 }
 
+// ---------- OTÁZKY: stoupavý konec ----------
+// Fenrir otázky zakončuje klesavě (poslední slovo asi −3,7 půltónu proti zbytku věty), Liam stoupavě (asi +2,5).
+// Výška se zvedne metodou PSOLA: zvuk se rozdělí na krátké úseky po jedné periodě hlasu a ty se poskládají hustěji.
+// Tím stoupne tón, ale barva hlasu (formanty) i délka slova zůstanou. Posun roste plynule od začátku posledního slova.
+export const RISE = { lead: 0.15, from: 2.5, to: 10, curve: 1.3 };   // půltóny: na začátku slova, na konci slova; tvar křivky
+
+// výška hlasu v okolí vzorku (Hz), 0 = neznělé (s, t, ticho). floor = nejmenší energie, která ještě není ticho
+// (poměrná k nejhlasitějšímu místu věty: konec věty bývá velmi tichý a nízký, i tak se musí poznat jako znělý)
+function f0At(a, sr, c, floor) {
+  const n = Math.round(0.05 * sr), s = Math.max(0, Math.round(c - n / 2)), lo = Math.floor(sr / 300), hi = Math.ceil(sr / 60);
+  if (s + n > a.length || n < 2 * hi) return 0;
+  let mean = 0, e0 = 0; for (let i = 0; i < n; i++) mean += a[s + i]; mean /= n;
+  for (let i = 0; i < n; i++) { const v = a[s + i] - mean; e0 += v * v; }
+  if (e0 / n < floor) return 0;
+  // korelace normovaná na překryv (nízký hlas na konci věty má dlouhou periodu)
+  let best = 0, bk = 0;
+  for (let k = lo; k <= hi; k++) {
+    let r = 0, e1 = 0, e2 = 0;
+    for (let i = 0; i + k < n; i++) { const x = a[s + i] - mean, y = a[s + i + k] - mean; r += x * y; e1 += x * x; e2 += y * y; }
+    r /= Math.sqrt(e1 * e2) + 1e-12; if (r > best) { best = r; bk = k; }
+  }
+  // nejkratší perioda s korelací blízko nejlepší (bez oktávových chyb)
+  if (best < 0.4) return 0;
+  for (let k = lo; k < bk; k++) {
+    let r = 0, e1 = 0, e2 = 0;
+    for (let i = 0; i + k < n; i++) { const x = a[s + i] - mean, y = a[s + i + k] - mean; r += x * y; e1 += x * x; e2 += y * y; }
+    if (r / (Math.sqrt(e1 * e2) + 1e-12) > 0.9 * best && Math.abs(bk / k - Math.round(bk / k)) < 0.08 && Math.round(bk / k) >= 2) return sr / k;
+  }
+  return sr / bk;
+}
+
+// výška hlasu po 10 ms v úseku [s0, s1): vyhlazená a s opravou chraplavého konce věty (Kokoro tam často skočí
+// na poloviční výšku, ~60 Hz; taková hodnota se zdvojí, když je blízko dvojnásobku je obvyklá výška věty)
+function f0Track(a, sr, s0, s1, floor, ref) {
+  const hop = Math.round(0.01 * sr), fr = [];
+  for (let c = s0; c < s1; c += hop) {
+    let f = f0At(a, sr, c, floor);
+    if (f && ref && f < ref * 0.72 && Math.abs(2 * f / ref - 1) < 0.45) f *= 2;
+    fr.push(f);
+  }
+  // mediánový filtr přes 5 snímků (jen znělé hodnoty), neznělé díry kratší než 50 ms se doplní ze sousedů
+  const sm = fr.map((_, i) => { const w = fr.slice(Math.max(0, i - 2), i + 3).filter(Boolean).sort((x, y) => x - y); return w.length >= 2 ? w[w.length >> 1] : fr[i]; });
+  for (let i = 0; i < sm.length; i++) if (!sm[i]) { let j = i; while (j < sm.length && !sm[j]) j++; if (i > 0 && j < sm.length && j - i <= 5) for (let k = i; k < j; k++) sm[k] = sm[i - 1] + (sm[j] - sm[i - 1]) * (k - i + 1) / (j - i + 1); i = j; }
+  return { hop, f: sm };
+}
+
+// posun výšky o st(t) půltónů v úseku [s0, s1) (vzorky); mimo úsek se zvuk nemění
+export function pitchShift(a, sr, s0, s1, st) {
+  s0 = Math.max(0, Math.round(s0)); s1 = Math.min(a.length, Math.round(s1)); if (s1 - s0 < sr * 0.05) return a;
+  // práh ticha: 40 dB pod nejhlasitějším místem celé věty; obvyklá výška věty jako vodítko proti oktávovým skokům
+  let peak = 0; const blk = Math.round(0.02 * sr);
+  for (let i = 0; i + blk <= a.length; i += blk) { let e = 0; for (let j = 0; j < blk; j++) e += a[i + j] * a[i + j]; peak = Math.max(peak, e / blk); }
+  const floor = peak * 1e-4, all = []; for (let c = Math.round(0.05 * sr); c < a.length - 0.05 * sr; c += Math.round(0.03 * sr)) { const f = f0At(a, sr, c, floor); if (f) all.push(f); }
+  all.sort((x, y) => x - y); const ref = all.length ? all[all.length >> 1] : 0;
+  const tr = f0Track(a, sr, s0, s1, floor, ref), fAt = smp => tr.f[Math.max(0, Math.min(tr.f.length - 1, Math.round((smp - s0) / tr.hop)))] || 0;
+  // analytické značky: znělá místa po periodách (u nejbližšího maxima kolem očekávané polohy), neznělá po 10 ms
+  const marks = []; let t = s0, step = Math.round(0.01 * sr);
+  while (t < s1) {
+    const f = fAt(t), P = f ? Math.round(sr / f) : step; let m = t;
+    if (f) { let best = -Infinity; const q = Math.round(P / 4); for (let k = Math.max(0, t - q); k <= Math.min(a.length - 1, t + q); k++) if (a[k] > best) { best = a[k]; m = k; } }
+    if (!marks.length || m > marks[marks.length - 1][0]) marks.push([m, P, !!f]);
+    t = (marks.length ? marks[marks.length - 1][0] : t) + P;
+  }
+  if (marks.length < 3) return a;
+  const out = Float32Array.from(a), pad = Math.ceil(sr / 50), acc = new Float32Array(s1 - s0 + 2 * pad), wsum = new Float32Array(acc.length), base = s0 - pad;
+  // syntéza: výstupní značky hustěji podle posunu, ke každé nejbližší analytická značka, okno Hann přes dvě periody
+  let ts = marks[0][0], k = 0;
+  while (ts < s1) {
+    while (k < marks.length - 1 && Math.abs(marks[k + 1][0] - ts) <= Math.abs(marks[k][0] - ts)) k++;
+    const [m, P, voiced] = marks[k], f = voiced ? Math.pow(2, st(ts) / 12) : 1;
+    for (let j = -P; j < P; j++) {
+      const src = m + j, dst = Math.round(ts) + j - base; if (src < 0 || src >= a.length || dst < 0 || dst >= acc.length) continue;
+      const w = 0.5 - 0.5 * Math.cos(Math.PI * (j + P) / P); acc[dst] += a[src] * w; wsum[dst] += w;
+    }
+    ts += P / f;
+  }
+  // vložení do zvuku s prolnutím 15 ms na začátku i na konci úseku
+  const x = Math.round(0.015 * sr);
+  for (let i = s0; i < s1; i++) {
+    const d = i - base, v = wsum[d] > 0.05 ? acc[d] / wsum[d] : a[i];
+    const g = Math.min(1, (i - s0) / x, (s1 - i) / x); out[i] = a[i] * (1 - g) + v * g;
+  }
+  return out;
+}
+
+// u každého slova s otazníkem zvednout výšku: plynule od RISE.lead před slovem, na konci slova o RISE.to půltónů
+export function riseQuestions(a, sr, ws, T, R = RISE) {
+  let out = a; const endSp = T.gaps.end * T.dt;
+  ws.forEach((x, i) => {
+    if (!/\?/.test(x.punct)) return;
+    // u poslední otázky v úseku až do konce hlasu (konec slova se odhaduje nejhůř), jinak do konce slova
+    // u poslední otázky v úseku až do konce zvuku: tichý chraplavý dozvuk za koncem slova jinak zůstane nízko a otázka zní klesavě
+    const last = i === ws.length - 1, w0 = T.times[i][0], w1 = last ? Math.max(endSp, T.times[i][1]) : Math.min(T.times[i][1], a.length / sr), p0 = Math.max(0, w0 - R.lead);
+    const st = smp => { const t = smp / sr; if (t < w0) return R.from * Math.max(0, (t - p0) / Math.max(0.01, w0 - p0)); const u = Math.min(1, (t - w0) / Math.max(0.05, w1 - w0)); return R.from + (R.to - R.from) * Math.pow(u, R.curve); };
+    out = pitchShift(out, sr, p0 * sr, last ? a.length : Math.min(a.length, (w1 + 0.06) * sr), st);
+  });
+  return out;
+}
+
 // celá úprava jedné věty: zisk po slovech s plynulými přechody (40 ms) a zkrácení dlouhých pauz na Liamovy délky
 export function shape(a, sr, text, phonemes, R = RULES) {
   const ws = words(text); if (ws.length < 2 || !a.length) return a;
   const T = wordTimes(a, sr, ws, phonemes), g = ws.map((_, i) => gainOf(ws, i, R)), ramp = 0.04;
+  a = riseQuestions(a, sr, ws, T);
   const out = new Float32Array(a.length);
   // zisk v čase: uprostřed slova jeho hodnota, na hranici plynulý přechod k sousednímu
   let w = 0;

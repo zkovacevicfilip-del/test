@@ -28,7 +28,7 @@
     const t = text.value.trim();
     if (!t) { say("Napiš nejdřív nějaký text.", true); return; }
     if (!worker) {
-      try { worker = new Worker("tts-worker.js?v=6", { type: "module" }); }
+      try { worker = new Worker("tts-worker.js?v=7", { type: "module" }); }
       catch (e) { say("Tenhle prohlížeč neumí spustit model (" + e.message + ").", true); return; }
       worker.onmessage = onMsg;
       worker.onerror = e => { say("Chyba při spuštění modelu: " + (e.message || "neznámá"), true); go.disabled = false; progress(null); };
