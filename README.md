@@ -142,6 +142,15 @@ Jednoduchá stránka na převod anglického textu na řeč: https://zkovacevicfi
 - **Převzaté soubory a licence:** `video-kit/tts/vendor/NOTICE.txt` (kokoro-js, Transformers.js, onnxruntime-web, phonemizer s eSpeak NG pod GPL-3.0).
 - **Testy:** `tests/run.js`, část „hlas pro videa“ (bez internetu: načtení, CSP, chybová hláška, verze převzatých souborů).
 
+## Zmenšit video (`zmensit-video/`, stav 20. 11. 2026)
+
+Osobní nástroj autora, s aplikací nesouvisí a nevede na ni odkaz: https://zkovacevicfilip-del.github.io/test/zmensit-video/ Zmenší video před posláním (Claudovi nebo jinam). Video se v prohlížeči přehraje do plátna v menším rozlišení a znovu zakóduje (`MediaRecorder`, MP4/H.264 v Chrome, jinak WebM). Nic se neodesílá.
+
+- **Kvalita:** 360p (0,35 Mb/s), 480p (0,7 Mb/s, výchozí), 720p (1,5 Mb/s), zvuk 32 až 96 kb/s nebo bez zvuku. Ověřeno: 20 s video z mobilu 1080 × 1920 (33 MB) → 1,0 MB při 480p se zvukem, 0,47 MB při 360p bez zvuku. Otočení videa z mobilu zůstane správně.
+- **ZIP** se dá stáhnout taky, ale video nezmenší (MP4 je už zkomprimované, ZIP je bez komprese). Hodí se jen tam, kde nejde poslat MP4.
+- **Omezení:** kódování běží v reálném čase (minutové video trvá asi minutu), stránka musí zůstat otevřená a obrazovka zapnutá (stránka si o zámek obrazovky řekne sama). Snímková frekvence nejvýš 30 fps. Zvuk ve výsledném MP4 je Opus.
+- **Test:** `tests/zmensit-video.js` (součást `npm test`) si vyrobí 3 s testovacího videa, zmenší ho ve třech nastaveních a ověří velikost, rozměr, přehrání a platnost ZIPu.
+
 ## Zkoušení oblečení (`obleceni/`, stav 17. 11. 2026)
 
 Osobní stránka autora, s aplikací nesouvisí a nevede na ni odkaz: https://zkovacevicfilip-del.github.io/test/obleceni/ Zadají se tělesné míry a fotky (zepředu, zezadu, oba boky), pak fotka kusu oblečení a jeho míry z tabulky velikostí. Stránka ukáže verdikt (sedí, těsné, volné, krátké, dlouhé, nevejde se a kolik cm chybí) a koláž kusu na fotce zepředu.

@@ -1,0 +1,30 @@
+/* Zmenšit video: paleta jako v aplikaci (Track black, Chalk grey, Electric purple) */
+:root{color-scheme:dark;--bg:#17191B;--surface:#232526;--surface-2:#2C2E2F;--ink:#E4E3DE;--on:#17191B;--muted:#9A9A98;--line:#353738;--line-2:#454647;--pt:#8B3DFF;--pt-text:#A66FF5}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg)}
+body{color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:640px;margin:0 auto;padding:22px 16px 56px}
+h1{font-size:clamp(1.8rem,6vw,2.4rem);line-height:1.08;letter-spacing:-.035em;margin:10px 0 8px}
+h2{font-size:1.06rem;font-weight:600;margin:0 0 12px}
+p{margin:0 0 10px}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+.hidden{display:none!important}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;margin:14px 0}
+input[type=file]{width:100%;font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--line-2);border-radius:14px;padding:10px}
+input[type=file]::file-selector-button{font:inherit;font-weight:600;margin-right:12px;padding:8px 14px;border-radius:999px;border:0;background:var(--ink);color:var(--on)}
+video{display:none;width:100%;max-height:300px;margin-top:12px;border-radius:14px;background:#000}
+video.on{display:block}
+.pole{display:block;font-size:.95rem;margin-bottom:12px}
+select{display:block;width:100%;margin-top:6px;font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--line-2);border-radius:14px;padding:10px 12px}
+.check{display:flex;align-items:center;gap:10px;margin:4px 0 12px}
+.check input{width:20px;height:20px;accent-color:var(--pt)}
+.btn{display:inline-block;font:inherit;font-size:.98rem;font-weight:600;padding:11px 20px;border-radius:999px;border:1px solid var(--ink);background:var(--ink);color:var(--on);cursor:pointer;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line-2)}
+.btn:disabled{opacity:.4;cursor:default}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 12px}
+.bar{height:12px;border-radius:999px;background:var(--surface-2);overflow:hidden;margin:4px 0 10px}
+.bar span{display:block;height:100%;width:0;background:var(--pt);border-radius:999px;transition:width .3s}
+.big{font-size:1.15rem;font-weight:600}
+.pu{color:var(--pt-text)}
+.status{min-height:1.2em;color:var(--pt-text)}

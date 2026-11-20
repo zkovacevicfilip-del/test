@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zmenšit video</title>
+<meta name="theme-color" content="#17191B">
+<meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png?v=10">
+<link rel="stylesheet" href="zmensit-video.css?v=1">
+</head>
+<body>
+<main class="wrap">
+  <h1>Zmenšit video</h1>
+  <p class="muted">Video se zmenší přímo v tomhle zařízení, nikam se neodesílá. Samotný ZIP video skoro nezmenší (MP4 je už zkomprimované), proto se video znovu zakóduje v menším rozlišení.</p>
+
+  <section class="card">
+    <h2>1. Vyber video</h2>
+    <input type="file" id="soubor" accept="video/*">
+    <p class="muted small" id="info"></p>
+    <video id="nahled" playsinline muted></video>
+  </section>
+
+  <section class="card">
+    <h2>2. Nastavení</h2>
+    <label class="pole">Kvalita
+      <select id="kvalita">
+        <option value="tiny">Nejmenší · 360p</option>
+        <option value="small" selected>Malé · 480p (doporučeno)</option>
+        <option value="good">Lepší · 720p</option>
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" id="bezZvuku"> Bez zvuku (ještě menší)</label>
+    <p class="muted small" id="odhad"></p>
+    <button class="btn" id="spustit" disabled>Zmenšit video</button>
+  </section>
+
+  <section class="card hidden" id="prubeh">
+    <h2>Zpracovávám…</h2>
+    <div class="bar"><span id="barVypln"></span></div>
+    <p class="muted small" id="prubehText"></p>
+    <p class="muted small">Nech stránku otevřenou a obrazovku zapnutou. Zpracování trvá zhruba tak dlouho jako video.</p>
+  </section>
+
+  <section class="card hidden" id="vysledek">
+    <h2>Hotovo</h2>
+    <p id="vysledekText"></p>
+    <div class="row">
+      <a class="btn" id="stahnoutVideo" href="#" download>Stáhnout video</a>
+      <a class="btn ghost" id="stahnoutZip" href="#" download>Stáhnout jako ZIP</a>
+    </div>
+    <p class="muted small" id="formatText"></p>
+  </section>
+
+  <p class="status" id="stav" role="status" aria-live="polite"></p>
+</main>
+<script src="zmensit-video.js?v=1"></script>
+</body>
+</html>
