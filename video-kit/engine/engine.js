@@ -173,7 +173,8 @@ window.renderFrame = f => {
   if (typeof CAMERA === 'function') { const c = CAMERA(t) || {}; ctx.translate(540 + (c.x || 0), 905 + (c.y || 0)); ctx.rotate(c.r || 0); ctx.scale((c.s || 1) * (c.sx == null ? 1 : c.sx), (c.s || 1) * (c.sy == null ? 1 : c.sy)); ctx.translate(-540, -905); }
   for (const a of TL.acts) if (t >= a.start && t < a.end) SCENES[a.id](t, a);
   ctx.restore();
-  captions(t);
+  // titulky: vlastní podoba (nepovinné), jinak dole na tmavém podkladu
+  if (typeof CAPTIONS === 'function') CAPTIONS(t); else captions(t);
   ctx.restore();
   // překryv přes celý obraz (nepovinné): OVERLAY(t), třeba stírací přechod mezi akty
   if (typeof OVERLAY === 'function') { ctx.save(); OVERLAY(t); ctx.restore(); ctx.globalAlpha = 1; }

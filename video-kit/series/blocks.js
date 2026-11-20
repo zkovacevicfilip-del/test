@@ -191,6 +191,8 @@ const VIS = { bars: vBars, rows: vRows, race: vRace, rider: vRider, flow: vFlow,
 
 // popis aktu → funkce scény
 function makeScene(s) {
+  // „free“: scéna si kreslí sama celý čas aktu (souvislá jízda přes víc aktů, bez náběhu a odchodu aktu)
+  if (s.type === 'free') return function (t, a) { s.draw(t, a); };
   if (s.type === 'hook') return function (t, a) { const ex = tw(t, a.end - 0.36, 0.36); ctx.save(); ctx.globalAlpha = 1 - ex; ctx.translate(0, -70 * ex); stack(t, s, 0, null); ctx.restore(); };
   return function (t, a) {
     const io = actIO(t, a); ctx.save(); ctx.globalAlpha = io.a;

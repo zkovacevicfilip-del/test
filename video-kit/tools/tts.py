@@ -79,7 +79,26 @@ def kokoro(i, key):
     return np.asarray(a, dtype=np.float32), sr
 
 
-gen = {"elevenlabs": eleven, "kokoro": kokoro}[vo["provider"]]
+def ours_batch(todo):
+    # náš hlas ze stránky video-kit/tts (Kokoro + živý přednes): všechny nové věty najednou, model se načte jen jednou
+    here = os.path.dirname(os.path.abspath(__file__))
+    root = next((d for d in [os.path.join(KIT, "tts"), os.path.join(KIT, "..", "..", "..", "tts"), os.path.join(here, "..", "tts")]
+                 if os.path.exists(os.path.join(d, "tts-worker.js"))), None)
+    if not root: sys.exit("Nenašel jsem stránku video-kit/tts s naším hlasem.")
+    lst = out_dir + "/ours.json"
+    json.dump([{"key": k, "text": sc["lines"][k]["say"], "speed": vo.get("speed", 1.15)} for k in todo], open(lst, "w", encoding="utf-8"))
+    prof = os.path.join(root, "..", "work", "kokoro-profile"); os.makedirs(prof, exist_ok=True)
+    subprocess.run(["node", os.path.join(here, "kokoro-page.js"), root, lst, out_dir, prof], check=True)
+
+
+def ours(i, key):
+    return sf.read(f"{out_dir}/{key}.wav", dtype="float32")
+
+
+gen = {"elevenlabs": eleven, "kokoro": kokoro, "ours": ours}[vo["provider"]]
+if vo["provider"] == "ours":
+    todo = [k for k in keys if not (k in old and old[k]["text"] == sc["lines"][k]["say"] and os.path.exists(f"{out_dir}/{k}.wav"))]
+    if todo: ours_batch(todo)
 CAP = sc.get("timing", {}).get("max_pause")   # nejdelší pauza uvnitř věty v sekundách (nepovinné)
 lines, chars, sr = [], 0, 44100
 for i, key in enumerate(keys):
