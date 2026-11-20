@@ -3,18 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Zmenšit video</title>
+<title>Zmenšovač videa</title>
 <meta name="theme-color" content="#17191B">
 <meta name="robots" content="noindex">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
-<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png?v=10">
-<link rel="stylesheet" href="zmensit-video.css?v=1">
+<link rel="manifest" href="manifest.webmanifest?v=1">
+<link rel="icon" type="image/png" sizes="32x32" href="ikony/favicon-32.png?v=1">
+<link rel="apple-touch-icon" href="ikony/apple-touch-icon.png?v=1">
+<link rel="stylesheet" href="zmensit-video.css?v=2">
 </head>
 <body>
 <main class="wrap">
-  <h1>Zmenšit video</h1>
+  <h1>Zmenšovač videa</h1>
   <p class="muted">Video se zmenší přímo v tomhle zařízení, nikam se neodesílá. Samotný ZIP video skoro nezmenší (MP4 je už zkomprimované), proto se video znovu zakóduje v menším rozlišení.</p>
+
+  <section class="card instal hidden" id="instalace">
+    <img src="ikony/icon-192.png?v=1" alt="" width="52" height="52">
+    <div><p>Nainstaluj si Zmenšovač na plochu, ať ho máš vždycky po ruce. Funguje i bez internetu.</p>
+    <button class="btn" id="instalovat">Nainstalovat aplikaci</button></div>
+  </section>
 
   <section class="card">
     <h2>1. Vyber video</h2>
@@ -55,7 +63,8 @@
   </section>
 
   <p class="status" id="stav" role="status" aria-live="polite"></p>
+  <p class="muted small hidden" id="navod">Na plochu ho přidáš i ručně: v Chrome menu ⋮ → Přidat na plochu (nebo Nainstalovat aplikaci).</p>
 </main>
-<script src="zmensit-video.js?v=1"></script>
+<script src="zmensit-video.js?v=2"></script>
 </body>
 </html>

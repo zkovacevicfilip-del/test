@@ -27,4 +27,7 @@ select{display:block;width:100%;margin-top:6px;font:inherit;color:var(--ink);bac
 .bar span{display:block;height:100%;width:0;background:var(--pt);border-radius:999px;transition:width .3s}
 .big{font-size:1.15rem;font-weight:600}
 .pu{color:var(--pt-text)}
+.instal{display:flex;gap:14px;align-items:flex-start;border-color:var(--line-2)}
+.instal img{flex:none;border-radius:12px}
+.instal p{margin:0 0 12px}
 .status{min-height:1.2em;color:var(--pt-text)}

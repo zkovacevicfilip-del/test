@@ -4,6 +4,18 @@
 // Kódování běží v reálném čase: minutové video trvá asi minutu.
 (() => {
   const $ = id => document.getElementById(id);
+
+  // aplikace na plochu: offline soubory (sw.js) a tlačítko Nainstalovat, když ho prohlížeč nabídne
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { scope: './', updateViaCache: 'none' }).catch(() => {});
+  const naPlose = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (!naPlose) $('navod').classList.remove('hidden');
+  let nabidka = null;
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); nabidka = e; $('instalace').classList.remove('hidden'); });
+  $('instalovat').addEventListener('click', async () => {
+    if (!nabidka) return;
+    nabidka.prompt(); await nabidka.userChoice.catch(() => {}); nabidka = null; $('instalace').classList.add('hidden');
+  });
+  window.addEventListener('appinstalled', () => { $('instalace').classList.add('hidden'); $('navod').classList.add('hidden'); });
   // výška kratší strany, datový tok obrazu a zvuku (bity za sekundu)
   const KVALITA = { tiny: { h: 360, vb: 350e3, ab: 32e3 }, small: { h: 480, vb: 700e3, ab: 48e3 }, good: { h: 720, vb: 1500e3, ab: 96e3 } };
   let soubor = null, delka = 0, url = '', vystupUrl = '', zipUrl = '', vyrobeny = null;

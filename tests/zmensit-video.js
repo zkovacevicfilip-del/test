@@ -19,7 +19,8 @@ function ok(label, cond, detail) {
 function startServer() {
   const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png" };
   const server = http.createServer((req, res) => {
-    const f = path.join(ROOT, decodeURIComponent(req.url.split("?")[0]));
+    let f = path.join(ROOT, decodeURIComponent(req.url.split("?")[0]));
+    if (req.url.split("?")[0].endsWith("/")) f = path.join(f, "index.html"); // jako GitHub Pages
     if (!f.startsWith(ROOT + path.sep) || !fs.existsSync(f) || !fs.statSync(f).isFile()) { res.writeHead(404); res.end(); return; }
     res.writeHead(200, { "Content-Type": types[path.extname(f)] || "application/octet-stream" });
     fs.createReadStream(f).pipe(res);
@@ -65,10 +66,27 @@ const prehraj = (page, sel) => page.evaluate(async sel => {
   const server = await startServer(), base = "http://127.0.0.1:" + server.address().port + "/";
   const browser = await chromium.launch(), tmp = fs.mkdtempSync(path.join(os.tmpdir(), "zmensit-"));
   try {
-    const page = await browser.newPage({ viewport: { width: 412, height: 900 }, acceptDownloads: true });
+    const ctx = await browser.newContext({ viewport: { width: 412, height: 900 }, acceptDownloads: true }), page = await ctx.newPage();
     const chyby = []; page.on("pageerror", e => chyby.push(e.message)); page.on("console", m => { if (m.type() === "error") chyby.push(m.text()); });
     await page.goto(base + "zmensit-video/index.html");
-    ok("stránka se načte a tlačítko čeká na video", await page.locator("#spustit").isDisabled() && (await page.title()) === "Zmenšit video");
+    ok("stránka se načte a tlačítko čeká na video", await page.locator("#spustit").isDisabled() && (await page.title()) === "Zmenšovač videa");
+
+    // aplikace na plochu: manifest s ikonami ve správné velikosti, vlastní rozsah, service worker
+    // manifest se čte mimo stránku: stránka sama nesmí nic stahovat (CSP connect-src 'none')
+    const manifestUrl = await page.evaluate(() => document.querySelector('link[rel="manifest"]').href);
+    const manifest = await (await fetch(manifestUrl)).json();
+    const app = await page.evaluate(async m => {
+      const ikony = await Promise.all(m.icons.map(i => new Promise(res => { const im = new Image(); im.onload = () => res(im.naturalWidth + "x" + im.naturalHeight === i.sizes); im.onerror = () => res(false); im.src = new URL(i.src, location.href); })));
+      const reg = await Promise.race([navigator.serviceWorker.ready, new Promise(r => setTimeout(() => r(null), 5000))]);
+      return { jmeno: m.short_name, rozsah: new URL(m.scope, location.href).pathname, display: m.display, ikony, maskable: m.icons.some(i => i.purpose === "maskable"), sw: !!(reg && reg.active), swRozsah: reg ? new URL(reg.scope).pathname : "" };
+    }, manifest);
+    ok("manifest: vlastní aplikace Zmenšovač s ikonami 192 a 512 px a ikonou pro Android", app.jmeno === "Zmenšovač" && app.display === "standalone" && app.ikony.length === 3 && app.ikony.every(Boolean) && app.maskable, JSON.stringify(app));
+    ok("aplikace má vlastní rozsah (oddělená od wattIF) a běží service worker", app.rozsah === "/zmensit-video/" && app.sw && app.swRozsah === "/zmensit-video/", JSON.stringify(app));
+    ok("návod na ruční přidání na plochu je vidět, karta Nainstalovat čeká na nabídku prohlížeče", await page.locator("#navod").isVisible() && !(await page.locator("#instalace").isVisible()));
+    await page.evaluate(() => { const e = new Event("beforeinstallprompt"); e.prompt = () => { window.NABIDNUTO = true; }; e.userChoice = Promise.resolve({ outcome: "accepted" }); window.dispatchEvent(e); });
+    const kartaVidet = await page.locator("#instalace").isVisible();
+    await page.locator("#instalovat").click();
+    ok("když prohlížeč nabídne instalaci, ukáže se tlačítko a vyvolá ji", kartaVidet && await page.evaluate(() => window.NABIDNUTO === true) && !(await page.locator("#instalace").isVisible()));
 
     const vstup = Buffer.from(await vyrobVideo(page), "base64");
     await page.setInputFiles("#soubor", { name: "jizda.webm", mimeType: "video/webm", buffer: vstup });
@@ -108,6 +126,13 @@ const prehraj = (page, sel) => page.evaluate(async sel => {
     const r3 = await page.evaluate(() => window.VYSLEDEK);
     ok("třetí spuštění se zvukem projde bez chyby", !r3.chyba && r3.h === 480, JSON.stringify(r3));
     ok("žádná chyba v konzoli ani porušení CSP", chyby.length === 0, chyby.join(" | "));
+
+    // bez internetu: uložená aplikace se otevře
+    await ctx.setOffline(true);
+    const p3 = await ctx.newPage(); let offOk = false;
+    try { await p3.goto(base + "zmensit-video/", { timeout: 10000 }); offOk = (await p3.title()) === "Zmenšovač videa" && await p3.locator("#soubor").isVisible() && await p3.evaluate(() => getComputedStyle(document.querySelector(".card")).borderRadius === "20px"); } catch (e) { offOk = false; }
+    ok("aplikace se otevře i bez internetu (i se vzhledem)", offOk);
+    await p3.close(); await ctx.setOffline(false);
 
     if (SHOTS) {
       const p2 = await browser.newPage({ viewport: { width: 1000, height: 900 } }); await p2.goto(base + "zmensit-video/index.html");

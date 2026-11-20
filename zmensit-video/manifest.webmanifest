@@ -1,0 +1,18 @@
+{
+  "name": "Zmenšovač videa",
+  "short_name": "Zmenšovač",
+  "description": "Zmenší video v telefonu nebo tabletu před posláním. Nic se nikam neodesílá.",
+  "lang": "cs",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#17191B",
+  "theme_color": "#17191B",
+  "icons": [
+    { "src": "ikony/icon-192.png?v=1", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "ikony/icon-512.png?v=1", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "ikony/icon-maskable-512.png?v=1", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
