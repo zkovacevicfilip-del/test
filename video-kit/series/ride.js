@@ -1,7 +1,7 @@
-// ---------- JÍZDA: animovaný jezdec na kole z boku, silnice, proudnice a titulky nahoře ----------
-// Formát „ride“ (podle vzorových reels, ale vlastní 2D kresba v naší paletě): jezdci se točícími se koly a šlapáním,
-// štítky s čísly přichycené k jezdcům, silnice nebo svah, proudnice vzduchu kolem těla a titulky nahoře se zvýrazněným slovem.
-// Souřadnice jezdce: počátek na zemi uprostřed mezi koly, y nahoru záporné, měřítko 1 = asi 210 px na metr.
+// ---------- JÍZDA: 3D jezdci na kole, silnice, proudnice a titulky nahoře ----------
+// Formát „ride“ (podle vzorových reels, ale vlastní 3D postavy v naší paletě): jezdci se točícími se koly a šlapáním
+// (engine/rider3d.mjs, three.js), štítky s čísly přichycené k jezdcům, silnice nebo svah, proudnice vzduchu kolem těla
+// a titulky nahoře se zvýrazněným slovem. Souřadnice jezdce: počátek na zemi mezi koly, 1 jednotka = 1 px (asi 210 na metr).
 
 const RG = {
   rear: [-105, -71], front: [105, -71], bb: [-12, -60], seat: [-52, -186], saddle: [-62, -210],
@@ -18,30 +18,6 @@ function ik(A, B, l1, l2, pick) {
   const c1 = [px - h * uy, py + h * ux], c2 = [px + h * uy, py - h * ux];
   return pick(c1, c2) ? c1 : c2;
 }
-function seg(g, p, q, w, col) { g.lineWidth = w; g.strokeStyle = col; g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.stroke(); }
-// končetina jako zužující se tvar se zaoblenými konci (šířka w1 u p, w2 u q)
-function limb(g, p, q, w1, w2, col) {
-  const dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy) || 1, nx = -dy / l, ny = dx / l;
-  g.fillStyle = col; g.beginPath();
-  g.moveTo(p[0] + nx * w1 / 2, p[1] + ny * w1 / 2); g.lineTo(q[0] + nx * w2 / 2, q[1] + ny * w2 / 2);
-  g.lineTo(q[0] - nx * w2 / 2, q[1] - ny * w2 / 2); g.lineTo(p[0] - nx * w1 / 2, p[1] - ny * w1 / 2); g.closePath(); g.fill();
-  g.beginPath(); g.arc(p[0], p[1], w1 / 2, 0, 7); g.fill(); g.beginPath(); g.arc(q[0], q[1], w2 / 2, 0, 7); g.fill();
-}
-// kolo s vysokým (aero) ráfkem: plášť, tmavý ráfek, značka na ráfku ukazuje otáčení
-function wheel(g, c, ang, acc) {
-  const R = RG.wheelR;
-  g.save(); g.translate(c[0], c[1]);
-  g.fillStyle = '#26282C'; g.beginPath(); g.arc(0, 0, R - 4, 0, 7); g.arc(0, 0, R - 24, 0, 7, true); g.fill();
-  g.strokeStyle = C.muted; g.lineWidth = 1.5; g.globalAlpha *= 0.8;
-  for (let i = 0; i < 12; i++) { const u = ang + i * Math.PI / 6; g.beginPath(); g.moveTo(Math.cos(u) * 6, Math.sin(u) * 6); g.lineTo(Math.cos(u) * (R - 24), Math.sin(u) * (R - 24)); g.stroke(); }
-  g.globalAlpha /= 0.8;
-  g.strokeStyle = acc; g.lineWidth = 6; g.beginPath(); g.arc(0, 0, R - 14, ang, ang + 0.9); g.stroke();
-  g.beginPath(); g.arc(0, 0, R - 14, ang + Math.PI, ang + Math.PI + 0.9); g.stroke();
-  g.strokeStyle = C.ink; g.lineWidth = 7; g.beginPath(); g.arc(0, 0, R - 2, 0, 7); g.stroke();
-  g.strokeStyle = C.line2; g.lineWidth = 2; g.beginPath(); g.arc(0, 0, R - 24, 0, 7); g.stroke();
-  g.fillStyle = C.ink; g.beginPath(); g.arc(0, 0, 7, 0, 7); g.fill();
-  g.restore();
-}
 // kostra jezdce v dané poloze (bez kreslení): kyčel, rameno, hlava
 function riderBones(pose) {
   const P = poseAt(pose || 0), tr = P.torso * Math.PI / 180, hip = [RG.saddle[0] + 4, RG.saddle[1] - 14];
@@ -50,65 +26,51 @@ function riderBones(pose) {
 }
 // nejvyšší bod helmy nad zemí (v px při měřítku 1), aby štítky nikdy nezakryly hlavu
 function riderTop(pose) { return riderBones(pose).hc[1] - 30; }
-// jezdec s kolem: x, zem, měřítko; o: { crank (úhel kliky), wheel (úhel kola), pose (0–2), accent (fialové doplňky), a (průhlednost) }
-function drawRider(x, ground, sc, o) {
-  const g = ctx, B = riderBones(o.pose), P = B.P, acc = o.accent ? C.pu : '#6E6D6A', skin = C.ink, far = '#8A8985', shorts = '#3E4045';
-  g.save(); g.translate(x, ground); g.scale(sc, sc); g.globalAlpha *= o.a == null ? 1 : o.a; g.lineCap = 'round'; g.lineJoin = 'round';
-  // stín na silnici
-  g.save(); g.fillStyle = 'rgba(0,0,0,0.35)'; g.beginPath(); g.ellipse(0, 4, 200, 12, 0, 0, 7); g.fill(); g.restore();
-  const hip = B.hip, sh = B.sh, hc = B.hc;
-  const ped = th => [RG.bb[0] + RG.crank * Math.cos(th), RG.bb[1] + RG.crank * Math.sin(th)];
-  const leg = (th, near) => {
-    const p = ped(th), ank = [p[0] - 4, p[1] - 14], kn = ik(hip, ank, 100, 94, (c1, c2) => c1[0] > c2[0]);
-    const sk = near ? skin : far, sh2 = near ? shorts : '#2F3135';
-    limb(g, hip, kn, 36, 25, sh2); limb(g, [lerp(hip[0], kn[0], 0.72), lerp(hip[1], kn[1], 0.72)], kn, 25, 24, sk);
-    limb(g, kn, ank, 23, 14, sk);
-    limb(g, [ank[0] - 6, ank[1] + 2], [p[0] + 20, p[1] + 2], 15, 11, near ? acc : '#4A4C50');
-  };
-  const arm = near => {
-    const hd = P.hands, el = ik(sh, hd, 68, 64, (c1, c2) => c1[1] > c2[1]), col = near ? skin : far;
-    limb(g, sh, el, 22, 17, col); limb(g, el, hd, 16, 12, col);
-    g.fillStyle = near ? '#2F3135' : '#26282B'; g.beginPath(); g.arc(hd[0], hd[1], 8, 0, 7); g.fill();
-  };
-  const th = o.crank || 0;
-  // vzadu: vzdálená noha a ruka (tmavší, plné barvy, aby se nepřekrývaly průhledně)
-  leg(th + Math.PI, false); arm(false);
-  // kolo
-  wheel(g, RG.rear, o.wheel || 0, acc); wheel(g, RG.front, o.wheel || 0, acc);
-  [[RG.bb, RG.seat], [RG.seat, RG.headTop], [RG.bb, RG.headBot], [RG.rear, RG.bb], [RG.rear, RG.seat], [RG.headTop, RG.headBot], [RG.headBot, RG.front]].forEach(([p, q]) => seg(g, p, q, 9, C.ink));
-  seg(g, RG.seat, RG.saddle, 6, C.muted); limb(g, [RG.saddle[0] - 22, RG.saddle[1] + 1], [RG.saddle[0] + 18, RG.saddle[1] + 3], 11, 7, '#2F3135');
-  seg(g, RG.headTop, [94, -197], 7, C.muted);
-  g.lineWidth = 7; g.strokeStyle = C.muted; g.beginPath(); g.moveTo(94, -197); g.quadraticCurveTo(114, -194, 107, -175); g.quadraticCurveTo(102, -163, 91, -162); g.stroke();
-  g.strokeStyle = C.ink; g.lineWidth = 4; g.beginPath(); g.arc(RG.bb[0], RG.bb[1], 25, 0, 7); g.stroke();
-  seg(g, ped(th + Math.PI), ped(th), 7, C.muted); g.fillStyle = C.ink; g.beginPath(); g.arc(RG.bb[0], RG.bb[1], 9, 0, 7); g.fill();
-  // vpředu: blízká noha, trup (dres), hlava s helmou, blízká ruka
-  leg(th, true);
-  const ux = Math.cos(B.tr), uy = -Math.sin(B.tr), nb = [uy, -ux];
-  g.fillStyle = skin; g.beginPath();
-  g.moveTo(hip[0] + nb[0] * 17, hip[1] + nb[1] * 17); g.lineTo(sh[0] + nb[0] * 19, sh[1] + nb[1] * 19);
-  g.quadraticCurveTo(sh[0] + ux * 26, sh[1] + uy * 26, sh[0] - nb[0] * 24, sh[1] - nb[1] * 24);
-  g.lineTo(hip[0] - nb[0] * 21 + ux * 30, hip[1] - nb[1] * 21 + uy * 30); g.quadraticCurveTo(hip[0] - nb[0] * 22, hip[1] - nb[1] * 22, hip[0] - ux * 16, hip[1] - uy * 16); g.closePath(); g.fill();
-  // boční pruh dresu a stín na břiše pro plastičnost
-  limb(g, [hip[0] + nb[0] * 8 + ux * 6, hip[1] + nb[1] * 8 + uy * 6], [sh[0] + nb[0] * 10 - ux * 10, sh[1] + nb[1] * 10 - uy * 10], 9, 9, acc);
-  g.save(); g.globalAlpha *= 0.18; limb(g, [hip[0] - nb[0] * 13 + ux * 20, hip[1] - nb[1] * 13 + uy * 20], [sh[0] - nb[0] * 15 - ux * 14, sh[1] - nb[1] * 15 - uy * 14], 12, 14, '#000'); g.restore();
-  limb(g, sh, [lerp(sh[0], hc[0], 0.6), lerp(sh[1], hc[1], 0.6)], 20, 16, skin);
-  g.save(); g.translate(hc[0], hc[1]); g.rotate(-0.2 + (P.torso - 30) * -0.004);
-  g.fillStyle = skin; g.beginPath(); g.ellipse(4, 7, 20, 21, 0, 0, 7); g.fill();
-  g.fillStyle = '#1E2023'; g.beginPath(); g.roundRect(8, -1, 18, 9, 4); g.fill();
-  g.fillStyle = acc; g.beginPath(); g.moveTo(-30, 6); g.quadraticCurveTo(-24, -26, 6, -25); g.quadraticCurveTo(30, -22, 31, -3); g.lineTo(18, -1); g.quadraticCurveTo(0, -6, -30, 6); g.fill();
-  g.strokeStyle = 'rgba(23,25,27,0.55)'; g.lineWidth = 3; g.beginPath(); g.moveTo(-14, -16); g.lineTo(-6, -8); g.moveTo(0, -22); g.lineTo(4, -12); g.moveTo(14, -20); g.lineTo(14, -9); g.stroke();
-  g.restore();
-  arm(true);
-  g.restore();
+// ---------- 3D scéna ----------
+// cfg: { cam: { pos: [x, y, z], look: [x, y, z], fov }, road: { lanes: [z…], z0, z1 }, riders: { A: { kit, over, z } }, rim }
+// jedna scéna na celé video (vytvoří se při prvním snímku); between() = kreslení mezi silnicí a jezdci; state: { dist, slope (stupně), riders: { A: { x, pose, crank, wheel, dir } } }
+const R3 = { st: null };
+function scene3d(cfg, state, between) {
+  const K = window.RIDE3D; if (!K) throw new Error('3D jezdci se nenačetli (engine/three-boot.mjs)');
+  if (!R3.st) {
+    const st = K.makeStage(1080, 1920, { fov: cfg.cam.fov || 40, rim: cfg.rim, shadow: cfg.shadow });
+    st.cam.position.set(...cfg.cam.pos); st.cam.lookAt(...cfg.cam.look);
+    const road = K.makeRoad(cfg.road || {}); st.world.add(road.group);
+    const riders = {}; for (const id in cfg.riders) { const r = cfg.riders[id], m = K.makeRider(r.kit || 'white', r.over); m.root.position.z = r.z || 0; st.world.add(m.root); riders[id] = m; }
+    R3.st = st; R3.road = road; R3.riders = riders;
+  }
+  const st = R3.st; R3.road.update(state.dist || 0); st.world.rotation.z = (state.slope || 0) * Math.PI / 180;
+  for (const id in R3.riders) { const m = R3.riders[id], s = state.riders[id] || {}; m.root.visible = s.hide !== true; m.root.position.x = s.x || 0; m.root.rotation.y = s.dir < 0 ? Math.PI : 0; m.update(s); }
+  // 3D obraz 1:1 na obrazovku (scény se kreslí ve zvětšení ZOOM kolem 540, 905, proto zpětný přepočet)
+  const X = 540 - 540 / ZOOM, Y = 905 - 905 / ZOOM, put = () => ctx.drawImage(st.canvas, X, Y, 1080 / ZOOM, 1920 / ZOOM);
+  // dva průchody: silnice (se stíny jezdců), pak proudnice (between), pak jezdci, aby proudnice byly nad silnicí a za jezdci
+  st.world.updateMatrixWorld(true); st.render(2); put(); if (between) between(); st.render(0); put();
+  // ztlumení (state.a < 1): tmavá vrstva přes celou scénu, jezdci neprůhlední
+  if (state.a != null && state.a < 1) { ctx.save(); ctx.globalAlpha = 1 - state.a; ctx.fillStyle = C.bg; ctx.fillRect(X, Y, 1080 / ZOOM, 1920 / ZOOM); ctx.restore(); }
 }
-
-// silnice: pás s přerušovanou čarou, posun čáry = ujetá vzdálenost (px)
-function drawRoad(y0, x0, x1, dist, a, tilt) {
-  ctx.save(); ctx.globalAlpha *= a == null ? 1 : a;
-  ctx.fillStyle = C.surf; ctx.fillRect(x0, y0, x1 - x0, 26);
-  ctx.strokeStyle = C.line2; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y0); ctx.stroke();
-  ctx.strokeStyle = C.muted; ctx.lineWidth = 4; ctx.setLineDash([46, 54]); ctx.lineDashOffset = dist; ctx.beginPath(); ctx.moveTo(x0, y0 + 13); ctx.lineTo(x1, y0 + 13); ctx.stroke();
-  ctx.restore();
+// bod jezdce (v jeho souřadnicích, y nahoru) → bod ve scéně (pro štítky a proudnice)
+function at3d(id, p) {
+  const st = R3.st, m = R3.riders[id]; if (!st) return [540, 905];
+  st.world.updateMatrixWorld(true); const v = new window.RIDE3D.THREE.Vector3(p[0], p[1], p[2] || 0).applyMatrix4(m.root.matrixWorld).project(st.cam);
+  const sx = (v.x + 1) / 2 * 1080, sy = (1 - v.y) / 2 * 1920; return [540 + (sx - 540) / ZOOM, 905 + (sy - 905) / ZOOM];
+}
+// měřítko jezdce ve scéně (px na jednotku) podle průmětu 100 jednotek podél kola
+function scale3d(id) { const a = at3d(id, [0, 0]), b = at3d(id, [100, 0]); return Math.hypot(b[0] - a[0], b[1] - a[1]) / 100; }
+// štítek nad helmou 3D jezdce
+// side 'left': štítek vlevo nad hlavou se šikmou čárkou (když přímo nad hlavou překáží jiný jezdec)
+function tag3d(id, pose, text, t, at, out, o) {
+  o = o || {}; const p = at3d(id, [20, -riderTop(pose) + 40]);
+  if (o.side !== 'left') { tagAt(text, p[0], p[1] - 40, Object.assign({ t, at, out, line: 34 }, o)); return; }
+  const q = popS(t, at, out); if (q.a <= 0) return;
+  const h = at3d(id, [0, -riderTop(pose) + 20]), x = h[0] - 120, y = h[1] - 70;
+  ctx.save(); ctx.globalAlpha *= q.a; ctx.strokeStyle = o.c === 'pu' ? C.pu : C.line2; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x + 40, y + 24); ctx.lineTo(h[0] - 8, h[1] - 6); ctx.stroke(); ctx.restore();
+  pill(text, x, y, { a: q.a, s: q.s, size: o.size || 36, ls: 0, bg: o.c === 'pu' ? C.pu : C.surf, c: C.ink });
+}
+// proudnice kolem 3D jezdce (2D za ním, natočené podle průmětu)
+function air3d(id, t, rel, wake, pose, a, dir) {
+  const g = at3d(id, [0, 0]), sc = scale3d(id); ctx.save();
+  if (dir < 0) { ctx.translate(g[0], 0); ctx.scale(-1, 1); ctx.translate(-g[0], 0); }   // jezdec jede doleva: proudnice zrcadlově
+  drawAir(g[0], g[1], sc, t, rel, wake, pose, a); ctx.restore();
 }
 
 // proudnice kolem jezdce (v jeho souřadnicích): hustý „větrný tunel“ jako ve vzoru, čáry obtékají tělo,
@@ -184,4 +146,12 @@ function statAt(t, at, out, label, value, color) {
   const p = popS(t, at, out), q = pop(t, at, out); if (p.a <= 0) return;
   txt(label, 540, 1408 + q.dy, { size: 30, w: 800, c: C.muted, ls: 4, a: q.a });
   txt(value, 540, 1520 + p.dy, Object.assign(fit(value, { size: 104, w: 800, f: F.U, ls: -3 }, 780), { c: color || C.pu, a: p.a, s: p.s }));
+}
+
+// konec videa: papírová vlaštovka (pošli kamarádovi) a výzva ke sledování
+function ctaEnd(t, at, at2, text) {
+  const p = popS(t, at, null), q = popS(t, at2, null); if (p.a <= 0) return;
+  ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(540, 1480); ctx.scale(p.s, p.s); ctx.fillStyle = C.pu; ctx.beginPath(); ctx.moveTo(-60, 0); ctx.lineTo(70, -50); ctx.lineTo(30, 60); ctx.lineTo(10, 18); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = C.ink; ctx.beginPath(); ctx.moveTo(10, 18); ctx.lineTo(70, -50); ctx.lineTo(18, 34); ctx.closePath(); ctx.fill(); ctx.restore();
+  if (q.a > 0) pill(text, 540, 1610, { a: q.a, s: q.s, size: 40, ls: 0 });
 }

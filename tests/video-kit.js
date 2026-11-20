@@ -36,8 +36,9 @@ function check(dir, name) {
   if (sc.format === "short") {
     ok(`[${name}] krátký scénář má 55 až 90 slov (asi 25 až 33 s)`, words >= 55 && words <= 90, words + " slov");
     const hook = sc.lines[keys[0]];
-    ok(`[${name}] hook je první věta, má nejvýš 16 slov a text přímo ve scéně`,
-      hook.captions === false && hook.say.trim().split(/\s+/).length <= 16, hook.say);
+    // formát „ride“ (layout 'top'): hook ukazují titulky nahoře, ve scéně jsou jezdci
+    ok(`[${name}] hook je první věta, má nejvýš 16 slov a text přímo ve scéně (nebo v titulcích nahoře)`,
+      (hook.captions === false || sc.layout === "top") && hook.say.trim().split(/\s+/).length <= 16, hook.say);
     const T = sc.timing || {};
     ok(`[${name}] krátké video: začátek do 0,2 s, pauzy ve větě nejvýš 0,5 s, dozvuk nejvýš 1 s`,
       T.lead <= 0.2 && T.max_pause > 0 && T.max_pause <= 0.5 && T.tail <= 1.0, JSON.stringify(T));
@@ -45,7 +46,8 @@ function check(dir, name) {
     ok(`[${name}] formát je buď vynechaný, nebo "short"`, sc.format === undefined, String(sc.format));
     ok(`[${name}] scénář má 120 až 180 slov (asi 55 až 70 s)`, words >= 120 && words <= 180, words + " slov");
   }
-  ok(`[${name}] hlas je Liam z ElevenLabs`, sc.voice.provider === "elevenlabs" && sc.voice.voice_id === "TX3LPaxmHKxFdv7VOQHJ");
+  // od 20. 11. 2026 i náš hlas (stránka video-kit/tts, Kokoro), když Liamovi dojdou kredity ElevenLabs
+  ok(`[${name}] hlas je Liam z ElevenLabs, nebo náš hlas Kokoro`, (sc.voice.provider === "elevenlabs" && sc.voice.voice_id === "TX3LPaxmHKxFdv7VOQHJ") || sc.voice.provider === "ours", sc.voice.provider);
 
   // scenes.js jen definuje funkce a tři tabulky, takže jde načíst bez prohlížeče
   const code = fs.readFileSync(path.join(dir, "scenes.js"), "utf8");
@@ -90,14 +92,23 @@ for (const ex of fs.readdirSync(path.join(KIT, "examples"))) check(path.join(KIT
       const wrong = refs.filter(r => r[0] === "@").map(r => r.slice(1)).filter(r => { const m = /^([A-Za-z0-9_]+)(?::(\d+))?(\$)?([+-]\d*\.?\d+)?$/.exec(r); return !m || !spec.lines[m[1]] || (m[2] != null && !spec.lines[m[1]].chunks[+m[2]]); });
       const hookItems = Object.values(spec.scenes).filter(x => x.type === "hook" || x.type === "text").flatMap(x => x.items.filter(i => i.i != null).map(i => [x.line, i.i])).filter(([l, i]) => !spec.lines[l] || !spec.lines[l].chunks[i]);
       ok(`[${name}] časy scén odkazují na existující věty a titulky`, wrong.length === 0 && hookItems.length === 0, wrong.concat(hookItems.map(String)).join(", "));
-      if (spec.style) ok(`[${name}] styl zapne kameru nebo pozadí jen přes háčky motoru (CAMERA, BACKGROUND)`, /const CAMERA = STYLE\.camera \? makeCamera/.test(out.scenes) && /const BACKGROUND = STYLE\.bg \? makeBackground/.test(out.scenes) && ["whip", "punch", "drift", "flip", undefined].includes(spec.style.camera) && ["words", "marker", "slot", "reveal", "flap", "glitch", "typing", undefined].includes(spec.style.text) && ["dots", "halftone", "paths", undefined].includes(spec.style.bg) && ["wipe", undefined].includes(spec.style.overlay), JSON.stringify(spec.style));
-      ok(`[${name}] název je jedinečný a video začíná slovy „What if“`, !titles.has(spec.title) && /^What if /.test(out.script.lines[out.script.acts[0].lines[0]].say), spec.title);
+      if (spec.style) ok(`[${name}] styl zapne kameru nebo pozadí jen přes háčky motoru (CAMERA, BACKGROUND)`, /const CAMERA = STYLE\.camera \? makeCamera/.test(out.scenes) && /const BACKGROUND = STYLE\.bg \? makeBackground/.test(out.scenes) && ["whip", "punch", "drift", "flip", undefined].includes(spec.style.camera) && ["words", "marker", "slot", "reveal", "flap", "glitch", "typing", undefined].includes(spec.style.text) && ["dots", "halftone", "paths", undefined].includes(spec.style.bg) && ["wipe", undefined].includes(spec.style.overlay) && ["top", undefined].includes(spec.style.captions), JSON.stringify(spec.style));
+      if (spec.style && spec.style.captions === "top") ok(`[${name}] titulky nahoře jdou přes háček CAPTIONS a scénář má layout 'top'`, /const CAPTIONS = STYLE\.captions === 'top' \? topCaptions/.test(out.scenes) && out.script.layout === "top" && /function topCaptions/.test(out.scenes) && /function scene3d/.test(out.scenes));
+      // série „What if“ (a její zkouška stylů) začíná slovy What if; jiné série (ride) mají vlastní háček
+      const whatIf = ["what-if", "styl-test"].includes(series);
+      ok(`[${name}] název je jedinečný` + (whatIf ? ` a video začíná slovy „What if“` : ""), !titles.has(spec.title) && (!whatIf || /^What if /.test(out.script.lines[out.script.acts[0].lines[0]].say)), spec.title);
+      if (spec.voice) ok(`[${name}] voice: 'ours' přepne na náš hlas`, spec.voice === "ours" && out.script.voice.provider === "ours" && out.script.voice.speed === 1.15);
       titles.add(spec.title);
     }
   }
 }
-ok("motor a nástroje sady jsou na místě", ["engine/engine.js", "engine/render.js", "engine/index.html", "engine/vendor/gsap.min.js", "engine/vendor/LICENSE-gsap.txt", "tools/tts.py", "tools/align.py", "tools/timeline.py",
+ok("motor a nástroje sady jsou na místě", ["engine/engine.js", "engine/render.js", "engine/index.html", "engine/vendor/gsap.min.js", "engine/vendor/LICENSE-gsap.txt",
+  "engine/vendor/three.module.js", "engine/vendor/three.core.js", "engine/vendor/LICENSE-three.txt", "engine/rider3d.mjs", "engine/three-boot.mjs", "tools/kokoro-page.js", "series/ride.js", "tools/tts.py", "tools/align.py", "tools/timeline.py",
   "tools/audio.py", "tools/sheet.py", "tools/physics.py", "sim/lbm.py", "sim/potential.py", "sim/mkmask.js", "build.sh", "SABLONA.md"].every(f => fs.existsSync(path.join(KIT, f))));
+// náš hlas: bez trvalého profilu prohlížeče (jeho mezipaměť hlásila chybu „match on Cache“ a hlas se zasekl), zvuk přes bypassCSP
+{ const kp = fs.readFileSync(path.join(KIT, "tools/kokoro-page.js"), "utf8");
+  ok("náš hlas ve výrobě: prohlížeč bez trvalého profilu a bez podstrkování modelu, CSP stránky se nemění", !/launchPersistentContext|\.route\(/.test(kp) && /bypassCSP: true/.test(kp)); }
+ok("stránka motoru načítá 3D jezdce jako modul ze souboru", /<script type="module" src="three-boot\.mjs"><\/script>/.test(fs.readFileSync(path.join(KIT, "engine/index.html"), "utf8")));
 ok("stránka motoru nemá skript přímo v HTML", !/<script(?![^>]*\bsrc=)[^>]*>/i.test(fs.readFileSync(path.join(KIT, "engine/index.html"), "utf8")));
 
 // ořez ticha a cvaknutí v hlasu (tools/tts.py). Potřebuje python s numpy (pracovní prostředí sady), jinak se přeskočí.

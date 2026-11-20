@@ -87,8 +87,7 @@ def ours_batch(todo):
     if not root: sys.exit("Nenašel jsem stránku video-kit/tts s naším hlasem.")
     lst = out_dir + "/ours.json"
     json.dump([{"key": k, "text": sc["lines"][k]["say"], "speed": vo.get("speed", 1.15)} for k in todo], open(lst, "w", encoding="utf-8"))
-    prof = os.path.join(root, "..", "work", "kokoro-profile"); os.makedirs(prof, exist_ok=True)
-    subprocess.run(["node", os.path.join(here, "kokoro-page.js"), root, lst, out_dir, prof], check=True)
+    subprocess.run(["node", os.path.join(here, "kokoro-page.js"), root, lst, out_dir], check=True)
 
 
 def ours(i, key):

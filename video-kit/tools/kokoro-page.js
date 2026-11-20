@@ -1,11 +1,13 @@
 // Náš hlas pro videa (Kokoro: směs am_fenrir/am_puck/am_onyx + živý přednes a stoupání u otázek).
 // Projde naši stránku video-kit/tts v prohlížeči bez okna, takže hlas zní stejně jako na stránce.
-//   node kokoro-page.js <tts_slozka> <vety.json> <vystupni_slozka> <profil_prohlizece>
+//   node kokoro-page.js <tts_slozka> <vety.json> <vystupni_slozka>
 // vety.json: [{ "key": "hook", "text": "…", "speed": 1.15 }] → <vystupni_slozka>/<key>.wav
-// Model (asi 90 MB) se stáhne z Hugging Face jen poprvé, pak zůstane v profilu prohlížeče.
+// Model (asi 90 MB) se stáhne z Hugging Face při každém spuštění (asi 20 s). Trvalý profil prohlížeče se nepoužívá:
+// jeho mezipaměť občas hlásila „Failed to execute 'match' on 'Cache'“ a hlas se zasekl; podstrčení modelu přes
+// page.route zase shazovalo stránku (90 MB přes protokol prohlížeče).
 const http = require('http'), fs = require('fs'), path = require('path');
 const { chromium } = require('playwright');
-const [ROOT, LIST, OUT, PROFILE] = process.argv.slice(2);
+const [ROOT, LIST, OUT] = process.argv.slice(2);
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.wasm': 'application/wasm', '.bin': 'application/octet-stream', '.svg': 'image/svg+xml', '.png': 'image/png' };
 
 const server = http.createServer((req, res) => {
@@ -18,7 +20,7 @@ const server = http.createServer((req, res) => {
   await new Promise(r => server.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${server.address().port}/`, lines = JSON.parse(fs.readFileSync(LIST, 'utf8'));
   // bypassCSP: zvuk se čte z blob: adresy, kterou CSP stránky (connect-src) jinak nepustí; stránka sama se nemění
-  const ctx = await chromium.launchPersistentContext(PROFILE, { headless: true, bypassCSP: true });
+  const br = await chromium.launch(), ctx = await br.newContext({ bypassCSP: true });
   try {
     const page = ctx.pages()[0] || await ctx.newPage();
     await page.goto(base + 'index.html', { waitUntil: 'load' });
@@ -41,5 +43,5 @@ const server = http.createServer((req, res) => {
       fs.writeFileSync(path.join(OUT, l.key + '.wav'), Buffer.from(b64, 'base64'));
       console.log(`${l.key}: ${st}`);
     }
-  } finally { await ctx.close(); server.close(); }
+  } finally { await br.close(); server.close(); }
 })().catch(e => { console.error('Náš hlas se nepovedl: ' + e.message); process.exit(1); });

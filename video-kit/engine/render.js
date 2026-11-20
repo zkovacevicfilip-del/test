@@ -4,7 +4,8 @@
 const { chromium } = require('playwright'); const fs = require('fs'); const path = require('path');
 const [, , mode, a, b] = process.argv; const WORK = path.join(__dirname, '..', 'work'); const PORT = process.env.KIT_PORT || 8140;
 (async () => {
-  const br = await chromium.launch();
+  // WebGL bez grafické karty (SwiftShader) pro 3D jezdce ve formátu „ride“
+  const br = await chromium.launch({ args: ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const p = await br.newPage({ viewport: { width: 1080, height: 1920 } });
   p.on('pageerror', e => { console.log('CHYBA', e.message); process.exitCode = 1; });
   p.on('console', m => { if (m.type() === 'error') console.log('console:', m.text()); });

@@ -225,6 +225,13 @@ z `video-kit/work/frames/` (začátek, střed, konec) a zkontroluj, že odpovíd
   nainstaluj `video-kit/work/env/bin/pip install kokoro-onnx` a do `video-kit/work/kokoro/` stáhni
   `kokoro-v1.0.onnx` a `voices-v1.0.bin` z vydání `model-files-v1.0` projektu `thewh1teagle/kokoro-onnx`.
   Autorovi napiš, že hlas není Liam.
+- **Náš hlas ze stránky `video-kit/tts`** (lepší než nouzový Kokoro výše, stejný jako na stránce: směs hlasů,
+  živý přednes, stoupání u otázek): v popisu videa ze série napiš `voice: 'ours'`, nebo celou dávku spusť
+  s proměnnou `VOICE=ours`. Krok `voice` projde stránku v prohlížeči bez okna (`tools/kokoro-page.js`),
+  model (asi 90 MB) se stáhne při každém spuštění. Nepoužívej trvalý profil prohlížeče ani podstrkování
+  modelu přes `page.route`: první občas hlásí „Failed to execute 'match' on 'Cache'“ a zasekne se,
+  druhé shodí stránku. Přepis řeči (`asrdiff.py`) u tohohle hlasu častěji slyší jinak krátká slova
+  (riders → writers, tuck → talk): je to chyba přepisu, stačí kotva titulku (`['Tuck only where', 'TALK|TUCK']`).
 
 ## 8. Časté chyby
 
@@ -370,3 +377,14 @@ Video ze série může mít v popisu `style`, který změní pohyb a efekty, ne 
 - **Motor** má tři nepovinné háčky: `CAMERA(t)` vrací `{x, y, s, r, sx, sy}` a hýbe scénou (titulky stojí), `BACKGROUND(t, síla)` kreslí pozadí místo proudu vzduchu, `OVERLAY(t)` kreslí přes celý obraz (přechody). Videa bez stylu se nemění.
 - **Pozor na okraje:** kamera zvětšuje scénu, text u okraje (řádky s pruhem, x 110 až 970) snese přiblížení nejvýš asi 1,5 %. `preview` a `render` hlásí `PŘETÉKÁ MIMO OBRAZ`.
 - **Hlas pro varianty se nekupuje znovu:** do `work/kits/<nový název>/work/tts/` zkopíruj hlas původního videa, krok `voice` ho převezme („beze změny“, 0 znaků).
+
+## 14. Formát „ride“: 3D jezdci jako ve vzorových reels (stav 20. 11. 2026)
+
+Podle dvou vzorových reels (animovaní jezdci na silnici, fialové proudnice, štítky s čísly, titulky nahoře se zvýrazněným slovem, na konci výzva ke sdílení). Postavy, kolo i scéna jsou naše vlastní, nic se nepřebírá. Vzory: `series/ride/01-same-power.js` (stejný výkon, jiná poloha), `02-descent.js` (sjezd bez šlapání), `03-headwind.js` (tam proti větru, zpět po větru).
+
+- **3D jezdec** (`engine/rider3d.mjs`, three.js 0.187 MIT ve `engine/vendor/`): tělo z hladkých tvarů, kolo s aero ráfky, šlapání (`crank`), otáčení kol (`wheel`), poloha `pose` 0 = vzpřímeně, 1 = nízko s ohnutými lokty, 2 = skrčeně v dolním úchopu. Dresy `white` (zvolený, nejblíž vzoru), `purple`, `black`; jednotlivé barvy jde přepsat (`over: { helmet: '#8B3DFF' }`). Autor 20. 11. 2026 nechtěl bílé obrysy, ale „realistické“ postavy. Na rovinu: jsou to stylizované 3D figuríny se světlem a stíny, ne vymodelovaní lidé z 3D programu jako ve vzoru.
+- **Popis videa:** `style: { captions: 'top' }` (titulky nahoře, háček motoru `CAPTIONS`), všechny akty `{ type: 'free', draw: ride }` (jedna souvislá jízda přes celé video). Funkce `ride(t)` si nastaví kameru, silnici a jezdce v objektu `VIEW` **uvnitř funkce** (do `scenes.js` se přenáší jen funkce, konstanty mimo ni chybí: chyba „VIEW is not defined“).
+- **Pomocníci (`series/ride.js`):** `scene3d(VIEW, stav, mezi)` vykreslí silnici, pak `mezi()` (proudnice `air3d`), pak jezdce, takže proudnice jsou nad silnicí a za jezdci; `stav.a < 1` scénu ztlumí tmavou vrstvou; `stav.slope` nakloní silnici (stupně). `tag3d(id, poloha, text, t, od, do, { c: 'pu', side: 'left' })` dá štítek nad helmu (`side: 'left'` šikmo vlevo, když nad hlavou překáží druhý jezdec). `statAt` velké číslo dole, `bigNum` číslo s jednotkou (stopky), `ctaEnd` papírová vlaštovka a výzva ke sledování.
+- **Rozvržení:** titulky nahoře, jezdci uprostřed, velká čísla dole (y 1408 až 1560 ve scéně). Dva jezdci ve dvou pruzích (vzadu z ≈ −760, vpředu z ≈ 200); zadní se smí posunout nejvýš asi o +230, jinak štítek přeteče vpravo.
+- **Render:** WebGL bez grafické karty (`render.js` spouští prohlížeč s `--enable-unsafe-swiftshader`). Video 25 s se renderuje asi 10 min (2D videa asi 3 min).
+- **Testy:** `tests/ride3d.js` (3D jezdec se vykreslí, poloha mění výšku, kolo se točí, silnice ve vlastní vrstvě), `tests/video-kit.js` (popisy ride, náš hlas, titulky nahoře).

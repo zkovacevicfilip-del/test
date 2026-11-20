@@ -1,6 +1,6 @@
-// 3D jezdec na kole (three.js): tělo z hladkých tvarů, kolo, šlapání a poloha 0–2.
+// 3D jezdec na kole (three.js): tělo z hladkých tvarů, kolo, šlapání a poloha 0–2. Používá formát „ride“ (series/ride.js).
 // Souřadnice jako ve 2D (ride.js, y dolů), převádí se na 3D: v(x, y, z) = (x, −y, z). 1 jednotka = 1 px při měřítku 1.
-import * as THREE from './three.module.js';
+import * as THREE from './vendor/three.module.js';
 
 const RG = { rear: [-105, -71], front: [105, -71], bb: [-12, -60], seat: [-52, -186], saddle: [-62, -210],
   headTop: [72, -190], headBot: [82, -150], hoods: [100, -199], drops: [101, -168], wheelR: 71, crank: 36 };
@@ -44,8 +44,8 @@ export const KITS = {
   black: { jersey: '#1E2024', panel: '#8B3DFF', shorts: '#121315', helmet: '#1E2024', shoes: '#1E2024', frame: '#2C2E33', skin: '#B9876A', rim: '#101113' }
 };
 
-export function makeRider(kitName) {
-  const K = KITS[kitName] || KITS.white, root = new THREE.Group();
+export function makeRider(kitName, over) {
+  const K = Object.assign({}, KITS[kitName] || KITS.white, over || {}), root = new THREE.Group();
   const M = (c, o = {}) => new THREE.MeshPhysicalMaterial(Object.assign({ color: c, roughness: 0.55, metalness: 0 }, o));
   const mat = {
     skin: M(K.skin, { roughness: 0.62, sheen: 0.3, sheenColor: new THREE.Color('#ffd9c4') }), jersey: M(K.jersey, { roughness: 0.5, sheen: 0.6, sheenRoughness: 0.5, sheenColor: new THREE.Color('#ffffff') }),
@@ -112,8 +112,8 @@ export function makeRider(kitName) {
   const armGeo = { up: shape(68, u => lerp(9, 7.5, u) + 1.4 * Math.sin(Math.PI * u)), fore: shape(64, u => lerp(8.5, 5.5, u) + 1.4 * Math.exp(-((u - 0.25) ** 2) / 0.04)) };
   const arms = [0, 1].map(i => {
     const z = i ? 36 : -36, up = add(new THREE.Mesh(armGeo.up, mat.skin)), sleeve = add(new THREE.Mesh(shape(32, u => lerp(11, 9.6, u), 1, 1, [true, false]), mat.jersey));
-    const fore = add(new THREE.Mesh(armGeo.fore, mat.skin)), hand = add(new THREE.Mesh(new THREE.SphereGeometry(7.5, 16, 12), mat.glove));
-    return { z, up, sleeve, fore, hand };
+    const fore = add(new THREE.Mesh(armGeo.fore, mat.skin)), hand = add(new THREE.Mesh(new THREE.SphereGeometry(7.5, 16, 12), mat.glove)), elbow = add(new THREE.Mesh(new THREE.SphereGeometry(8, 16, 12), mat.skin));
+    return { z, up, sleeve, fore, hand, elbow };
   });
   body.children.forEach(c => { c.castShadow = true; });
 
@@ -137,27 +137,40 @@ export function makeRider(kitName) {
     arms.forEach(A => {
       const sh3 = [sh[0] - 4, sh[1] + 2], hd = P.hands, el = ik(sh3, hd, 68, 64, (c1, c2) => c1[1] > c2[1]);
       const S3 = v(sh3, A.z), E = v(el, A.z + (A.z > 0 ? 6 : -6)), Hd = v(hd, A.z > 0 ? 22 : -22);
-      place(A.up, S3, E); place(A.sleeve, S3, E); place(A.fore, E, Hd); A.hand.position.copy(Hd);
+      place(A.up, S3, E); place(A.sleeve, S3, E); place(A.fore, E, Hd); A.hand.position.copy(Hd); A.elbow.position.copy(E);
     });
   }
   update({ pose: 0 });
   return { root, update };
 }
 
-// scéna: světla (bílé hlavní, fialové zadní) a stín na zemi; vrací vykreslovač do vlastního plátna
+// scéna: světla (bílé hlavní, fialové zadní) a stín; vrací vykreslovač do vlastního průhledného plátna
 export function makeStage(w, h, opts = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(opts.pr || 1); renderer.setSize(w, h, false); renderer.setClearColor(0x000000, 0);
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = opts.exposure || 1.05; renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  const scene = new THREE.Scene();
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
+  const scene = new THREE.Scene(), world = new THREE.Group(); scene.add(world);
   scene.add(new THREE.HemisphereLight(0xcfc8ff, 0x17191b, 0.9));
-  const key = new THREE.DirectionalLight(0xffffff, 2.6); key.position.set(260, 700, 520); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
-  Object.assign(key.shadow.camera, { left: -400, right: 400, top: 400, bottom: -400, near: 10, far: 2000 }); key.shadow.radius = 6; scene.add(key);
+  const sb = opts.shadow || 900, key = new THREE.DirectionalLight(0xffffff, 2.6); key.position.set(260, 700, 520); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+  Object.assign(key.shadow.camera, { left: -sb, right: sb, top: sb, bottom: -sb, near: 10, far: 3000 }); key.shadow.radius = 4; key.shadow.bias = -0.0005; scene.add(key);
   const rim = new THREE.DirectionalLight(0x8b3dff, opts.rim || 3.2); rim.position.set(-500, 320, -420); scene.add(rim);
   const rim2 = new THREE.DirectionalLight(0x9f6bff, (opts.rim || 3.2) * 0.5); rim2.position.set(-300, 120, 500); scene.add(rim2);
   const fill = new THREE.DirectionalLight(0xffffff, 0.6); fill.position.set(400, 100, 300); scene.add(fill);
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.ShadowMaterial({ opacity: 0.45 })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
-  const cam = new THREE.PerspectiveCamera(opts.fov || 24, w / h, 10, 5000);
-  return { THREE, renderer, scene, cam, canvas: renderer.domElement, render() { renderer.render(scene, cam); } };
+  scene.traverse(o => { if (o.isLight) o.layers.enableAll(); });   // světla platí pro všechny vrstvy
+  const cam = new THREE.PerspectiveCamera(opts.fov || 40, w / h, 10, 9000);
+  return { THREE, renderer, scene, world, cam, canvas: renderer.domElement, render(layer) { cam.layers.set(layer || 0); renderer.render(scene, cam); } };
+}
+
+// silnice: tmavý asfalt v pásu z0–z1 (napříč), bílé okraje a přerušované čáry mezi pruhy, které ujíždějí podle vzdálenosti
+export function makeRoad(o = {}) {
+  const z0 = o.z0 ?? -900, z1 = o.z1 ?? 420, L = o.len || 7000, g = new THREE.Group();
+  const asphalt = new THREE.Mesh(new THREE.PlaneGeometry(L, z1 - z0), new THREE.MeshStandardMaterial({ color: '#0f1012', roughness: 1 }));
+  asphalt.rotation.x = -Math.PI / 2; asphalt.position.z = (z0 + z1) / 2; asphalt.receiveShadow = true; g.add(asphalt);
+  const white = new THREE.MeshStandardMaterial({ color: '#cfcfca', roughness: 0.7 });
+  for (const z of [z0 + 30, z1 - 30]) { const e = new THREE.Mesh(new THREE.PlaneGeometry(L, 9), white); e.rotation.x = -Math.PI / 2; e.position.set(0, 0.5, z); e.receiveShadow = true; g.add(e); }
+  const P = 260, n = Math.ceil(L / P) + 2, dashes = [];
+  for (const z of o.lanes || []) for (let i = 0; i < n; i++) { const d = new THREE.Mesh(new THREE.PlaneGeometry(130, 8), white); d.rotation.x = -Math.PI / 2; d.position.set(0, 0.6, z); d.receiveShadow = true; d.userData.i = i; g.add(d); dashes.push(d); }
+  g.traverse(o => o.layers.set(2));   // silnice ve vrstvě 2: kreslí se zvlášť, pod proudnice (viz ride.js)
+  return { group: g, update(dist) { for (const d of dashes) d.position.x = ((d.userData.i * P - dist) % (n * P) + n * P) % (n * P) - L / 2; } };
 }
