@@ -210,7 +210,7 @@ export function makeRider(kitName, over) {
     rear.rotation.z = -(o.wheel || 0); spinF.rotation.z = -(o.wheel || 0);
     cranks[0].rotation.z = -cr; cranks[1].rotation.z = -(cr + Math.PI);   // šlapání po směru hodin (kolo jede doprava)
     cranks.forEach(c => c.children[1].rotation.z = -c.rotation.z);   // pedály drží vodorovně
-    const head = H.pose(root, pose, cr);
+    const head = H.pose(root, pose, cr, o.grip);
     helmet.position.copy(head.center); helmet.quaternion.copy(head.q);
     head.feet.forEach((f, i) => { shoes[i].position.copy(f.pos); shoes[i].quaternion.copy(f.q); });
   }
@@ -301,7 +301,7 @@ roughnessFactor = rg == 0 ? 0.56 : rg == 2 ? 0.34 : rg == 3 ? 0.8 : 0.46;`);
     const p = pole.clone().sub(n.clone().multiplyScalar(pole.dot(n))).normalize(); return A.clone().add(n.multiplyScalar(a)).add(p.multiplyScalar(h));
   };
   const wpos = (riderRoot, n) => riderRoot.worldToLocal(by[n].getWorldPosition(new THREE.Vector3()));
-  function pose(riderRoot, p, crank) {
+  function pose(riderRoot, p, crank, grip) {
     const P = poseAt(p), tr = P.torso * deg;
     for (const b of bones) b.quaternion.identity();
     // pánev a záda: pánev překlopená dopředu, záda mírně kulatá (níž strměji), ramena svěšená
@@ -318,7 +318,7 @@ roughnessFactor = rg == 0 ? 0.56 : rg == 2 ? 0.34 : rg == 3 ? 0.8 : 0.46;`);
     riderRoot.updateMatrixWorld(true);
     // paže: v poloze 0 ruce na základním řídítku (dvoukloubová úloha), od polohy 1 lokty skoro svisle pod rameny
     // a předloktí dopředu po nástavcích; mezi tím plynulý přechod
-    const kTT = clamp(p), arms = {};
+    const kTT = grip === 'base' ? 0 : clamp(p), arms = {};   // grip 'base': ruce na základním řídítku i v nízké poloze (sprint, kopec)
     for (const [s, sz] of [['R', 1], ['L', -1]]) {
       const S = wpos(riderRoot, 'upperarm01.' + s), G = new THREE.Vector3(GRIP[0], GRIP[1], 21 * sz);
       const reach = Math.min(S.distanceTo(G), LA[0] + LA[1] - 1), W0 = S.clone().add(G.clone().sub(S).normalize().multiplyScalar(reach));

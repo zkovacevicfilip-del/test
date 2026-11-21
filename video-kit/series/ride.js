@@ -146,7 +146,9 @@ function statAt(t, at, out, label, value, color) {
   const p = popS(t, at, out), q = pop(t, at, out); if (p.a <= 0) return;
   const o2 = OUTDOOR(); if (o2) { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 4; }
   txt(label, 540, 1408 + q.dy, { size: 30, w: 800, c: o2 ? '#ffffff' : C.muted, ls: 4, a: q.a });
-  txt(value, 540, 1520 + p.dy, Object.assign(fit(value, { size: 104, w: 800, f: F.U, ls: -3 }, 780), { c: o2 ? (color === C.ink ? '#ffffff' : YEL) : color || C.pu, a: p.a, s: p.s }));
+  const vo = Object.assign(fit(value, { size: 104, w: 800, f: F.U, ls: -3 }, 780), { c: o2 ? (color === C.ink ? '#ffffff' : YEL) : color || C.pu, a: p.a, s: p.s });
+  // se stylem textu (Kokonut UI: slot = číslice se protočí jako válečky, marker, reveal…) číslo naskočí efektem z blocks.js
+  if (typeof STYLE !== 'undefined' && STYLE.text) fxText(value, 540, 1520 + p.dy, Object.assign({}, vo, { s: 1 }), at, 'big', t); else txt(value, 540, 1520 + p.dy, vo);
   if (o2) ctx.restore();
 }
 
@@ -157,4 +159,29 @@ function ctaEnd(t, at, at2, text) {
   ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(540, 1480); ctx.scale(p.s, p.s); ctx.fillStyle = o3 ? YEL : C.pu; ctx.beginPath(); ctx.moveTo(-60, 0); ctx.lineTo(70, -50); ctx.lineTo(30, 60); ctx.lineTo(10, 18); ctx.closePath(); ctx.fill();
   ctx.fillStyle = C.ink; ctx.beginPath(); ctx.moveTo(10, 18); ctx.lineTo(70, -50); ctx.lineTo(18, 34); ctx.closePath(); ctx.fill(); ctx.restore();
   if (q.a > 0) pill(text, 540, 1610, { a: q.a, s: q.s, size: 40, ls: 0, bg: o3 ? YEL : C.pu, c: o3 ? DARK : C.ink });
+}
+
+// úvodní nápis (styl hook 'watt'): velké „watt“ bílé a „IF“ žluté nad jezdcem, vyskočí a na konci háčku zmizí
+function hookTitle(t, at, out) {
+  const p = popS(t, at, out); if (p.a <= 0) return;
+  const w1 = hookWord(), fo = { size: 150, w: 800, f: F.U, ls: -4 }, a = width(w1, fo), b = width('IF', fo), x0 = 540 - (a + b) / 2, y = 640;
+  ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(540, y - 50); ctx.scale(p.s, p.s); ctx.translate(-540, -(y - 50));
+  ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 6;
+  txt(w1, x0, y, Object.assign({ align: 'left', c: '#ffffff' }, fo)); txt('IF', x0 + a, y, Object.assign({ align: 'left', c: YEL }, fo));
+  ctx.restore();
+}
+// barometr (Kokonut UI styl ciferníku): ručička z tlakové výše (vpravo) do níže (vlevo), číslo v hPa se protočí
+function barometer(t, at, out, from, to, tMove, x = 540, y = 600) {
+  const p = popS(t, at, out); if (p.a <= 0) return;
+  const k = ease('power3.inOut')(clamp((t - tMove) / 1.4)), v = lerp(from, to, k), ang = Math.PI * (1.15 + 0.7 * (v - 970) / 80), R = 130;
+  ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(x, y); ctx.scale(p.s, p.s);
+  ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 22; ctx.fillStyle = 'rgba(247,247,244,0.94)'; ctx.beginPath(); ctx.arc(0, 0, R, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
+  ctx.lineWidth = 10; ctx.strokeStyle = '#d64b3c'; ctx.beginPath(); ctx.arc(0, 0, R - 22, Math.PI * 1.15, Math.PI * 1.5); ctx.stroke();
+  ctx.strokeStyle = '#3b8fd6'; ctx.beginPath(); ctx.arc(0, 0, R - 22, Math.PI * 1.5, Math.PI * 1.85); ctx.stroke();
+  for (let i = 0; i <= 8; i++) { const a2 = Math.PI * (1.15 + 0.7 * i / 8); ctx.strokeStyle = '#17191B'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(Math.cos(a2) * (R - 36), Math.sin(a2) * (R - 36)); ctx.lineTo(Math.cos(a2) * (R - 48), Math.sin(a2) * (R - 48)); ctx.stroke(); }
+  txt('LOW', -62, 12, { size: 22, w: 800, c: '#d64b3c' }); txt('HIGH', 62, 12, { size: 22, w: 800, c: '#3b8fd6' });
+  ctx.strokeStyle = '#17191B'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(ang) * (R - 40), Math.sin(ang) * (R - 40)); ctx.stroke();
+  ctx.fillStyle = '#17191B'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, 7); ctx.fill();
+  txt(Math.round(v) + ' hPa', 0, 78, { size: 34, w: 800, f: F.U, c: '#17191B' });
+  ctx.restore();
 }

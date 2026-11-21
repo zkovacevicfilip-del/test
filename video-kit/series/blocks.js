@@ -387,7 +387,8 @@ function makeOverlay(st) {
     TL.acts.forEach((a, i) => {
       if (!i) return; const u = (t - (a.start - 0.32)) / 0.64; if (u <= 0 || u >= 1) return;
       const left = -W + 2 * W * e(u);
-      ctx.fillStyle = C.pu; ctx.fillRect(left, 0, W, H); ctx.fillStyle = C.ink; ctx.fillRect(left + W - 4, 0, 14, H);
+      const out = typeof OUTDOOR === 'function' && OUTDOOR();   // venkovní vzhled formátu ride: žlutý pruh
+      ctx.fillStyle = out ? '#FFD23F' : C.pu; ctx.fillRect(left, 0, W, H); ctx.fillStyle = out ? '#17191B' : C.ink; ctx.fillRect(left + W - 4, 0, 14, H);
     });
   };
 }
