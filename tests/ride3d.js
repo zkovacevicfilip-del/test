@@ -32,7 +32,13 @@ const server = http.createServer((req, res) => {
       const rear = m.root.children[0].children[0], w0 = rear.rotation.z; m.update({ pose: 0, wheel: 1.2 }); const w1 = rear.rotation.z;
       let roadLayers = true; road.group.traverse(o => { if (!o.layers.isEnabled(2) || o.layers.isEnabled(0)) roadLayers = false; });
       let skinned = null; m.root.traverse(o => { if (o.isSkinnedMesh) skinned = o; });
-      return { n0, top0, top2, head0: [head0.x, head0.y], roadOnly, w0, w1, roadLayers, bones: skinned ? skinned.skeleton.bones.length : 0, verts: H.meta.vertices, kits: Object.keys(K.KITS) };
+      // dlaň: normála z kostí (zápěstí → prostředek prstů) × (ukazováček → malíček), u levé ruky opačně; v souřadnicích jezdce
+      const palm = (pose, s) => { m.update({ pose }); m.root.updateMatrixWorld(true);
+        const P = n => m.root.worldToLocal(m.root.getObjectByName(n).getWorldPosition(new K.THREE.Vector3()));
+        const f = P('finger3-1.' + s).sub(P('wrist.' + s)), a = P('finger5-1.' + s).sub(P('finger2-1.' + s));
+        return new K.THREE.Vector3().crossVectors(f, a).multiplyScalar(s === 'R' ? 1 : -1).normalize().toArray(); };
+      const palms = { base: [palm(0, 'R'), palm(0, 'L')], aero: [palm(1, 'R'), palm(1, 'L')] };
+      return { n0, top0, top2, head0: [head0.x, head0.y], roadOnly, palms, w0, w1, roadLayers, bones: skinned ? skinned.skeleton.bones.length : 0, verts: H.meta.vertices, kits: Object.keys(K.KITS) };
     });
     ok("model člověka (MakeHuman) se načte: 163 kostí, přes 13 000 bodů", r.bones === 163 && r.verts > 13000, r.bones + " / " + r.verts);
     ok("jezdec se vykreslí bez chyb (WebGL bez grafické karty)", errs.length === 0 && r.n0 > 3000, errs.join("; ") + " / bodů " + r.n0);
@@ -40,6 +46,10 @@ const server = http.createServer((req, res) => {
     ok("nejnižší poloha (2) má helmu níž než vzpřímená (0)", r.top2 < r.top0 - 20, r.top0 + " → " + r.top2);
     ok("silnice je jen ve vrstvě 2 a bez jezdců jde vykreslit zvlášť", r.roadLayers && r.roadOnly > 1000 && r.roadOnly !== r.n0, r.roadOnly);
     ok("kolo se otáčí podle úhlu wheel", Math.abs(r.w1 - r.w0 + 1.2) < 1e-6, r.w0 + " → " + r.w1);
+    // oprava 21. 11. 2026: na základním řídítku byla zápěstí vykroucená a řídítko vedlo ven z ruky; autor chce dlaně
+    // dovnitř k nástavcům (jako v nástavcích), pravá ruka je blíž k divákovi (z > 0), takže její dlaň míří k −z
+    ok("na základním řídítku dlaně dovnitř k nástavcům, ne nahoru", r.palms.base[0][2] < -0.6 && r.palms.base[1][2] > 0.6 && r.palms.base.every(n => n[1] < 0.3), JSON.stringify(r.palms.base));
+    ok("v aero nástavcích dlaně k sobě (pravá k −z, levá k +z)", r.palms.aero[0][2] < -0.6 && r.palms.aero[1][2] > 0.6, JSON.stringify(r.palms.aero));
     ok("dresy: bílý, fialový, černý", ["white", "purple", "black"].every(k => r.kits.includes(k)), r.kits.join(", "));
   } finally { await br.close(); server.close(); }
   if (fails) { console.log(`\n${fails} test(ů) selhalo`); process.exit(1); } else console.log("\n3D jezdci: vše v pořádku");
