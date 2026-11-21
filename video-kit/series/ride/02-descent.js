@@ -2,7 +2,7 @@
 // v nástavcích. Náš hlas (Liamovi došly kredity). Autor 21. 11. 2026: ve videu jen jeden jezdec.
 const ride = function (t) {
   // pohled kamery, silnice se sklonem a jezdec (popis musí být uvnitř funkce, do scenes.js se přenáší jen ona)
-  const VIEW = { cam: { pos: [300, 560, 1180], look: [0, 150, -60], fov: 40 }, road: { lanes: [-260], z0: -700, z1: 900 }, riders: { A: { kit: 'purple', z: 60 } } };
+  const VIEW = { cam: { pos: [300, 380, 1250], look: [0, 175, -60], fov: 40 }, road: { lanes: [-260], z0: -700, z1: 900 }, riders: { A: { kit: 'purple', z: 60 } } };
   const T = r => TR(r), tStop = T('hook:0') + 0.9, tDown = T('setup:0'), tCta = T('cta:0');
   // šlapání do konce první věty, pak kliky vodorovně a jen se jede
   const stop = Math.PI * Math.ceil(9.4 * tStop / Math.PI), crank = Math.min(t * 9.4, stop);
@@ -24,7 +24,7 @@ const ride = function (t) {
 module.exports = {
   title: 'ride-descent',
   about: 'Jeden časovkář sjíždí 6 % na 3 km bez šlapání. Vzpřímeně na základním řídítku (CdA 0,36) 52,5 km/h, skrčeně v aero nástavcích (CdA 0,21) 68,7 km/h. Skrčeně je dole asi o 49 s dřív.',
-  style: { captions: 'top' },
+  style: { captions: 'top', look: 'golden' },
   voice: 'ours',
   acts: [['hook', 'hook'], ['setup', 'setup'], ['stance', 'he', 'tuck'], ['result', 'result'], ['why', 'why'], ['cta', 'cta']],
   lines: {

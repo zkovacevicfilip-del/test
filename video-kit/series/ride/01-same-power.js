@@ -2,7 +2,7 @@
 // s čísly, titulky nahoře. Náš hlas (Liamovi došly kredity). Autor 21. 11. 2026: ve videu jen jeden jezdec.
 const ride = function (t) {
   // pohled kamery, silnice a jezdec (popis musí být uvnitř funkce, do scenes.js se přenáší jen ona)
-  const VIEW = { cam: { pos: [300, 560, 1180], look: [0, 150, -60], fov: 40 }, road: { lanes: [-260], z0: -700, z1: 900 }, riders: { A: { kit: 'purple', z: 60 } } };
+  const VIEW = { cam: { pos: [300, 380, 1250], look: [0, 175, -60], fov: 40 }, road: { lanes: [-260], z0: -700, z1: 900 }, riders: { A: { kit: 'purple', z: 60 } } };
   const T = r => TR(r), tDrop = T('drop:1'), tUp = T('cost:1'), tBack = T('cta:0') + 0.3, tCta = T('cta:0');
   // poloha: vzpřímeně → do nástavců („onto the aero bars“) → na chvíli zase vzpřímeně („sitting up“ za 314 W) → zpět do nástavců
   const pose = tw(t, tDrop, 1.1, E.io) - tw(t, tUp, 0.9, E.io) + tw(t, tBack, 0.9, E.io), aero = clamp(pose);
@@ -24,7 +24,7 @@ const ride = function (t) {
 module.exports = {
   title: 'ride-same-power',
   about: 'Jeden časovkář se stejnými 250 W na časovkářském kole: vzpřímeně s rukama na základním řídítku (CdA 0,30) jede 37,8 km/h, v aero nástavcích s lokty na opěrkách (CdA 0,23) 41,1 km/h. Vzpřímeně by na stejnou rychlost potřeboval o 64 W (26 %) víc.',
-  style: { captions: 'top' },
+  style: { captions: 'top', look: 'golden' },
   voice: 'ours',
   acts: [['hook', 'hook'], ['stance', 'he', 'drop'], ['race', 'speeds', 'hour'], ['cost', 'cost'], ['cta', 'cta']],
   lines: {

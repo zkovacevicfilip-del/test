@@ -1,7 +1,7 @@
 // Formát „ride“: jeden časovkář (3D, MakeHuman) tam proti větru a zpět po větru, stopky, kdy se vyplatí aero nástavce. Náš hlas (Liamovi došly kredity).
 const ride = function (t) {
   // pohled kamery, silnice a jeden jezdec (popis musí být uvnitř funkce, do scenes.js se přenáší jen ona)
-  const VIEW = { cam: { pos: [300, 560, 1180], look: [0, 150, -60], fov: 40 }, road: { lanes: [-260], z0: -700, z1: 900 }, riders: { A: { kit: 'purple', z: 60 } } };
+  const VIEW = { cam: { pos: [300, 380, 1250], look: [0, 175, -60], fov: 40 }, road: { lanes: [-260], z0: -700, z1: 900 }, riders: { A: { kit: 'purple', z: 60 } } };
   // stopky m:ss (scenes.js nemá physics.js, proto vlastní)
   const P_clock = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
   const T = r => TR(r), tOut = T('out:0'), tBack = T('back:0'), tLow = T('low:0'), tCta = T('cta:0');
@@ -15,7 +15,7 @@ const ride = function (t) {
   scene3d(VIEW, st, () => air3d('A', t, back ? 420 : 900, back ? 0.5 : 1, pose, 0.95 * (1 - ctaK) * (1 - turn), dir));
   // šipka větru: vždy zprava doleva
   const wa = clamp((t - T('setup:0')) / 0.3) * (1 - ctaK) * (1 - turn);
-  if (wa > 0) { const y = 560, ph = (t * 1.6) % 1; ctx.save(); ctx.globalAlpha *= wa; ctx.scale(-1, 1); for (let i = 0; i < 3; i++) { const x = 900 - ((ph + i / 3) % 1) * 760; ctx.globalAlpha = wa * Math.sin(Math.PI * ((ph + i / 3) % 1)); arrow(-x, y, 150, C.pu, 1); } ctx.restore(); txt('WIND 20 km/h', 540, 500, { size: 30, w: 800, c: C.muted, ls: 4, a: wa }); }
+  if (wa > 0) { const y = 560, ph = (t * 1.6) % 1, out = OUTDOOR(); ctx.save(); ctx.globalAlpha *= wa; if (out) { ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 10; } ctx.scale(-1, 1); for (let i = 0; i < 3; i++) { const x = 900 - ((ph + i / 3) % 1) * 760; ctx.globalAlpha = wa * Math.sin(Math.PI * ((ph + i / 3) % 1)); arrow(-x, y, 150, out ? '#ffffff' : C.pu, 1); } ctx.restore(); if (out) { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 12; } txt('WIND 20 km/h', 540, 500, { size: 30, w: 800, c: out ? '#ffffff' : C.muted, ls: 4, a: wa }); if (out) ctx.restore(); }
   // stopky: tam 0 → 45:30, zpět 0 → 23:20 (zrychleně během věty)
   const clockAt = (t0, t1, s1) => P_clock(s1 * clamp((t - t0) / Math.max(0.5, t1 - t0)));
   // obě stopky zůstanou vidět až do součtu: tam nahoře, zpět pod nimi
@@ -31,7 +31,7 @@ const ride = function (t) {
 module.exports = {
   title: 'ride-headwind',
   about: 'Časovkář tam a zpět 20 km při 250 W a větru 20 km/h: vzpřímeně na základním řídítku (CdA 0,30) tam 45:30, zpět 23:20, celkem o 5:21 pomaleji než bez větru. Aero nástavce (CdA 0,23) ušetří proti větru 5:00, po větru jen 1:21.',
-  style: { captions: 'top' },
+  style: { captions: 'top', look: 'golden' },
   voice: 'ours',
   acts: [['hook', 'hook'], ['setup', 'setup'], ['out', 'out'], ['back', 'back'], ['total', 'total'], ['why', 'why'], ['low', 'low'], ['cta', 'cta']],
   lines: {
