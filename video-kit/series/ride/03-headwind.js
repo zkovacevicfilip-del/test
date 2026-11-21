@@ -1,7 +1,7 @@
-// Formát „ride“: jeden 3D jezdec tam proti větru a zpět po větru, stopky, kde se vyplatí jet nízko. Náš hlas (Liamovi došly kredity).
+// Formát „ride“: jeden časovkář (3D, MakeHuman) tam proti větru a zpět po větru, stopky, kdy se vyplatí aero nástavce. Náš hlas (Liamovi došly kredity).
 const ride = function (t) {
   // pohled kamery, silnice a jeden jezdec (popis musí být uvnitř funkce, do scenes.js se přenáší jen ona)
-  const VIEW = { cam: { pos: [300, 560, 1180], look: [0, 150, -60], fov: 40 }, road: { lanes: [-260], z0: -700, z1: 900 }, riders: { A: { kit: 'white', z: 60 } } };
+  const VIEW = { cam: { pos: [300, 560, 1180], look: [0, 150, -60], fov: 40 }, road: { lanes: [-260], z0: -700, z1: 900 }, riders: { A: { kit: 'purple', z: 60 } } };
   // stopky m:ss (scenes.js nemá physics.js, proto vlastní)
   const P_clock = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
   const T = r => TR(r), tOut = T('out:0'), tBack = T('back:0'), tLow = T('low:0'), tCta = T('cta:0');
@@ -24,13 +24,13 @@ const ride = function (t) {
   statAt(t, T('setup:0'), T('out:0') - 0.15, '20 km EACH WAY · 250 W', 'Out & back', C.ink);
   statAt(t, T('total:0'), T('why:0') - 0.15, 'SLOWER THAN NO WIND', '+5:21');
   statAt(t, T('why:0'), tLow - 0.15, 'TIME IN THE HEADWIND', '~2× longer', C.ink);
-  statAt(t, T('low:3'), T('low:4') - 0.1, 'GETTING LOW, HEADWIND', '−3:30');
-  statAt(t, T('low:5'), tCta - 0.15, 'GETTING LOW, TAILWIND', '−0:56', C.ink);
+  statAt(t, T('low:3'), T('low:4') - 0.1, 'AERO BARS, HEADWIND', '−5:00');
+  statAt(t, T('low:5'), tCta - 0.15, 'AERO BARS, TAILWIND', '−1:21', C.ink);
   ctaEnd(t, tCta, T('cta:1'), 'Follow for more free speed');
 };
 module.exports = {
   title: 'ride-headwind',
-  about: 'Tam a zpět 20 km při 250 W a větru 20 km/h: v běžné poloze (CdA 0,30) tam 45:30, zpět 23:20, celkem o 5:21 pomaleji než bez větru. Nízká poloha (CdA 0,25) ušetří proti větru 3:30, po větru jen 0:56.',
+  about: 'Časovkář tam a zpět 20 km při 250 W a větru 20 km/h: vzpřímeně na základním řídítku (CdA 0,30) tam 45:30, zpět 23:20, celkem o 5:21 pomaleji než bez větru. Aero nástavce (CdA 0,23) ušetří proti větru 5:00, po větru jen 1:21.',
   style: { captions: 'top' },
   voice: 'ours',
   acts: [['hook', 'hook'], ['setup', 'setup'], ['out', 'out'], ['back', 'back'], ['total', 'total'], ['why', 'why'], ['low', 'low'], ['cta', 'cta']],
@@ -45,8 +45,8 @@ module.exports = {
       chunks: [["That's over 5 minutes", "THAT'S|THATS"], 'slower than', 'no wind at all.'] },
     why: { say: 'Because you spend almost twice as long in the headwind.',
       chunks: ['Because you spend', 'almost twice as long', 'in the headwind.'] },
-    low: { say: 'So where should you get low? In the headwind, it saves three and a half minutes. In the tailwind, under one.',
-      chunks: ['So where should', 'you get low?', 'In the headwind,', ['it saves 3.5 minutes.', 'IT'], 'In the tailwind,', 'under one.'] },
+    low: { say: 'So when do the aero bars pay off? In the headwind, they save five minutes. In the tailwind, just over one.',
+      chunks: ['So when do', 'the aero bars pay off?', 'In the headwind,', ['they save 5 minutes.', 'THEY'], 'In the tailwind,', 'just over one.'] },
     cta: { say: 'Send this to a friend who sits up into the wind. Follow for more.',
       chunks: ['Send this to a friend', 'who sits up', 'into the wind.', 'Follow for more.'] }
   },
@@ -58,9 +58,9 @@ module.exports = {
       ['zpět po větru, s (23:20)', back, 1400, 2],
       ['o kolik pomaleji než bez větru, s (5:21, „over five minutes“)', out + back - calm, 321, 2],
       ['kolikrát déle proti větru („almost twice“, „~2×“)', out / back, 1.95, 0.02],
-      ['úspora nízko (CdA 0,25) proti větru, s (3:30)', out - P.time(250, 20, { wind: w }), 210, 2],
-      ['úspora nízko (CdA 0,25) po větru, s (0:56, „under one“)', back - P.time(250, 20, { wind: -w }), 56, 2]
+      ['úspora v nástavcích (CdA 0,23) proti větru, s (5:00, „five minutes“)', out - P.time(250, 20, { wind: w, cda: 0.23 }), 300, 2],
+      ['úspora v nástavcích (CdA 0,23) po větru, s (1:21, „just over one“)', back - P.time(250, 20, { wind: -w, cda: 0.23 }), 81, 2]
     ];
   },
-  sources: 'Model jako v aplikaci (84 kg, Crr 0,004, účinnost 97,5 %, 20 °C), vítr přesně proti a po směru jízdy. Běžná poloha CdA 0,30, nízká 0,25 (rozsah z přehledu Crouch a kol. 2017).'
+  sources: 'Model jako v aplikaci (84 kg, Crr 0,004, účinnost 97,5 %, 20 °C), vítr přesně proti a po směru jízdy. Vzpřímeně na základním řídítku CdA 0,30, v aero nástavcích 0,23 (rozsah z přehledu Crouch a kol. 2017).'
 };

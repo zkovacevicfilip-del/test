@@ -1,31 +1,15 @@
 // ---------- JÍZDA: 3D jezdci na kole, silnice, proudnice a titulky nahoře ----------
-// Formát „ride“ (podle vzorových reels, ale vlastní 3D postavy v naší paletě): jezdci se točícími se koly a šlapáním
-// (engine/rider3d.mjs, three.js), štítky s čísly přichycené k jezdcům, silnice nebo svah, proudnice vzduchu kolem těla
+// Formát „ride“ (podle vzorových reels, ale vlastní 3D postavy v naší paletě): časovkáři z modelu člověka MakeHuman
+// se šlapáním a točícími se koly (engine/rider3d.mjs, three.js), štítky s čísly přichycené k jezdcům, silnice nebo svah, proudnice vzduchu kolem těla
 // a titulky nahoře se zvýrazněným slovem. Souřadnice jezdce: počátek na zemi mezi koly, 1 jednotka = 1 px (asi 210 na metr).
 
-const RG = {
-  rear: [-105, -71], front: [105, -71], bb: [-12, -60], seat: [-52, -186], saddle: [-62, -210],
-  headTop: [72, -190], headBot: [82, -150], hoods: [100, -199], drops: [101, -168], wheelR: 71, crank: 36
-};
-// poloha: 0 = vzpřímeně (ruce na páčkách, natažené paže), 1 = nízko (ohnuté lokty, nižší záda), 2 = skrčeně ve sjezdu
-const POSE = [{ torso: 48, hands: RG.hoods, head: [30, -30] }, { torso: 30, hands: [97, -197], head: [36, -20] }, { torso: 16, hands: RG.drops, head: [38, -12] }];
-const lerp2 = (p, q, k) => [lerp(p[0], q[0], k), lerp(p[1], q[1], k)];
-function poseAt(p) { const i = Math.max(0, Math.min(1, Math.floor(p))), k = clamp(p - i); const a = POSE[i], b = POSE[Math.min(2, i + 1)]; return { torso: lerp(a.torso, b.torso, k), hands: lerp2(a.hands, b.hands, k), head: lerp2(a.head, b.head, k) }; }
-// dvoukloubová úloha (stehno a lýtko, nadloktí a předloktí): kde je koleno nebo loket
-function ik(A, B, l1, l2, pick) {
-  const dx = B[0] - A[0], dy = B[1] - A[1], d = Math.min(Math.hypot(dx, dy), l1 + l2 - 0.5), a = (l1 * l1 - l2 * l2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
-  const ux = dx / Math.hypot(dx, dy), uy = dy / Math.hypot(dx, dy), px = A[0] + a * ux, py = A[1] + a * uy;
-  const c1 = [px - h * uy, py + h * ux], c2 = [px + h * uy, py - h * ux];
-  return pick(c1, c2) ? c1 : c2;
-}
-// kostra jezdce v dané poloze (bez kreslení): kyčel, rameno, hlava
+// kostra jezdce v dané poloze (z engine/rider3d.mjs, časovkářské polohy) v souřadnicích plátna (y dolů):
+// kyčel, rameno, hlava; slouží pro proudnice (kde je tělo). Poloha 0 = vzpřímeně na základním řídítku,
+// 1 = v aero nástavcích, 2 = nejnižší (sjezd, hlava dole).
 function riderBones(pose) {
-  const P = poseAt(pose || 0), tr = P.torso * Math.PI / 180, hip = [RG.saddle[0] + 4, RG.saddle[1] - 14];
-  const sh = [hip[0] + 128 * Math.cos(tr), hip[1] - 128 * Math.sin(tr)];
-  return { P, tr, hip, sh, hc: [sh[0] + P.head[0], sh[1] + P.head[1]] };
+  const b = window.RIDE3D.bones(pose || 0), f = p => [p[0], -p[1]];
+  return { hip: f(b.hip), sh: f(b.sh), hc: f(b.hc) };
 }
-// nejvyšší bod helmy nad zemí (v px při měřítku 1), aby štítky nikdy nezakryly hlavu
-function riderTop(pose) { return riderBones(pose).hc[1] - 30; }
 // ---------- 3D scéna ----------
 // cfg: { cam: { pos: [x, y, z], look: [x, y, z], fov }, road: { lanes: [z…], z0, z1 }, riders: { A: { kit, over, z } }, rim }
 // jedna scéna na celé video (vytvoří se při prvním snímku); between() = kreslení mezi silnicí a jezdci; state: { dist, slope (stupně), riders: { A: { x, pose, crank, wheel, dir } } }
@@ -59,10 +43,12 @@ function scale3d(id) { const a = at3d(id, [0, 0]), b = at3d(id, [100, 0]); retur
 // štítek nad helmou 3D jezdce
 // side 'left': štítek vlevo nad hlavou se šikmou čárkou (když přímo nad hlavou překáží jiný jezdec)
 function tag3d(id, pose, text, t, at, out, o) {
-  o = o || {}; const p = at3d(id, [20, -riderTop(pose) + 40]);
-  if (o.side !== 'left') { tagAt(text, p[0], p[1] - 40, Object.assign({ t, at, out, line: 34 }, o)); return; }
+  o = o || {}; const top = R3.riders[id].top(), p = at3d(id, [R3.riders[id].head().x, top + 14]);
+  // u pravého okraje štítek posunout dovnitř obrazu (viditelná část scény je x 90 až 990)
+  const pw = width(text, { size: o.size || 36, w: 800, f: F.I, ls: 0 }) + 52, px = Math.min(p[0], 990 - pw / 2 - 14);
+  if (o.side !== 'left') { tagAt(text, px, p[1] - 40, Object.assign({ t, at, out, line: 34 }, o)); return; }
   const q = popS(t, at, out); if (q.a <= 0) return;
-  const h = at3d(id, [0, -riderTop(pose) + 20]), x = h[0] - 120, y = h[1] - 70;
+  const hd = R3.riders[id].head(), h = at3d(id, [hd.x, top - 6]), x = h[0] - 120, y = h[1] - 70;
   ctx.save(); ctx.globalAlpha *= q.a; ctx.strokeStyle = o.c === 'pu' ? C.pu : C.line2; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x + 40, y + 24); ctx.lineTo(h[0] - 8, h[1] - 6); ctx.stroke(); ctx.restore();
   pill(text, x, y, { a: q.a, s: q.s, size: o.size || 36, ls: 0, bg: o.c === 'pu' ? C.pu : C.surf, c: C.ink });
 }

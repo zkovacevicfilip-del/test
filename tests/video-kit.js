@@ -103,7 +103,8 @@ for (const ex of fs.readdirSync(path.join(KIT, "examples"))) check(path.join(KIT
   }
 }
 ok("motor a nástroje sady jsou na místě", ["engine/engine.js", "engine/render.js", "engine/index.html", "engine/vendor/gsap.min.js", "engine/vendor/LICENSE-gsap.txt",
-  "engine/vendor/three.module.js", "engine/vendor/three.core.js", "engine/vendor/LICENSE-three.txt", "engine/rider3d.mjs", "engine/three-boot.mjs", "tools/kokoro-page.js", "series/ride.js", "tools/tts.py", "tools/align.py", "tools/timeline.py",
+  "engine/vendor/three.module.js", "engine/vendor/three.core.js", "engine/vendor/LICENSE-three.txt", "engine/vendor/MarchingCubes.js", "engine/vendor/RoomEnvironment.js", "engine/rider3d.mjs", "engine/three-boot.mjs",
+  "engine/models/cyclist.json", "engine/models/cyclist.bin", "engine/models/LICENSE-makehuman-CC0.md", "tools/makehuman-cyclist.py", "tools/kokoro-page.js", "series/ride.js", "tools/tts.py", "tools/align.py", "tools/timeline.py",
   "tools/audio.py", "tools/sheet.py", "tools/physics.py", "sim/lbm.py", "sim/potential.py", "sim/mkmask.js", "build.sh", "SABLONA.md"].every(f => fs.existsSync(path.join(KIT, f))));
 // náš hlas: bez trvalého profilu prohlížeče (jeho mezipaměť hlásila chybu „match on Cache“ a hlas se zasekl), zvuk přes bypassCSP
 { const kp = fs.readFileSync(path.join(KIT, "tools/kokoro-page.js"), "utf8");

@@ -186,6 +186,8 @@ window.frameJPEG = f => { window.renderFrame(f); return cv.toDataURL('image/jpeg
 async function bin(u, T) { return new T(await (await fetch(u)).arrayBuffer()); }
 function img(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
 window.setup = async () => {
+  // 3D jezdci (formát ride): počkat na načtení modelu člověka; stránka bez 3D nic nečeká
+  if (window.RIDE3D_READY) await window.RIDE3D_READY;
   cv = document.getElementById('c'); ctx = cv.getContext('2d'); tmp = document.createElement('canvas'); tmp.width = W; tmp.height = 760; tctx = tmp.getContext('2d');
   TL = await (await fetch('../work/timeline.json')).json(); L = TL.lines; TL.acts.forEach(a => ACT[a.id] = a);
   for (const a of TL.acts) { if (!SCENES[a.id]) throw new Error('scenes.js: chybí scéna pro akt "' + a.id + '"'); if (AMBIENT[a.id] == null) throw new Error('scenes.js: chybí AMBIENT pro akt "' + a.id + '"'); }
