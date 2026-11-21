@@ -14,7 +14,7 @@ export const BIKE = { rear: [-104, 71], front: [106, 71], bb: [-10, 58], seat: [
 const POSES = [
   { hip: [-52, 205], torso: 32, hands: [100, 154], hz: 21, head: [24, 25], tilt: 0.05 },
   { hip: [-44, 205], torso: 11, hands: [130, 177], hz: 7, head: [30, 13], tilt: 0.22 },
-  { hip: [-40, 205], torso: 5, hands: [127, 186], hz: 5, head: [31, 5], tilt: 0.32 }
+  { hip: [-40, 205], torso: 5, hands: [127, 186], hz: 5, head: [31, 5], tilt: 0.36 }
 ];
 export function poseAt(p) {
   const i = Math.max(0, Math.min(1, Math.floor(p))), k = clamp(p - i), a = POSES[i], b = POSES[Math.min(2, i + 1)];
@@ -168,7 +168,8 @@ export function makeRider(kitName, over) {
   for (const s of [1, -1]) {
     const g = fit.grip;
     add(tubeAlong([[stemF[0] - 4, stemF[1], 0], [stemF[0] + 2, stemF[1] + 1, 10 * s], [g[0] - 8, g[1] - 4, 19 * s], [g[0] + 2, g[1] - 5, 21 * s], [g[0] + 8, g[1] - 12, 21 * s]], 3.4, mat.carbon));
-    add(tubeAlong([[padX - 8, padY - 3, 9 * s], [padX + 20, padY - 2, 8 * s], [fit.tip[0] - 12, fit.tip[1] - 6, 7 * s], [fit.tip[0] + 2, fit.tip[1] - 5, 7 * s], [fit.tip[0] + 9, fit.tip[1] + 3, 7 * s]], 2.8, mat.carbon2));
+    // nástavec vede pod předloktím a konec ohnutý nahoru prochází sevřenou pěstí (kousek před zápěstím, blíž ke středu)
+    const tz = Math.max(3, fit.tip[2] - 2), fx = fit.tip[0] + 12; add(tubeAlong([[padX - 8, padY - 3, 9 * s], [padX + 20, padY - 2, 8 * s], [fx - 22, fit.tip[1] - 8, tz * s], [fx - 6, fit.tip[1] - 7, tz * s], [fx + 1, fit.tip[1] - 3, tz * s], [fx + 2, fit.tip[1] + 2, tz * s]], 2.8, mat.carbon2));
     T([padX, stemF[1], 9 * s], [padX, padY - 4, 9 * s], 8, 8, mat.carbon2);
     const pd = add(new THREE.Mesh(new THREE.CapsuleGeometry(1, 16, 6, 16), mat.pad)); pd.geometry.scale(7, 1, 6); pd.rotation.z = Math.PI / 2; pd.position.set(padX - 2, padY, 10 * s);
   }
@@ -260,10 +261,11 @@ function makeHuman(K) {
     const Qr = by.root.quaternion, hipM = new THREE.Vector3(-0, P.hip[1], P.hip[0]).divideScalar(SC);
     by.root.position.copy(hipM.sub(hip0.clone().sub(root0).applyQuaternion(Qr)));
     [['spine05', 22], ['spine04', 12], ['spine03', 5], ['spine02', 0], ['spine01', -8]].forEach(([n, o]) => aim(n, pitch(tr + o * deg)));
-    const nk = lerp(28, 48, clamp(p));
-    ['neck01', 'neck02', 'neck03'].forEach((n, i) => aim(n, pitch(tr + (nk + i * 6) * deg)));
-    // hlava hledí dopředu, mírně dolů
-    const fa = -(6 + 18 * P.tilt) * deg, fwd = toModel(pitch(fa)).normalize(), up = toModel(pitch(fa + Math.PI / 2)).normalize(), right = new THREE.Vector3().crossVectors(up, fwd);
+    // krk: vzpřímeně se zvedá, v časovkářské poloze pokračuje skoro v linii zad (hlava nízko, blízko rukou)
+    const nk = p <= 1 ? lerp(30, 9, clamp(p)) : lerp(9, 2, clamp(p - 1));
+    ['neck01', 'neck02', 'neck03'].forEach((n, i) => aim(n, pitch(tr + (nk + i * 4) * deg)));
+    // hlava hledí dopředu; v časovkářské poloze skloněná (oči koukají zpod hledí), helma leží ocasem na zádech
+    const fa = -(5 + 60 * P.tilt) * deg, fwd = toModel(pitch(fa)).normalize(), up = toModel(pitch(fa + Math.PI / 2)).normalize(), right = new THREE.Vector3().crossVectors(up, fwd);
     const qh = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, fwd)); by.head.quaternion.copy(wq(by.head).invert().multiply(qh));
     riderRoot.updateMatrixWorld(true);
     // paže: v poloze 0 ruce na základním řídítku (dvoukloubová úloha), od polohy 1 lokty skoro svisle pod rameny
@@ -273,21 +275,24 @@ function makeHuman(K) {
       const S = wpos(riderRoot, 'upperarm01.' + s), G = new THREE.Vector3(GRIP[0], GRIP[1], 21 * sz);
       const reach = Math.min(S.distanceTo(G), LA[0] + LA[1] - 1), W0 = S.clone().add(G.clone().sub(S).normalize().multiplyScalar(reach));
       const E0 = ik3(S, W0, LA[0], LA[1], new THREE.Vector3(-0.2, -1, 0.5 * sz));
-      const E1 = S.clone().add(new THREE.Vector3(0.12, -1, -0.16 * sz).normalize().multiplyScalar(LA[0])), W1 = E1.clone().add(new THREE.Vector3(1, 0.12, -0.1 * sz).normalize().multiplyScalar(LA[1]));
+      const E1 = S.clone().add(new THREE.Vector3(0.12, -1, -0.16 * sz).normalize().multiplyScalar(LA[0])), W1 = E1.clone().add(new THREE.Vector3(1, 0.22, -0.13 * sz).normalize().multiplyScalar(LA[1]));   // předloktí mírně nahoru, ruce u sebe
       const E = E0.clone().lerp(E1, kTT), W = W0.clone().lerp(W1, kTT); arms[s] = { E, W };
       aim('upperarm01.' + s, E.clone().sub(S)); aim('upperarm02.' + s, E.clone().sub(S));
       riderRoot.updateMatrixWorld(true);
       const E2 = wpos(riderRoot, 'lowerarm01.' + s), fd = W.clone().sub(E2).normalize();
       aim('lowerarm01.' + s, fd); aim('lowerarm02.' + s, fd);
-      // zápěstí: dlaň dolů, prsty sevřené kolem řídítka
-      const palm = toModel(new THREE.Vector3(0, -1, 0)), f1 = toModel(fd.clone().add(new THREE.Vector3(0, -0.08, 0))).normalize();
+      // zápěstí: na základním řídítku dlaň dolů, v nástavcích dlaně k sobě (palce nahoru), prsty sevřené kolem konce nástavce
+      const palm = toModel(new THREE.Vector3(0, -1, 0).lerp(new THREE.Vector3(0, -0.2, -sz), kTT).normalize()), f1 = toModel(fd.clone().add(new THREE.Vector3(0, -0.08, 0))).normalize();
       const f0 = rest['wrist.' + s], n0 = new THREE.Vector3(s === 'R' ? 1 : -1, 0, 0); n0.sub(f0.clone().multiplyScalar(n0.dot(f0))).normalize();
       const n1 = palm.clone().sub(f1.clone().multiplyScalar(palm.dot(f1))).normalize();
       const M0 = new THREE.Matrix4().makeBasis(f0, n0, f0.clone().cross(n0)), M1 = new THREE.Matrix4().makeBasis(f1, n1, f1.clone().cross(n1));
       const qw = new THREE.Quaternion().setFromRotationMatrix(M1.multiply(M0.transpose())); by['wrist.' + s].quaternion.copy(wq(by['wrist.' + s]).invert().multiply(qw));
       const ha = Math.atan2(fd.y, fd.x);
-      for (let f = 2; f <= 5; f++) [35, 80, 120].forEach((c, j) => aim(`finger${f}-${j + 1}.${s}`, new THREE.Vector3(Math.cos(ha - c * deg), Math.sin(ha - c * deg), -0.08 * sz)));
-      [15, 35, 55].forEach((c, j) => aim(`finger1-${j + 1}.${s}`, new THREE.Vector3(Math.cos(ha - c * deg), Math.sin(ha - c * deg), -0.5 * sz)));
+      // prsty: na řídítku se ohýbají dolů kolem vodorovné trubky, v nástavcích dovnitř kolem svislého konce (pěst)
+      for (let f = 2; f <= 5; f++) [55, 115, 165].forEach((c, j) => { const a = c * deg, down = new THREE.Vector3(Math.cos(ha - a * 0.75), Math.sin(ha - a * 0.75), -0.08 * sz), side = new THREE.Vector3(Math.cos(a), -0.1 - 0.05 * f, -sz * Math.sin(a));
+        aim(`finger${f}-${j + 1}.${s}`, down.lerp(side, kTT)); });
+      [15, 35, 55].forEach((c, j) => { const a = c * deg, down = new THREE.Vector3(Math.cos(ha - a), Math.sin(ha - a), -0.5 * sz), up = new THREE.Vector3(0.75, 0.25 - 0.15 * j, -0.6 * sz);   // palec přes prsty
+        aim(`finger1-${j + 1}.${s}`, down.lerp(up, kTT)); });
     }
     // nohy: kyčel → koleno → kotník nad pedálem (pravá noha = klika na straně převodníku, blíž k divákovi)
     riderRoot.updateMatrixWorld(true);
@@ -313,7 +318,7 @@ function makeHuman(K) {
   let last = null;
   // poloha loktů a rukou v polohách 1 a 0 → kam dát opěrky, nástavce a základní řídítko
   function fit(riderRoot) { pose(riderRoot, 1, 0); const t1 = last.R; pose(riderRoot, 0, 0); const t0 = last.R;
-    return { pad: [t1.E.x, t1.E.y - 9], tip: [t1.W.x, t1.W.y], grip: [t0.W.x, t0.W.y] }; }
+    return { pad: [t1.E.x, t1.E.y - 9], tip: [t1.W.x, t1.W.y, Math.abs(t1.W.z)], grip: [t0.W.x, t0.W.y] }; }
   return { group, pose, by, fit };
 }
 
