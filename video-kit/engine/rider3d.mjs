@@ -418,6 +418,32 @@ function noiseTex(c1, c2, n = 256, k = 0.5, rep = 1) {
   for (let i = 0; i < n * n * k; i++) { g.globalAlpha = 0.08 + rnd() * 0.25; g.fillStyle = rnd() < 0.5 ? c2 : '#ffffff'; g.fillRect(rnd() * n, rnd() * n, 1 + rnd() * 2, 1 + rnd() * 2); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep); return t;
 }
+// asfalt: jemné kamínky, větší tmavší a světlejší skvrny, záplaty a spáry s dehtem, aby bylo vidět, že silnice ujíždí
+// (autor 22. 11. 2026: asfalt pod jezdcem se nehýbal); textura se opakuje beze švu (vše u okraje se kreslí i z druhé strany)
+function asphaltTex(n = 512) {
+  const c = document.createElement('canvas'); c.width = c.height = n; const g = c.getContext('2d'); g.fillStyle = '#3d4045'; g.fillRect(0, 0, n, n);
+  let seed = 23; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const wrap = f => { for (const dx of [-n, 0, n]) for (const dy of [-n, 0, n]) { g.save(); g.translate(dx, dy); f(); g.restore(); } };
+  // velké měkké skvrny (opotřebení, vlhčí a sušší místa)
+  for (let i = 0; i < 46; i++) {
+    const x = rnd() * n, y = rnd() * n, r = 30 + rnd() * 90, dark = rnd() < 0.6, a = 0.07 + rnd() * 0.1;
+    wrap(() => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, dark ? `rgba(18,19,22,${a})` : `rgba(120,124,130,${a * 0.8})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, 2 * r, 2 * r); });
+  }
+  // záplaty: tmavší obdélníky s ostrým okrajem
+  for (let i = 0; i < 3; i++) {
+    const x = rnd() * n, y = rnd() * n, w = 60 + rnd() * 90, h = 30 + rnd() * 50;
+    wrap(() => { g.fillStyle = 'rgba(30,32,35,0.55)'; g.fillRect(x, y, w, h); g.strokeStyle = 'rgba(15,16,18,0.6)'; g.lineWidth = 1.5; g.strokeRect(x, y, w, h); });
+  }
+  // kamínky (stejně jako dřív noiseTex)
+  for (let i = 0; i < n * n * 0.35; i++) { g.globalAlpha = 0.08 + rnd() * 0.25; g.fillStyle = rnd() < 0.5 ? '#24262a' : '#ffffff'; g.fillRect(rnd() * n, rnd() * n, 1 + rnd() * 2, 1 + rnd() * 2); }
+  g.globalAlpha = 1;
+  // spáry zalité dehtem: tenké klikaté tmavé čáry
+  for (let i = 0; i < 4; i++) {
+    const pts = []; let x = rnd() * n, y = rnd() * n, a = rnd() * Math.PI * 2; for (let k = 0; k < 14; k++) { pts.push([x, y]); a += (rnd() - 0.5) * 0.9; x += Math.cos(a) * 12; y += Math.sin(a) * 12; }
+    wrap(() => { g.strokeStyle = 'rgba(12,13,15,0.75)'; g.lineWidth = 1.6 + rnd() * 1.2; g.lineJoin = 'round'; g.beginPath(); pts.forEach((p, k) => k ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); });
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t;
+}
 // krajina kolem silnice (vrstva 2): tráva, červenobílé obrubníky, svodidla, stromy a kopce v oparu; vše ujíždí podle vzdálenosti
 export function makeOutdoor(o = {}, L = LOOKS.day) {
   const z0 = o.z0 ?? -650, z1 = o.z1 ?? 520, Lx = 16000, g = new THREE.Group(), moving = [];
@@ -446,19 +472,21 @@ export function makeOutdoor(o = {}, L = LOOKS.day) {
   // kopce: velké zploštělé koule daleko v oparu
   for (let i = 0; i < 7; i++) { const hl = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), std(L.hill[i % 2], 1)); hl.scale.set(2600 + rnd() * 2400, 600 + rnd() * 700, 1500); hl.position.set(-9000 + i * 3000 + rnd() * 800, -150, -9000 - rnd() * 3000); g.add(hl); }
   g.traverse(x => x.layers.set(2));
-  return { group: g, update(dist) { for (const m of moving) m.position.x = ((m.userData.x0 - dist) % Lx + Lx) % Lx - Lx / 2; } };
+  // tráva ujíždí stejně jako silnice (posun textury o ujetou vzdálenost; jedna dlaždice = 2·Lx / 60)
+  return { group: g, grass: grassT, update(dist) { for (const m of moving) m.position.x = ((m.userData.x0 - dist) % Lx + Lx) % Lx - Lx / 2; grassT.offset.x = (dist / (Lx * 2 / 60)) % 1; } };
 }
 
 // silnice: tmavý asfalt v pásu z0–z1, bílé okraje a přerušované čáry mezi pruhy, které ujíždějí podle vzdálenosti
 export function makeRoad(o = {}) {
   const z0 = o.z0 ?? -900, z1 = o.z1 ?? 420, L = o.len || 7000, g = new THREE.Group();
   const asphalt = new THREE.Mesh(new THREE.PlaneGeometry(L, z1 - z0), new THREE.MeshStandardMaterial({ color: o.outdoor ? '#ffffff' : '#0f1012', roughness: o.outdoor ? 0.95 : 1 }));
-  if (o.outdoor) { asphalt.material.map = noiseTex('#3d4045', '#24262a', 512, 0.35); asphalt.material.map.repeat.set(L / 900, (z1 - z0) / 900); }
+  if (o.outdoor) { asphalt.material.map = asphaltTex(512); asphalt.material.map.repeat.set(L / 900, (z1 - z0) / 900); }
   asphalt.rotation.x = -Math.PI / 2; asphalt.position.z = (z0 + z1) / 2; asphalt.receiveShadow = true; g.add(asphalt);
   const white = new THREE.MeshStandardMaterial({ color: '#cfcfca', roughness: 0.7 });
   for (const z of [z0 + 30, z1 - 30]) { const e = new THREE.Mesh(new THREE.PlaneGeometry(L, 9), white); e.rotation.x = -Math.PI / 2; e.position.set(0, 0.5, z); e.receiveShadow = true; g.add(e); }
   const P = 260, n = Math.ceil(L / P) + 2, dashes = [];
   for (const z of o.lanes || []) for (let i = 0; i < n; i++) { const d = new THREE.Mesh(new THREE.PlaneGeometry(130, 8), white); d.rotation.x = -Math.PI / 2; d.position.set(0, 0.6, z); d.receiveShadow = true; d.userData.i = i; g.add(d); dashes.push(d); }
   g.traverse(o => o.layers.set(2));   // silnice ve vrstvě 2: kreslí se zvlášť, pod proudnice (viz ride.js)
-  return { group: g, update(dist) { for (const d of dashes) d.position.x = ((d.userData.i * P - dist) % (n * P) + n * P) % (n * P) - L / 2; } };
+  // asfalt ujíždí s jezdcem: posun textury (jedna dlaždice = 900 jednotek) o ujetou vzdálenost
+  return { group: g, asphalt, update(dist) { for (const d of dashes) d.position.x = ((d.userData.i * P - dist) % (n * P) + n * P) % (n * P) - L / 2; if (asphalt.material.map) asphalt.material.map.offset.x = (dist / 900) % 1; } };
 }

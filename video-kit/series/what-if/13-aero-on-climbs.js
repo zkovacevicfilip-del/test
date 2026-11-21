@@ -1,6 +1,7 @@
-// Realistický formát „ride“ (od 22. 11. 2026): jeden jezdec do kopce v krajině za zlaté hodinky, hlas Liam, pohybová grafika
-// z GSAP (švih kamery do aktů) a Kokonut UI (číslice jako válečky automatu, stírací přechod), úvodní nápis wattIF.
-const ride = function (t) {
+// Realistický formát „ride“ s texty původní šablony What if (autor 22. 11. 2026): jeden jezdec do kopce v krajině za zlaté
+// hodinky, ujíždějící asfalt, hlas Liam; nápis whatIF, nadpisy nahoře, titulky dole a barvy jako ve videu what-if-no-air.
+// Z pohybové grafiky zůstal švih kamery do aktů (GSAP) a stírací přechod (Kokonut UI), teď fialový.
+const ride = function (t, a) {
   // pohled kamery, silnice do kopce a jezdec (popis musí být uvnitř funkce, do scenes.js se přenáší jen ona)
   const VIEW = { cam: { pos: [300, 380, 1250], look: [0, 175, -60], fov: 40 }, road: { lanes: [-260], z0: -700, z1: 900 }, riders: { A: { kit: 'purple', z: 60 } } };
   const T = r => TR(r), tLow = T('gain:2'), tTip = T('tip:3');
@@ -10,22 +11,23 @@ const ride = function (t) {
   const dist = t * 190, st = { dist, slope, riders: { A: { x: 0, pose, grip: 'base', crank: t * 8.6, wheel: dist / 71 } } };
   scene3d(VIEW, st, () => air3d('A', t, 330, lerp(0.7, 0.35, clamp(pose / 0.85)), pose, 0.8));
   const tag = (s, at, out, c, size) => tag3d('A', pose, s, t, at, out, { c, size });
-  hookTitle(t, T('hook:0'), T('hook:3'));
   tag('250 W', T('share:1'), T('gain:0') - 0.1, 'pu', 46);
   tag('17.5 km/h', T('gain:1'), T('gain:2') - 0.1, null, 46); tag('17.9 km/h', T('gain:3'), T('tip:0') - 0.1, 'pu', 46);
-  statAt(t, T('myth:0'), T('share:0') - 0.15, 'UPHILL, SO ONLY WEIGHT?', 'Not quite', C.ink);
-  statAt(t, T('share:3'), T('gain:0') - 0.15, 'OF YOUR POWER GOES TO AIR, 5 % CLIMB', '11 %');
-  statAt(t, T('gain:5'), T('kilo:0') - 0.15, 'COMPACT, OVER 10 km', '−39 s');
-  statAt(t, T('kilo:3'), T('tip:0') - 0.15, 'SAME AS LOSING', '> 2 kg', C.ink);
-  ctaEnd(t, T('tip:3'), null, 'Follow for more free speed');
+  // texty z původního videa (stejné nadpisy jako dřív ve scénách rows, race a rider)
+  classicUI(t, a, {
+    hook: { line: 'hook', cy: 440, items: [{ whatIf: true, i: 0, size: 140 }, { t: 'aero still matters', i: 1, size: 56 }, { t: "when you're climbing", i: 2, size: 56 }, { t: 'at 17 km/h?', i: 3, big: true, size: 104 }] },
+    heads: [{ at: 'myth:1', title: 'Uphill = weight?', sub: 'not quite', subAt: 'myth:3' }, { at: 'share:0', label: '5% CLIMB · 250 W', big: '11%', bigAt: 'share:3', sub: 'of your power still fights air', subAt: 'share:4' },
+      { at: 'gain:0', big: '5% climb', c: 'ink', sub: '10 km · same 250 W' }, { at: 'gain:5', big: '39 s', sub: 'faster over 10 km' }, { at: 'kilo:0', title: 'Or lose', big: '2+ kilos', bigAt: 'kilo:3' },
+      { at: 'tip:1', title: "Don't sit up", big: 'like a sail', bigAt: 'tip:2', c: 'ink' }, { at: 'tip:3', big: 'Stay compact' }]
+  });
 };
 module.exports = {
   title: 'what-if-aero-on-climbs',
   about: 'I do kopce jde část výkonu na vzduch: na 5% stoupání asi 11 %. Kompaktní pozice (ohnuté lokty, rovná záda) ušetří 39 s na 10 km, víc než shození 2 kg.',
-  style: { captions: 'top', look: 'golden', camera: 'whip', text: 'slot', overlay: 'wipe', hook: 'watt' },
+  style: { look: 'golden', ui: 'classic', camera: 'whip', overlay: 'wipe' },
   acts: [['hook', 'hook'], ['share', 'myth', 'share'], ['race', 'gain', 'kilo'], ['tip', 'tip']],
   lines: {
-    hook: { say: "What if aero still matters when you're climbing at seventeen kilometers per hour?",
+    hook: { say: "What if aero still matters when you're climbing at seventeen kilometers per hour?", captions: false,
       chunks: ['What if', ['aero still matters', 'AERO|ARROW'], "when you're climbing", ['at 17 km/h?', 'AT']] },
     myth: { say: "Everyone says: uphill, it's all about weight. Not quite.",
       chunks: ['Everyone says:', 'uphill,', ["it's all about weight.", "IT'S|ITS"], 'Not quite.'] },

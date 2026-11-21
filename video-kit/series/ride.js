@@ -14,6 +14,10 @@ function riderBones(pose) {
 // zvýrazněním, bílé a žluté štítky, bílé proudnice (podle vzorového videa od autora z 21. 11. 2026)
 const OUTDOOR = () => (typeof STYLE !== 'undefined' && STYLE.look) || null;
 const YEL = '#FFD23F', DARK = '#17191B';
+// texty ve venkovním stylu (bílá a žlutá); se style.ui = 'classic' zůstane krajina realistická, ale texty jsou jako
+// v původní šabloně What if (barvy C, nadpisy nahoře, titulky dole), autor 22. 11. 2026
+const CLASSIC = () => typeof STYLE !== 'undefined' && STYLE.ui === 'classic';
+const TXTOUT = () => !!OUTDOOR() && !CLASSIC();
 // ---------- 3D scéna ----------
 // cfg: { cam: { pos: [x, y, z], look: [x, y, z], fov }, road: { lanes: [z…], z0, z1 }, riders: { A: { kit, over, z } }, rim }
 // jedna scéna na celé video (vytvoří se při prvním snímku); between() = kreslení mezi silnicí a jezdci; state: { dist, slope (stupně), riders: { A: { x, pose, crank, wheel, dir } } }
@@ -107,7 +111,7 @@ function bigNum(t, at, out, num, unit, x, y, o) {
 function tagAt(text, x, y, o) {
   const p = o.at != null ? popS(o.t, o.at, o.out == null ? null : o.out) : { a: 1, s: 1 };
   if (p.a <= 0) return;
-  const out = OUTDOOR(), hl = o.c === 'pu';
+  const out = TXTOUT(), hl = o.c === 'pu';
   ctx.save(); ctx.globalAlpha *= p.a; ctx.strokeStyle = out ? '#ffffff' : hl ? C.pu : C.line2; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y + 26); ctx.lineTo(x, y + (o.line || 60)); ctx.stroke(); ctx.restore();
   if (out) { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.35)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4; }
   pill(text, x, y, { a: p.a, s: p.s, size: o.size || 36, ls: 0, bg: out ? (hl ? YEL : '#F7F7F4') : hl ? C.pu : C.surf, c: out ? DARK : C.ink });
@@ -127,7 +131,7 @@ function topCaptions(t) {
     rows.forEach((r, ri) => {
       const w = r.reduce((s, i, j) => s + ws[i] + (j ? sp : 0), 0); let x = 540 - w / 2; const y = y0 + ri * 80;
       r.forEach(i => {
-        if (OUTDOOR()) {   // bílý text s černým obrysem, právě vyslovené slovo žluté
+        if (TXTOUT()) {   // bílý text s černým obrysem, právě vyslovené slovo žluté
           ctx.save(); ctx.font = font(fo); ctx.textAlign = 'left'; ctx.lineJoin = 'round'; ctx.lineWidth = 12; ctx.strokeStyle = 'rgba(12,13,15,0.92)'; ctx.globalAlpha *= i <= cur ? 1 : 0.85;
           ctx.strokeText(words[i], x, y); ctx.fillStyle = i === cur ? YEL : '#ffffff'; ctx.fillText(words[i], x, y); ctx.restore();
         } else {
@@ -144,7 +148,7 @@ function topCaptions(t) {
 // velký údaj dole (pásmo y 1380 až 1560): popisek verzálkami a číslo
 function statAt(t, at, out, label, value, color) {
   const p = popS(t, at, out), q = pop(t, at, out); if (p.a <= 0) return;
-  const o2 = OUTDOOR(); if (o2) { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 4; }
+  const o2 = TXTOUT(); if (o2) { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 4; }
   txt(label, 540, 1408 + q.dy, { size: 30, w: 800, c: o2 ? '#ffffff' : C.muted, ls: 4, a: q.a });
   const vo = Object.assign(fit(value, { size: 104, w: 800, f: F.U, ls: -3 }, 780), { c: o2 ? (color === C.ink ? '#ffffff' : YEL) : color || C.pu, a: p.a, s: p.s });
   // se stylem textu (Kokonut UI: slot = číslice se protočí jako válečky, marker, reveal…) číslo naskočí efektem z blocks.js
@@ -155,7 +159,7 @@ function statAt(t, at, out, label, value, color) {
 // konec videa: papírová vlaštovka (pošli kamarádovi) a výzva ke sledování
 function ctaEnd(t, at, at2, text) {
   const p = popS(t, at, null), q = popS(t, at2, null); if (p.a <= 0) return;
-  const o3 = OUTDOOR();
+  const o3 = TXTOUT();
   ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(540, 1480); ctx.scale(p.s, p.s); ctx.fillStyle = o3 ? YEL : C.pu; ctx.beginPath(); ctx.moveTo(-60, 0); ctx.lineTo(70, -50); ctx.lineTo(30, 60); ctx.lineTo(10, 18); ctx.closePath(); ctx.fill();
   ctx.fillStyle = C.ink; ctx.beginPath(); ctx.moveTo(10, 18); ctx.lineTo(70, -50); ctx.lineTo(18, 34); ctx.closePath(); ctx.fill(); ctx.restore();
   if (q.a > 0) pill(text, 540, 1610, { a: q.a, s: q.s, size: 40, ls: 0, bg: o3 ? YEL : C.pu, c: o3 ? DARK : C.ink });
@@ -183,5 +187,17 @@ function barometer(t, at, out, from, to, tMove, x = 540, y = 600) {
   ctx.strokeStyle = '#17191B'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(ang) * (R - 40), Math.sin(ang) * (R - 40)); ctx.stroke();
   ctx.fillStyle = '#17191B'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, 7); ctx.fill();
   txt(Math.round(v) + ' hPa', 0, 78, { size: 34, w: 800, f: F.U, c: '#17191B' });
+  ctx.restore();
+}
+
+// texty původní šablony přes realistickou krajinu (style.ui = 'classic'): úvodní sloupec whatIF (o.hook = { line, cy, items }
+// jako scéna typu hook) a nadpisy nahoře (o.heads jako heads u bloků). Jemný tmavý stín, aby šly číst i na světlé obloze.
+function classicUI(t, a, o) {
+  // tmavý přechod přes horní část obrazu (jako tmavé pozadí šablony), dolů do ztracena nad helmou; viditelná část scény je y 151 až 1751
+  const g = ctx.createLinearGradient(0, 151, 0, 760); g.addColorStop(0, 'rgba(12,13,15,0.62)'); g.addColorStop(0.55, 'rgba(12,13,15,0.3)'); g.addColorStop(1, 'rgba(12,13,15,0)');
+  ctx.save(); ctx.fillStyle = g; ctx.fillRect(0, 0, 1080, 760); ctx.restore();
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 3;
+  if (o.hook && a && a.id === 'hook') { const ex = tw(t, a.end - 0.36, 0.36); ctx.save(); ctx.globalAlpha *= 1 - ex; ctx.translate(0, -70 * ex); stack(t, o.hook, 0, null); ctx.restore(); }
+  if (o.heads) heads(t, o.heads, 0);
   ctx.restore();
 }

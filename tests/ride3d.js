@@ -38,7 +38,10 @@ const server = http.createServer((req, res) => {
         const f = P('finger3-1.' + s).sub(P('wrist.' + s)), a = P('finger5-1.' + s).sub(P('finger2-1.' + s));
         return new K.THREE.Vector3().crossVectors(f, a).multiplyScalar(s === 'R' ? 1 : -1).normalize().toArray(); };
       const palms = { base: [palm(0, 'R'), palm(0, 'L')], aero: [palm(1, 'R'), palm(1, 'L')] };
-      return { n0, top0, top2, head0: [head0.x, head0.y], roadOnly, palms, w0, w1, roadLayers, bones: skinned ? skinned.skeleton.bones.length : 0, verts: H.meta.vertices, kits: Object.keys(K.KITS) };
+      // asfalt a tráva ujíždějí s jezdcem (posun textury o ujetou vzdálenost)
+      const ro = K.makeRoad({ outdoor: true }), env = K.makeOutdoor({}, K.LOOKS.golden); ro.update(0); env.update(0);
+      const a0 = ro.asphalt.material.map.offset.x, g0 = env.grass.offset.x; ro.update(450); env.update(400); const a1 = ro.asphalt.material.map.offset.x, g1 = env.grass.offset.x;
+      return { a0, a1, g0, g1, n0, top0, top2, head0: [head0.x, head0.y], roadOnly, palms, w0, w1, roadLayers, bones: skinned ? skinned.skeleton.bones.length : 0, verts: H.meta.vertices, kits: Object.keys(K.KITS) };
     });
     ok("model člověka (MakeHuman) se načte: 163 kostí, přes 13 000 bodů", r.bones === 163 && r.verts > 13000, r.bones + " / " + r.verts);
     ok("jezdec se vykreslí bez chyb (WebGL bez grafické karty)", errs.length === 0 && r.n0 > 3000, errs.join("; ") + " / bodů " + r.n0);
@@ -50,6 +53,9 @@ const server = http.createServer((req, res) => {
     // dovnitř k nástavcům (jako v nástavcích), pravá ruka je blíž k divákovi (z > 0), takže její dlaň míří k −z
     ok("na základním řídítku dlaně dovnitř k nástavcům, ne nahoru", r.palms.base[0][2] < -0.6 && r.palms.base[1][2] > 0.6 && r.palms.base.every(n => n[1] < 0.3), JSON.stringify(r.palms.base));
     ok("v aero nástavcích dlaně k sobě (pravá k −z, levá k +z)", r.palms.aero[0][2] < -0.6 && r.palms.aero[1][2] > 0.6, JSON.stringify(r.palms.aero));
+    // oprava 22. 11. 2026 (autor): asfalt pod jezdcem se nehýbal
+    ok("asfalt ujíždí podle vzdálenosti (450 jednotek = půl dlaždice textury)", Math.abs(r.a1 - r.a0 - 0.5) < 1e-6, r.a0 + " → " + r.a1);
+    ok("tráva u silnice ujíždí taky", Math.abs(r.g1 - r.g0 - 0.75) < 1e-6, r.g0 + " → " + r.g1);
     ok("dresy: bílý, fialový, černý", ["white", "purple", "black"].every(k => r.kits.includes(k)), r.kits.join(", "));
   } finally { await br.close(); server.close(); }
   if (fails) { console.log(`\n${fails} test(ů) selhalo`); process.exit(1); } else console.log("\n3D jezdci: vše v pořádku");

@@ -27,7 +27,7 @@ function whatIf(t, tin, y, size) { const p = popS(t, tin, null, 0.7); rich([[hoo
 // items: { whatIf } | { t, i | at, dt, size, c, big, plain, gap, count }
 function stack(t, s, dy, outT) {
   const its = s.items.map(it => {
-    const base = it.whatIf ? { size: 170, w: 800, f: F.U, ls: -5 } : it.big ? { size: it.size || 200, w: 800, f: F.U, ls: -6 } : it.plain ? { size: it.size || 52, w: 700 } : { size: it.size || 64, w: 700, f: F.U, ls: -2 };
+    const base = it.whatIf ? { size: it.size || 170, w: 800, f: F.U, ls: -5 } : it.big ? { size: it.size || 200, w: 800, f: F.U, ls: -6 } : it.plain ? { size: it.size || 52, w: 700 } : { size: it.size || 64, w: 700, f: F.U, ls: -2 };
     return { it, fo: fit(it.whatIf ? hookWord() + 'IF' : fin(it.t, it.count), base, it.whatIf || it.big ? 780 : 860) };
   });
   let H = 0;
@@ -387,7 +387,7 @@ function makeOverlay(st) {
     TL.acts.forEach((a, i) => {
       if (!i) return; const u = (t - (a.start - 0.32)) / 0.64; if (u <= 0 || u >= 1) return;
       const left = -W + 2 * W * e(u);
-      const out = typeof OUTDOOR === 'function' && OUTDOOR();   // venkovní vzhled formátu ride: žlutý pruh
+      const out = typeof TXTOUT === 'function' && TXTOUT();   // venkovní vzhled formátu ride: žlutý pruh (se style.ui 'classic' fialový)
       ctx.fillStyle = out ? '#FFD23F' : C.pu; ctx.fillRect(left, 0, W, H); ctx.fillStyle = out ? '#17191B' : C.ink; ctx.fillRect(left + W - 4, 0, 14, H);
     });
   };
