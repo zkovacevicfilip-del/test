@@ -356,7 +356,9 @@ function makeCamera(st, V) {
     TL.acts.forEach((a, i) => {
       if (st.camera === 'whip' && i > 0) {
         // švihnutí do nového aktu: ze strany (střídavě), s pootočením, doběh expo.out
-        const d = i % 2 ? 1 : -1;
+        // v realistické krajině (formát ride) se stíracím pruhem vždy zleva: odkrytý okraj scény je vpravo pod pruhem,
+        // jinak by vlevo na chvíli prosvítal tmavý pruh pozadí
+        const d = typeof OUTDOOR === 'function' && OUTDOOR() && st.overlay === 'wipe' ? -1 : i % 2 ? 1 : -1;
         tl.fromTo(cam, { x: 260 * d, r: 0.035 * d }, { x: 0, r: 0, duration: 0.5, ease: 'expo.out', immediateRender: false }, a.start);
       }
       if (st.camera === 'flip' && i > 0) {

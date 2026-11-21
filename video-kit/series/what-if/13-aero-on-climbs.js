@@ -16,9 +16,11 @@ const ride = function (t, a) {
   // texty z původního videa (stejné nadpisy jako dřív ve scénách rows, race a rider)
   classicUI(t, a, {
     hook: { line: 'hook', cy: 440, items: [{ whatIf: true, i: 0, size: 140 }, { t: 'aero still matters', i: 1, size: 56 }, { t: "when you're climbing", i: 2, size: 56 }, { t: 'at 17 km/h?', i: 3, big: true, size: 104 }] },
-    heads: [{ at: 'myth:1', title: 'Uphill = weight?', sub: 'not quite', subAt: 'myth:3' }, { at: 'share:0', label: '5% CLIMB · 250 W', big: '11%', bigAt: 'share:3', sub: 'of your power still fights air', subAt: 'share:4' },
-      { at: 'gain:0', big: '5% climb', c: 'ink', sub: '10 km · same 250 W' }, { at: 'gain:5', big: '39 s', sub: 'faster over 10 km' }, { at: 'kilo:0', title: 'Or lose', big: '2+ kilos', bigAt: 'kilo:3' },
-      { at: 'tip:1', title: "Don't sit up", big: 'like a sail', bigAt: 'tip:2', c: 'ink' }, { at: 'tip:3', big: 'Stay compact' }]
+    heads: {
+      share: [{ at: 'myth:1', title: 'Uphill = weight?', sub: 'not quite', subAt: 'myth:3' }, { at: 'share:0', label: '5% CLIMB · 250 W', big: '11%', bigAt: 'share:3', sub: 'of your power still fights air', subAt: 'share:4' }],
+      race: [{ at: 'gain:0', big: '5% climb', c: 'ink', sub: '10 km · same 250 W' }, { at: 'gain:5', big: '39 s', sub: 'faster over 10 km' }, { at: 'kilo:0', title: 'Or lose', big: '2+ kilos', bigAt: 'kilo:3' }],
+      tip: [{ at: 'tip:1', title: "Don't sit up", big: 'like a sail', bigAt: 'tip:2', c: 'ink' }, { at: 'tip:3', big: 'Stay compact' }]
+    }
   });
 };
 module.exports = {

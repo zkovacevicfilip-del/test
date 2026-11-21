@@ -191,13 +191,16 @@ function barometer(t, at, out, from, to, tMove, x = 540, y = 600) {
 }
 
 // texty původní šablony přes realistickou krajinu (style.ui = 'classic'): úvodní sloupec whatIF (o.hook = { line, cy, items }
-// jako scéna typu hook) a nadpisy nahoře (o.heads jako heads u bloků). Jemný tmavý stín, aby šly číst i na světlé obloze.
+// jako scéna typu hook) a nadpisy nahoře (o.heads: pro každý akt seznam jako heads u bloků). Jemný tmavý stín, aby šly číst i na světlé obloze.
 function classicUI(t, a, o) {
   // tmavý přechod přes horní část obrazu (jako tmavé pozadí šablony), dolů do ztracena nad helmou; viditelná část scény je y 151 až 1751
   const g = ctx.createLinearGradient(0, 151, 0, 760); g.addColorStop(0, 'rgba(12,13,15,0.62)'); g.addColorStop(0.55, 'rgba(12,13,15,0.3)'); g.addColorStop(1, 'rgba(12,13,15,0)');
   ctx.save(); ctx.fillStyle = g; ctx.fillRect(0, 0, 1080, 760); ctx.restore();
   ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 3;
   if (o.hook && a && a.id === 'hook') { const ex = tw(t, a.end - 0.36, 0.36); ctx.save(); ctx.globalAlpha *= 1 - ex; ctx.translate(0, -70 * ex); stack(t, o.hook, 0, null); ctx.restore(); }
-  if (o.heads) heads(t, o.heads, 0);
+  // nadpisy po aktech jako v šabloně (o.heads = { idAktu: [...] }): naskočí a zmizí s aktem (actIO), takže při švihu
+  // kamery do dalšího aktu už nejsou vidět (oprava 22. 11. 2026: nadpis se při švihu usekl o okraj obrazu)
+  const hs = o.heads && a && o.heads[a.id];
+  if (hs) { const io = actIO(t, a); ctx.save(); ctx.globalAlpha *= io.a; heads(t, hs, io.dy); ctx.restore(); }
   ctx.restore();
 }
