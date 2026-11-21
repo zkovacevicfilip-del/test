@@ -373,28 +373,87 @@ roughnessFactor = rg == 0 ? 0.56 : rg == 2 ? 0.34 : rg == 3 ? 0.8 : 0.46;`);
   return { group, pose, by, fit };
 }
 
+// světlo a obloha podle vzhledu: look 'studio' (tmavé pozadí, fialové zadní světlo; původní), 'day' (letní den), 'golden' (zlatá
+// hodinka, nízké teplé slunce), 'overcast' (zataženo, měkké světlo). Obloha se kreslí jen v průchodu silnice (vrstva 2).
+export const LOOKS = {
+  day: { sky: ['#5f9be0', '#a9cdf0', '#e8f1f7'], fog: '#dfe9f1', sun: ['#fff3e0', 3.2, [-500, 1500, 900]], hemi: ['#d4e6ff', '#6d8a4a', 1.1], env: 0.55, exp: 1.0, grass: ['#5f8f3a', '#4d7a2f'], tree: ['#3f6f2a', '#557f33', '#2f5a22'], hill: ['#6f9455', '#8aa678'] },
+  golden: { sky: ['#4a6fae', '#f0a96a', '#ffd6a0'], fog: '#f3c99a', sun: ['#ffb36b', 3.6, [-1800, 520, -600]], hemi: ['#ffd9b0', '#5a5a35', 0.8], env: 0.45, exp: 1.05, grass: ['#6f8a35', '#5b7428'], tree: ['#4a6a25', '#5f7d2e', '#3a5520'], hill: ['#8a8a55', '#b0a070'] },
+  overcast: { sky: ['#9aa6b2', '#c3ccd4', '#dde2e6'], fog: '#d3d9de', sun: ['#ffffff', 1.4, [-300, 1500, 600]], hemi: ['#e6ecf2', '#5d6b50', 1.9], env: 0.8, exp: 1.05, grass: ['#557a3a', '#46682f'], tree: ['#3c5e2c', '#4a6d34', '#31512a'], hill: ['#73866a', '#97a38f'] }
+};
+function gradientTex(cols) {
+  const c = document.createElement('canvas'); c.width = 8; c.height = 512; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 512);
+  gr.addColorStop(0, cols[0]); gr.addColorStop(0.62, cols[1]); gr.addColorStop(1, cols[2]); g.fillStyle = gr; g.fillRect(0, 0, 8, 512);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
 export function makeStage(w, h, opts = {}) {
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+  const L = LOOKS[opts.look], renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(opts.pr || 1); renderer.setSize(w, h, false); renderer.setClearColor(0x000000, 0);
-  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = opts.exposure || 1.0; renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = opts.exposure || (L ? L.exp : 1.0); renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.VSMShadowMap;
   const scene = new THREE.Scene(), world = new THREE.Group(); scene.add(world);
-  const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = opts.env ?? 0.35;
-  scene.add(new THREE.HemisphereLight(0xcfc8ff, 0x17191b, 0.5));
-  const sb = opts.shadow || 900, key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(260, 700, 520); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
-  Object.assign(key.shadow.camera, { left: -sb, right: sb, top: sb, bottom: -sb, near: 10, far: 3000 }); key.shadow.radius = 5; key.shadow.blurSamples = 12; key.shadow.bias = -0.0004; scene.add(key);
-  const rim = new THREE.DirectionalLight(0x8b3dff, opts.rim || 3.4); rim.position.set(-500, 320, -420); scene.add(rim);
-  const rim2 = new THREE.DirectionalLight(0x9f6bff, (opts.rim || 3.4) * 0.45); rim2.position.set(-300, 120, 500); scene.add(rim2);
-  const fill = new THREE.DirectionalLight(0xffffff, 0.5); fill.position.set(400, 100, 300); scene.add(fill);
+  const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = opts.env ?? (L ? L.env : 0.35);
+  const sb = opts.shadow || 900;
+  const key = new THREE.DirectionalLight(L ? L.sun[0] : 0xffffff, L ? L.sun[1] : 2.4); key.position.set(...(L ? L.sun[2] : [260, 700, 520])); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+  Object.assign(key.shadow.camera, { left: -sb, right: sb, top: sb, bottom: -sb, near: 10, far: 5000 }); key.shadow.radius = 5; key.shadow.blurSamples = 12; key.shadow.bias = -0.0004; scene.add(key);
+  let sky = null;
+  if (L) {
+    scene.add(new THREE.HemisphereLight(L.hemi[0], L.hemi[1], L.hemi[2]));
+    const fill = new THREE.DirectionalLight(0xffffff, 0.35); fill.position.set(400, 200, 600); scene.add(fill);
+    scene.fog = new THREE.Fog(L.fog, 3000, 14000); sky = gradientTex(L.sky);
+  } else {
+    scene.add(new THREE.HemisphereLight(0xcfc8ff, 0x17191b, 0.5));
+    const rim = new THREE.DirectionalLight(0x8b3dff, opts.rim || 3.4); rim.position.set(-500, 320, -420); scene.add(rim);
+    const rim2 = new THREE.DirectionalLight(0x9f6bff, (opts.rim || 3.4) * 0.45); rim2.position.set(-300, 120, 500); scene.add(rim2);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.5); fill.position.set(400, 100, 300); scene.add(fill);
+  }
   scene.traverse(o => { if (o.isLight) o.layers.enableAll(); });
-  const cam = new THREE.PerspectiveCamera(opts.fov || 40, w / h, 10, 9000);
-  return { THREE, renderer, scene, world, cam, canvas: renderer.domElement, render(layer) { cam.layers.set(layer || 0); renderer.render(scene, cam); } };
+  const cam = new THREE.PerspectiveCamera(opts.fov || 40, w / h, 10, 30000);
+  return { THREE, renderer, scene, world, cam, look: L, canvas: renderer.domElement, render(layer) { cam.layers.set(layer || 0); scene.background = layer === 2 ? sky : null; renderer.render(scene, cam); } };
+}
+
+// šumová textura (asfalt, tráva): barva c1 s jemnými skvrnami c2
+function noiseTex(c1, c2, n = 256, k = 0.5, rep = 1) {
+  const c = document.createElement('canvas'); c.width = c.height = n; const g = c.getContext('2d'); g.fillStyle = c1; g.fillRect(0, 0, n, n);
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < n * n * k; i++) { g.globalAlpha = 0.08 + rnd() * 0.25; g.fillStyle = rnd() < 0.5 ? c2 : '#ffffff'; g.fillRect(rnd() * n, rnd() * n, 1 + rnd() * 2, 1 + rnd() * 2); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep); return t;
+}
+// krajina kolem silnice (vrstva 2): tráva, červenobílé obrubníky, svodidla, stromy a kopce v oparu; vše ujíždí podle vzdálenosti
+export function makeOutdoor(o = {}, L = LOOKS.day) {
+  const z0 = o.z0 ?? -650, z1 = o.z1 ?? 520, Lx = 16000, g = new THREE.Group(), moving = [];
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const std = (c, r = 0.9) => new THREE.MeshStandardMaterial({ color: c, roughness: r });
+  // tráva po obou stranách
+  const grassT = noiseTex(L.grass[0], L.grass[1], 256, 0.6); grassT.repeat.set(60, 30);
+  for (const [za, zb] of [[z1, z1 + 6000], [z0 - 12000, z0]]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(Lx * 2, zb - za), std('#ffffff', 1)); m.material.map = grassT; m.rotation.x = -Math.PI / 2; m.position.set(0, -0.5, (za + zb) / 2); m.receiveShadow = true; g.add(m); }
+  // obrubníky: střídavě červené a bílé kvádry podél obou okrajů silnice
+  const P = 120, n = Math.ceil(Lx / P), kerbG = new THREE.BoxGeometry(P - 2, 6, 34);
+  const red = std('#c8322d', 0.6), white = std('#eeeeea', 0.6);
+  for (const z of [z0 - 17, z1 + 17]) for (let i = 0; i < n; i++) { const k = new THREE.Mesh(kerbG, i % 2 ? red : white); k.position.set(0, 2.5, z); k.receiveShadow = true; k.castShadow = true; k.userData = { x0: i * P }; g.add(k); moving.push(k); }
+  // svodidla za vzdáleným okrajem: sloupky a vlnitá pásnice
+  const rail = new THREE.Mesh(new THREE.BoxGeometry(Lx * 2, 16, 3), new THREE.MeshStandardMaterial({ color: '#c9ccd1', roughness: 0.35, metalness: 0.8 })); rail.position.set(0, 50, z0 - 70); rail.castShadow = true; g.add(rail);
+  const postG = new THREE.BoxGeometry(5, 58, 5), postM = std('#9aa0a8', 0.5);
+  for (let i = 0; i < Lx / 400; i++) { const ps = new THREE.Mesh(postG, postM); ps.position.set(0, 29, z0 - 74); ps.castShadow = true; ps.userData = { x0: i * 400 }; g.add(ps); moving.push(ps); }
+  // stromy: kmen a koruna ze tří koulí, náhodně v pásu za svodidly a pár stromů na bližší straně
+  const trunkM = std('#5a4430', 0.9), leafM = L.tree.map(c => std(c, 0.85)), leafG = new THREE.IcosahedronGeometry(1, 2);
+  for (let i = 0; i < 110; i++) {
+    const t = new THREE.Group(), h = 260 + rnd() * 260, r = 110 + rnd() * 90;
+    const tr = new THREE.Mesh(new THREE.CylinderGeometry(9, 14, h, 8), trunkM); tr.position.y = h / 2; tr.castShadow = true; t.add(tr);
+    for (let j = 0; j < 3; j++) { const lf = new THREE.Mesh(leafG, leafM[(i + j) % 3]); lf.scale.set(r * (0.8 + rnd() * 0.4), r * (0.85 + rnd() * 0.35), r * (0.8 + rnd() * 0.4)); lf.position.set((rnd() - 0.5) * r * 0.9, h + (rnd() - 0.2) * r * 0.6, (rnd() - 0.5) * r * 0.8); lf.castShadow = true; t.add(lf); }
+    // stromy daleko za svodidly, ať je vidět obloha a kopce
+    const z = z0 - 2600 - rnd() * 5200; t.position.set(0, 0, z); t.userData = { x0: rnd() * Lx }; g.add(t); moving.push(t);
+  }
+  // kopce: velké zploštělé koule daleko v oparu
+  for (let i = 0; i < 7; i++) { const hl = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), std(L.hill[i % 2], 1)); hl.scale.set(2600 + rnd() * 2400, 600 + rnd() * 700, 1500); hl.position.set(-9000 + i * 3000 + rnd() * 800, -150, -9000 - rnd() * 3000); g.add(hl); }
+  g.traverse(x => x.layers.set(2));
+  return { group: g, update(dist) { for (const m of moving) m.position.x = ((m.userData.x0 - dist) % Lx + Lx) % Lx - Lx / 2; } };
 }
 
 // silnice: tmavý asfalt v pásu z0–z1, bílé okraje a přerušované čáry mezi pruhy, které ujíždějí podle vzdálenosti
 export function makeRoad(o = {}) {
   const z0 = o.z0 ?? -900, z1 = o.z1 ?? 420, L = o.len || 7000, g = new THREE.Group();
-  const asphalt = new THREE.Mesh(new THREE.PlaneGeometry(L, z1 - z0), new THREE.MeshStandardMaterial({ color: '#0f1012', roughness: 1 }));
+  const asphalt = new THREE.Mesh(new THREE.PlaneGeometry(L, z1 - z0), new THREE.MeshStandardMaterial({ color: o.outdoor ? '#ffffff' : '#0f1012', roughness: o.outdoor ? 0.95 : 1 }));
+  if (o.outdoor) { asphalt.material.map = noiseTex('#3d4045', '#24262a', 512, 0.35); asphalt.material.map.repeat.set(L / 900, (z1 - z0) / 900); }
   asphalt.rotation.x = -Math.PI / 2; asphalt.position.z = (z0 + z1) / 2; asphalt.receiveShadow = true; g.add(asphalt);
   const white = new THREE.MeshStandardMaterial({ color: '#cfcfca', roughness: 0.7 });
   for (const z of [z0 + 30, z1 - 30]) { const e = new THREE.Mesh(new THREE.PlaneGeometry(L, 9), white); e.rotation.x = -Math.PI / 2; e.position.set(0, 0.5, z); e.receiveShadow = true; g.add(e); }

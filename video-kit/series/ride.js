@@ -10,6 +10,10 @@ function riderBones(pose) {
   const b = window.RIDE3D.bones(pose || 0), f = p => [p[0], -p[1]];
   return { hip: f(b.hip), sh: f(b.sh), hc: f(b.hc) };
 }
+// venkovní vzhled (STYLE.look: 'day', 'golden', 'overcast'): skutečná krajina, bílé titulky s černým obrysem a žlutým
+// zvýrazněním, bílé a žluté štítky, bílé proudnice (podle vzorového videa od autora z 21. 11. 2026)
+const OUTDOOR = () => (typeof STYLE !== 'undefined' && STYLE.look) || null;
+const YEL = '#FFD23F', DARK = '#17191B';
 // ---------- 3D scéna ----------
 // cfg: { cam: { pos: [x, y, z], look: [x, y, z], fov }, road: { lanes: [z…], z0, z1 }, riders: { A: { kit, over, z } }, rim }
 // jedna scéna na celé video (vytvoří se při prvním snímku); between() = kreslení mezi silnicí a jezdci; state: { dist, slope (stupně), riders: { A: { x, pose, crank, wheel, dir } } }
@@ -17,13 +21,15 @@ const R3 = { st: null };
 function scene3d(cfg, state, between) {
   const K = window.RIDE3D; if (!K) throw new Error('3D jezdci se nenačetli (engine/three-boot.mjs)');
   if (!R3.st) {
-    const st = K.makeStage(1080, 1920, { fov: cfg.cam.fov || 40, rim: cfg.rim, shadow: cfg.shadow });
+    const look = cfg.look || OUTDOOR();
+    const st = K.makeStage(1080, 1920, { fov: cfg.cam.fov || 40, rim: cfg.rim, shadow: cfg.shadow, look });
     st.cam.position.set(...cfg.cam.pos); st.cam.lookAt(...cfg.cam.look);
-    const road = K.makeRoad(cfg.road || {}); st.world.add(road.group);
+    const road = K.makeRoad(Object.assign({ outdoor: !!look }, cfg.road || {})); st.world.add(road.group);
+    if (look) { R3.env = K.makeOutdoor(cfg.road || {}, st.look); st.world.add(R3.env.group); }
     const riders = {}; for (const id in cfg.riders) { const r = cfg.riders[id], m = K.makeRider(r.kit || 'white', r.over); m.root.position.z = r.z || 0; st.world.add(m.root); riders[id] = m; }
     R3.st = st; R3.road = road; R3.riders = riders;
   }
-  const st = R3.st; R3.road.update(state.dist || 0); st.world.rotation.z = (state.slope || 0) * Math.PI / 180;
+  const st = R3.st; R3.road.update(state.dist || 0); if (R3.env) R3.env.update(state.dist || 0); st.world.rotation.z = (state.slope || 0) * Math.PI / 180;
   for (const id in R3.riders) { const m = R3.riders[id], s = state.riders[id] || {}; m.root.visible = s.hide !== true; m.root.position.x = s.x || 0; m.root.rotation.y = s.dir < 0 ? Math.PI : 0; m.update(s); }
   // 3D obraz 1:1 na obrazovku (scény se kreslí ve zvětšení ZOOM kolem 540, 905, proto zpětný přepočet)
   const X = 540 - 540 / ZOOM, Y = 905 - 905 / ZOOM, put = () => ctx.drawImage(st.canvas, X, Y, 1080 / ZOOM, 1920 / ZOOM);
@@ -79,7 +85,7 @@ function drawAir(x, ground, sc, t, rel, wake, pose, a) {
     }
     // okraje pásma slábnou (nahoře, dole i k okrajům obrazu), ať proudnice nevypadají jako obdélník
     const edge = Math.min(1, j / 5, (N - 1 - j) / 4), hi = h2 > 0.82, al = (hi ? 0.35 : 0.2 + 0.5 * h) * (0.25 + 0.75 * edge);
-    const rgb = hi ? '228,227,222' : '139,61,255', gr = ctx.createLinearGradient(X1, 0, X0, 0);
+    const rgb = OUTDOOR() ? (hi ? '255,255,255' : '246,248,252') : hi ? '228,227,222' : '139,61,255', gr = ctx.createLinearGradient(X1, 0, X0, 0);
     gr.addColorStop(0, `rgba(${rgb},0)`); gr.addColorStop(0.18, `rgba(${rgb},${al})`); gr.addColorStop(0.82, `rgba(${rgb},${al})`); gr.addColorStop(1, `rgba(${rgb},0)`);
     ctx.setLineDash([dash, gap]); ctx.lineDashOffset = off; ctx.lineWidth = hi ? 3.2 : 2 + h * 1.4; ctx.strokeStyle = gr; ctx.stroke();
   }
@@ -101,8 +107,11 @@ function bigNum(t, at, out, num, unit, x, y, o) {
 function tagAt(text, x, y, o) {
   const p = o.at != null ? popS(o.t, o.at, o.out == null ? null : o.out) : { a: 1, s: 1 };
   if (p.a <= 0) return;
-  ctx.save(); ctx.globalAlpha *= p.a; ctx.strokeStyle = o.c === 'pu' ? C.pu : C.line2; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y + 26); ctx.lineTo(x, y + (o.line || 60)); ctx.stroke(); ctx.restore();
-  pill(text, x, y, { a: p.a, s: p.s, size: o.size || 36, ls: 0, bg: o.c === 'pu' ? C.pu : C.surf, c: C.ink });
+  const out = OUTDOOR(), hl = o.c === 'pu';
+  ctx.save(); ctx.globalAlpha *= p.a; ctx.strokeStyle = out ? '#ffffff' : hl ? C.pu : C.line2; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y + 26); ctx.lineTo(x, y + (o.line || 60)); ctx.stroke(); ctx.restore();
+  if (out) { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.35)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4; }
+  pill(text, x, y, { a: p.a, s: p.s, size: o.size || 36, ls: 0, bg: out ? (hl ? YEL : '#F7F7F4') : hl ? C.pu : C.surf, c: out ? DARK : C.ink });
+  if (out) ctx.restore();
 }
 
 // titulky nahoře: aktuální úsek 2 až 5 slov, právě vyslovené slovo v rámečku (časy slov uvnitř úseku podle délky slov)
@@ -118,8 +127,13 @@ function topCaptions(t) {
     rows.forEach((r, ri) => {
       const w = r.reduce((s, i, j) => s + ws[i] + (j ? sp : 0), 0); let x = 540 - w / 2; const y = y0 + ri * 80;
       r.forEach(i => {
-        if (i === cur) { ctx.save(); ctx.fillStyle = 'rgba(139,61,255,0.22)'; ctx.strokeStyle = C.pu; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(x - 12, y - 56, ws[i] + 24, 74, 14); ctx.fill(); ctx.stroke(); ctx.restore(); }
-        txt(words[i], x, y, Object.assign({ align: 'left', c: i === cur ? C.ink : (i < cur ? C.ink : C.muted), a: i <= cur ? 1 : 0.7 }, fo));
+        if (OUTDOOR()) {   // bílý text s černým obrysem, právě vyslovené slovo žluté
+          ctx.save(); ctx.font = font(fo); ctx.textAlign = 'left'; ctx.lineJoin = 'round'; ctx.lineWidth = 12; ctx.strokeStyle = 'rgba(12,13,15,0.92)'; ctx.globalAlpha *= i <= cur ? 1 : 0.85;
+          ctx.strokeText(words[i], x, y); ctx.fillStyle = i === cur ? YEL : '#ffffff'; ctx.fillText(words[i], x, y); ctx.restore();
+        } else {
+          if (i === cur) { ctx.save(); ctx.fillStyle = 'rgba(139,61,255,0.22)'; ctx.strokeStyle = C.pu; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(x - 12, y - 56, ws[i] + 24, 74, 14); ctx.fill(); ctx.stroke(); ctx.restore(); }
+          txt(words[i], x, y, Object.assign({ align: 'left', c: i === cur ? C.ink : (i < cur ? C.ink : C.muted), a: i <= cur ? 1 : 0.7 }, fo));
+        }
         x += ws[i] + sp;
       });
     });
@@ -130,14 +144,17 @@ function topCaptions(t) {
 // velký údaj dole (pásmo y 1380 až 1560): popisek verzálkami a číslo
 function statAt(t, at, out, label, value, color) {
   const p = popS(t, at, out), q = pop(t, at, out); if (p.a <= 0) return;
-  txt(label, 540, 1408 + q.dy, { size: 30, w: 800, c: C.muted, ls: 4, a: q.a });
-  txt(value, 540, 1520 + p.dy, Object.assign(fit(value, { size: 104, w: 800, f: F.U, ls: -3 }, 780), { c: color || C.pu, a: p.a, s: p.s }));
+  const o2 = OUTDOOR(); if (o2) { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 4; }
+  txt(label, 540, 1408 + q.dy, { size: 30, w: 800, c: o2 ? '#ffffff' : C.muted, ls: 4, a: q.a });
+  txt(value, 540, 1520 + p.dy, Object.assign(fit(value, { size: 104, w: 800, f: F.U, ls: -3 }, 780), { c: o2 ? (color === C.ink ? '#ffffff' : YEL) : color || C.pu, a: p.a, s: p.s }));
+  if (o2) ctx.restore();
 }
 
 // konec videa: papírová vlaštovka (pošli kamarádovi) a výzva ke sledování
 function ctaEnd(t, at, at2, text) {
   const p = popS(t, at, null), q = popS(t, at2, null); if (p.a <= 0) return;
-  ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(540, 1480); ctx.scale(p.s, p.s); ctx.fillStyle = C.pu; ctx.beginPath(); ctx.moveTo(-60, 0); ctx.lineTo(70, -50); ctx.lineTo(30, 60); ctx.lineTo(10, 18); ctx.closePath(); ctx.fill();
+  const o3 = OUTDOOR();
+  ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(540, 1480); ctx.scale(p.s, p.s); ctx.fillStyle = o3 ? YEL : C.pu; ctx.beginPath(); ctx.moveTo(-60, 0); ctx.lineTo(70, -50); ctx.lineTo(30, 60); ctx.lineTo(10, 18); ctx.closePath(); ctx.fill();
   ctx.fillStyle = C.ink; ctx.beginPath(); ctx.moveTo(10, 18); ctx.lineTo(70, -50); ctx.lineTo(18, 34); ctx.closePath(); ctx.fill(); ctx.restore();
-  if (q.a > 0) pill(text, 540, 1610, { a: q.a, s: q.s, size: 40, ls: 0 });
+  if (q.a > 0) pill(text, 540, 1610, { a: q.a, s: q.s, size: 40, ls: 0, bg: o3 ? YEL : C.pu, c: o3 ? DARK : C.ink });
 }
