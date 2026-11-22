@@ -1,5 +1,5 @@
 // Realistický formát „ride“ s texty původní šablony What if (autor 22. 11. 2026): jeden časovkář v krajině za zlaté hodinky,
-// ujíždějící asfalt, barometr, hlas Liam, nápis whatIF, nadpisy nahoře, titulky dole, švih kamery a fialový stírací přechod.
+// ujíždějící asfalt, barometr, hlas Liam, nápis whatIF, nadpisy nahoře, titulky dole, jemný švih kamery (bez fialového stíracího pruhu).
 // Na konci „pošli kamarádovi a sleduj“ (karty přes krajinu, karta profilu wattIF).
 const ride = function (t, a) {
   // pohled kamery, silnice a jezdec (popis musí být uvnitř funkce, do scenes.js se přenáší jen ona)
@@ -27,7 +27,7 @@ const ride = function (t, a) {
 module.exports = {
   title: 'what-if-weather-pressure',
   about: 'Tlak vzduchu podle počasí mění hustotu vzduchu o několik procent: při tlakové níži se jede rychleji. Při 250 W na 40 km je rozdíl mezi 1030 a 990 hPa asi 45 s.',
-  style: { look: 'golden', ui: 'classic', camera: 'whip', overlay: 'wipe' },
+  style: { look: 'golden', ui: 'classic', camera: 'whip' },
   acts: [['hook', 'hook'], ['baro', 'look', 'press'], ['race', 'race', 'equal'], ['tip', 'tip'], ['cta', 'cta']],
   lines: {
     hook: { say: 'What if the weather forecast could tell you when to go for a personal best?', captions: false,

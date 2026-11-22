@@ -1,6 +1,6 @@
 // Realistický formát „ride“ s texty původní šablony What if (autor 22. 11. 2026): jeden jezdec do kopce v krajině za zlaté
 // hodinky, ujíždějící asfalt, hlas Liam; nápis whatIF, nadpisy nahoře, titulky dole a barvy jako ve videu what-if-no-air.
-// Z pohybové grafiky zůstal švih kamery do aktů (GSAP) a stírací přechod (Kokonut UI), teď fialový. Na konci „pošli
+// Z pohybové grafiky zůstal jemný švih kamery do aktů (GSAP), fialový stírací pruh autor 22. 11. 2026 zrušil. Na konci „pošli
 // kamarádovi a sleduj“ (karty přes krajinu jako ve vzorovém reelu, karta profilu wattIF).
 const ride = function (t, a) {
   // pohled kamery, silnice do kopce a jezdec (popis musí být uvnitř funkce, do scenes.js se přenáší jen ona)
@@ -29,7 +29,7 @@ const ride = function (t, a) {
 module.exports = {
   title: 'what-if-aero-on-climbs',
   about: 'I do kopce jde část výkonu na vzduch: na 5% stoupání asi 11 %. Kompaktní pozice (ohnuté lokty, rovná záda) ušetří 39 s na 10 km, víc než shození 2 kg.',
-  style: { look: 'golden', ui: 'classic', camera: 'whip', overlay: 'wipe' },
+  style: { look: 'golden', ui: 'classic', camera: 'whip' },
   acts: [['hook', 'hook'], ['share', 'myth', 'share'], ['race', 'gain', 'kilo'], ['tip', 'tip'], ['cta', 'cta']],
   lines: {
     hook: { say: "What if aero still matters when you're climbing at seventeen kilometers per hour?", captions: false,

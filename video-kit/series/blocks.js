@@ -350,7 +350,7 @@ function makeBackground(st) {
 
 // kamera z GSAP: pozastavená časová osa nad obyčejným objektem {x, y, s, r}, pro snímek se posune na čas t
 function makeCamera(st, V) {
-  let tl = null; const cam = { x: 0, y: 0, s: 1, r: 0, sx: 1 };
+  let tl = null; const cam = { x: 0, y: 0, s: 1, r: 0, sx: 1, sy: 1 };
   const build = () => {
     tl = gsap.timeline({ paused: true });
     TL.acts.forEach((a, i) => {
@@ -358,8 +358,12 @@ function makeCamera(st, V) {
         // švihnutí do nového aktu: ze strany (střídavě), s pootočením, doběh expo.out
         // v realistické krajině (formát ride) se stíracím pruhem vždy zleva: odkrytý okraj scény je vpravo pod pruhem,
         // jinak by vlevo na chvíli prosvítal tmavý pruh pozadí
-        const d = typeof OUTDOOR === 'function' && OUTDOOR() && st.overlay === 'wipe' ? -1 : i % 2 ? 1 : -1;
-        tl.fromTo(cam, { x: 260 * d, r: 0.035 * d }, { x: 0, r: 0, duration: 0.5, ease: 'expo.out', immediateRender: false }, a.start);
+        const out = typeof OUTDOOR === 'function' && OUTDOOR(), d = out && st.overlay === 'wipe' ? -1 : i % 2 ? 1 : -1;
+        // jemný švih (autor 22. 11. 2026, krajina bez stíracího pruhu): malé cuknutí a krátké přiblížení o 10 %,
+        // které schová okraj scény (přiblížení přidá 45 px na každé straně, posun s pootočením je nejvýš 35 px)
+        const soft = out && st.overlay !== 'wipe';
+        if (soft) tl.fromTo(cam, { x: 30 * d, r: 0.006 * d, sx: 1.1, sy: 1.1 }, { x: 0, r: 0, sx: 1, sy: 1, duration: 0.45, ease: 'expo.out', immediateRender: false }, a.start);
+        else tl.fromTo(cam, { x: 260 * d, r: 0.035 * d }, { x: 0, r: 0, duration: 0.5, ease: 'expo.out', immediateRender: false }, a.start);
       }
       if (st.camera === 'flip' && i > 0) {
         // nový akt se otočí jako karta: scéna se roztáhne z úzkého proužku, s malým překmitem (GSAP back.out)

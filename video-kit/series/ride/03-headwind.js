@@ -40,7 +40,7 @@ const ride = function (t, a) {
 module.exports = {
   title: 'ride-headwind',
   about: 'Časovkář tam a zpět 20 km při 250 W a větru 20 km/h: vzpřímeně na základním řídítku (CdA 0,30) tam 45:30, zpět 23:20, celkem o 5:21 pomaleji než bez větru. Aero nástavce (CdA 0,23) ušetří proti větru 5:00, po větru jen 1:21.',
-  style: { look: 'golden', ui: 'classic', camera: 'whip', overlay: 'wipe' },
+  style: { look: 'golden', ui: 'classic', camera: 'whip' },
   acts: [['hook', 'hook'], ['setup', 'setup'], ['out', 'out'], ['back', 'back'], ['total', 'total'], ['why', 'why'], ['low', 'low'], ['cta', 'cta']],
   lines: {
     hook: { say: "Out into the wind, back with it. Doesn't it cancel out?", captions: false,

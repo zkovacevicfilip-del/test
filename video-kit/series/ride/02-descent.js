@@ -30,7 +30,7 @@ const ride = function (t, a) {
 module.exports = {
   title: 'ride-descent',
   about: 'Jeden časovkář sjíždí 6 % na 3 km bez šlapání. Vzpřímeně na základním řídítku (CdA 0,36) 52,5 km/h, skrčeně v aero nástavcích (CdA 0,21) 68,7 km/h. Skrčeně je dole asi o 49 s dřív.',
-  style: { look: 'golden', ui: 'classic', camera: 'whip', overlay: 'wipe' },
+  style: { look: 'golden', ui: 'classic', camera: 'whip' },
   acts: [['hook', 'hook'], ['setup', 'setup'], ['stance', 'he', 'tuck'], ['result', 'result'], ['why', 'why'], ['cta', 'cta']],
   lines: {
     hook: { say: 'Zero watts, six percent downhill. How much faster is he, just by tucking?', captions: false,
