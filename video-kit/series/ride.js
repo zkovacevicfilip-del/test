@@ -33,10 +33,17 @@ function scene3d(cfg, state, between) {
     const riders = {}; for (const id in cfg.riders) { const r = cfg.riders[id], m = K.makeRider(r.kit || 'white', r.over); m.root.position.z = r.z || 0; st.world.add(m.root); riders[id] = m; }
     R3.st = st; R3.road = road; R3.riders = riders;
   }
-  const st = R3.st; R3.road.update(state.dist || 0); if (R3.env) R3.env.update(state.dist || 0); st.world.rotation.z = (state.slope || 0) * Math.PI / 180;
+  const st = R3.st, cm = window.CAM || {};
+  // kamera styl 'orbit': 3D kamera objede bod pohledu kolem svislé osy o úhel cm.o (plynulý pohyb do strany)
+  { const P = cfg.cam.pos, Lk = cfg.cam.look, o = cm.o || 0, dx = P[0] - Lk[0], dz = P[2] - Lk[2], co = Math.cos(o), so = Math.sin(o);
+    st.cam.position.set(Lk[0] + dx * co + dz * so, P[1], Lk[2] - dx * so + dz * co); st.cam.lookAt(...Lk); }
+  R3.road.update(state.dist || 0); if (R3.env) R3.env.update(state.dist || 0); st.world.rotation.z = (state.slope || 0) * Math.PI / 180;
   for (const id in R3.riders) { const m = R3.riders[id], s = state.riders[id] || {}; m.root.visible = s.hide !== true; m.root.position.x = s.x || 0; m.root.rotation.y = s.dir < 0 ? Math.PI : 0; m.update(s); }
   // 3D obraz 1:1 na obrazovku (scény se kreslí ve zvětšení ZOOM kolem 540, 905, proto zpětný přepočet)
-  const X = 540 - 540 / ZOOM, Y = 905 - 905 / ZOOM, put = () => ctx.drawImage(st.canvas, X, Y, 1080 / ZOOM, 1920 / ZOOM);
+  // swipe (cm.x > 0): vlevo vedle obrazu ještě odjíždějící krajina; cm.blur: rozmazání pohybem (obraz víckrát s posunem)
+  const X = 540 - 540 / ZOOM, Y = 905 - 905 / ZOOM, Wv = 1080 / ZOOM, Hv = 1920 / ZOOM, b = cm.blur || 0;
+  const one = x => { if (b < 1) { ctx.drawImage(st.canvas, x, Y, Wv, Hv); return; } const g = ctx.globalAlpha; for (let k = 0; k < 7; k++) { ctx.globalAlpha = g / (k + 1); ctx.drawImage(st.canvas, x + (k / 6 - 0.5) * b, Y, Wv, Hv); } ctx.globalAlpha = g; };
+  const put = () => { one(X); if (cm.x > 0) one(X - Wv); };
   // dva průchody: silnice (se stíny jezdců), pak proudnice (between), pak jezdci, aby proudnice byly nad silnicí a za jezdci
   st.world.updateMatrixWorld(true); st.render(2); put(); if (between) between(); st.render(0); put();
   // ztlumení (state.a < 1): tmavá vrstva přes celou scénu, jezdci neprůhlední

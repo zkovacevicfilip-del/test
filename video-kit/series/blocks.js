@@ -350,10 +350,16 @@ function makeBackground(st) {
 
 // kamera z GSAP: pozastavená časová osa nad obyčejným objektem {x, y, s, r}, pro snímek se posune na čas t
 function makeCamera(st, V) {
-  let tl = null; const cam = { x: 0, y: 0, s: 1, r: 0, sx: 1, sy: 1 };
+  let tl = null; const cam = { x: 0, y: 0, s: 1, r: 0, sx: 1, sy: 1, o: 0, p: 1, blur: 0 };
+  const swipe = st.camera === 'swipe' || st.camera === 'swipe-blur';
   const build = () => {
     tl = gsap.timeline({ paused: true });
     TL.acts.forEach((a, i) => {
+      // plynulý pohyb do strany (autor 22. 11. 2026: ne cuknutí): 3D kamera objede jezdce do nového úhlu (o = úhel v radiánech)
+      const orb = k => k === 0 ? 0 : k % 2 ? -0.24 : 0.2;
+      if (st.camera === 'orbit' && i > 0) tl.fromTo(cam, { o: orb(i - 1) }, { o: orb(i), duration: 1.4, ease: 'power2.inOut', immediateRender: false }, a.start - 0.5);
+      // swipe: krajina plynule odjede doleva a nový akt přijede zprava (p = postup 0 až 1)
+      if (swipe && i > 0) tl.fromTo(cam, { p: 0 }, { p: 1, duration: 0.7, ease: 'power2.inOut', immediateRender: false }, a.start);
       if (st.camera === 'whip' && i > 0) {
         // švihnutí do nového aktu: ze strany (střídavě), s pootočením, doběh expo.out
         // v realistické krajině (formát ride) se stíracím pruhem vždy zleva: odkrytý okraj scény je vpravo pod pruhem,
@@ -382,7 +388,12 @@ function makeCamera(st, V) {
       hits.sort((p, q) => p - q).forEach((h, i) => { if (i && h - hits[i - 1] < 0.6) return; tl.fromTo(cam, { s: 1.015, r: (i % 2 ? 1 : -1) * 0.004 }, { s: 1, r: 0, duration: 0.8, ease: 'elastic.out(1, 0.45)', immediateRender: false }, h); });
     }
   };
-  return function (t) { if (!tl) build(); tl.seek(t, false); return cam; };
+  return function (t) {
+    if (!tl) build(); tl.seek(t, false);
+    // swipe: posun o celou viditelnou šířku scény (900), odjíždějící krajinu kreslí scene3d o šířku vlevo; rozmazání nejsilnější uprostřed
+    if (swipe) { const p = cam.p; cam.x = p > 0 && p < 1 ? 900 * (1 - p) : 0; cam.blur = st.camera === 'swipe-blur' && p > 0 && p < 1 ? 70 * 4 * p * (1 - p) : 0; }
+    window.CAM = cam; return cam;
+  };
 }
 
 // překryv: fialový pruh přes celý obraz přejede zleva doprava a zakryje střih mezi akty (GSAP power3.inOut)

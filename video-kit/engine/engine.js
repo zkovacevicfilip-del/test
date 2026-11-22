@@ -28,7 +28,8 @@ function txt(s, x, y, o) {
   ctx.globalAlpha *= o.a == null ? 1 : o.a; ctx.fillStyle = o.c || C.ink;
   if (o.s != null && o.s !== 1) { ctx.translate(x, y - o.size * 0.35); ctx.scale(o.s, o.s); ctx.translate(-x, -(y - o.size * 0.35)); }
   // hlídač přetečení: text, který je vidět a sahá mimo obraz, se zapíše do window.OVER
-  if (ctx.globalAlpha > 0.6) { const m = ctx.getTransform(), w = ctx.measureText(s).width, al = o.align || 'center', l = al === 'left' ? x : al === 'right' ? x - w : x - w / 2, X0 = m.a * l + m.c * y + m.e, X1 = m.a * (l + w) + m.c * y + m.e; if (X0 < 10 || X1 > W - 10) window.OVER[s] = lastFrame + 1; }
+  // při swipe (window.CAM.x > 0) texty nového aktu přijíždějí zprava zvenku obrazu, to není přetečení
+  if (ctx.globalAlpha > 0.6 && !(window.CAM && window.CAM.x > 0)) { const m = ctx.getTransform(), w = ctx.measureText(s).width, al = o.align || 'center', l = al === 'left' ? x : al === 'right' ? x - w : x - w / 2, X0 = m.a * l + m.c * y + m.e, X1 = m.a * (l + w) + m.c * y + m.e; if (X0 < 10 || X1 > W - 10) window.OVER[s] = lastFrame + 1; }
   ctx.fillText(s, x, y); ctx.restore();
 }
 function width(s, o) { ctx.save(); ctx.font = font(o); ctx.letterSpacing = (o.ls || 0) + 'px'; const w = ctx.measureText(s).width; ctx.restore(); return w; }
