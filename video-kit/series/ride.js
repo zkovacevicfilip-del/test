@@ -204,3 +204,74 @@ function classicUI(t, a, o) {
   if (hs) { const io = actIO(t, a); ctx.save(); ctx.globalAlpha *= io.a; heads(t, hs, io.dy); ctx.restore(); }
   ctx.restore();
 }
+
+// ---------- KONEC VIDEA: pošli kamarádovi + sleduj ----------
+// Varianta 1 „karty přes krajinu“ (autor 22. 11. 2026 podle vzorového reelu): jezdec jede dál, přes krajinu vyskočí panel
+// sdílení (kontakty, zpráva, Send → Sent) a pak karta profilu (Follow → Following). Karta profilu je jediné místo s názvem
+// a malým logem aplikace wattIF (výjimka od autora 22. 11. 2026). Kreslí se v souřadnicích obrazovky 1080 × 1920 (bez ZOOM).
+// o = { share, pick, tap, follow, ftap }: časy v s (panel, výběr kontaktu, klepnutí na Send, karta profilu, klepnutí na Follow)
+const CTA_NAMES = ['Alex', 'Sam', 'Leo', 'Tom'], CTA_COLS = ['#3d3550', '#3A3C3D', '#33403f', '#463d36'], CTA_FIELD = '#2E3031';
+function ctaCards(t, o) {
+  if (t < o.share - 0.05) return;
+  ctx.save(); ctx.translate(540, 905); ctx.scale(1 / ZOOM, 1 / ZOOM); ctx.translate(-540, -905);
+  const inn = at => { const k = ease('back.out(1.6)')(clamp((t - at) / 0.5)); return { a: clamp((t - at) / 0.15), s: lerp(0.86, 1, k), dy: (1 - k) * 70 }; };
+  const outK = ease('power2.in')(clamp((t - o.follow + 0.25) / 0.3));   // panel sdílení odjede nahoru, než přijde karta profilu
+  if (outK < 1) { const p = inn(o.share); ctaGroup(p.a * (1 - outK), p.s, 540, 760, p.dy - 110 * outK, () => ctaShare(t, o)); }
+  if (t >= o.follow) { const p = inn(o.follow); ctaGroup(p.a, p.s, 540, 710, p.dy, () => ctaProfile(t, o)); }
+  ctx.restore();
+}
+function ctaGroup(a, s, cx, cy, dy, draw) { if (a <= 0) return; ctx.save(); ctx.globalAlpha *= a; ctx.translate(cx, cy + dy); ctx.scale(s, s); ctx.translate(-cx, -cy); draw(); ctx.restore(); }
+function ctaCard(x, y, w, h) { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 10; ctx.fillStyle = 'rgba(35,37,38,0.97)'; ctx.beginPath(); ctx.roundRect(x, y, w, h, 40); ctx.fill(); ctx.restore(); }
+function ctaCheck(x, y, s, col) { ctx.save(); ctx.strokeStyle = col || C.ink; ctx.lineWidth = 6 * s; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(x - 12 * s, y); ctx.lineTo(x - 3 * s, y + 9 * s); ctx.lineTo(x + 13 * s, y - 9 * s); ctx.stroke(); ctx.restore(); }
+// tlačítko se při klepnutí krátce zmáčkne (k = 0 až 1 během 0,25 s po klepnutí)
+function ctaPress(t, at, cx, cy) { const k = 1 - 0.05 * Math.sin(Math.PI * clamp((t - at) / 0.25)); ctx.translate(cx, cy); ctx.scale(k, k); ctx.translate(-cx, -cy); }
+// prst: bílá tečka přijede 0,35 s před klepnutím, při klepnutí se zmenší a rozběhne se kruh
+function ctaTap(t, at, x, y) {
+  const u = (t - at + 0.35) / 0.9; if (u <= 0 || u >= 1) return;
+  const a = clamp(u / 0.25) * clamp((1 - u) / 0.3), pr = clamp((t - at) / 0.4), mv = ease('power2.out')(clamp((t - at + 0.35) / 0.35));
+  ctx.save(); ctx.globalAlpha *= a;
+  if (pr > 0 && pr < 1) { ctx.save(); ctx.globalAlpha *= 1 - pr; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x, y, 34 + 70 * ease('power2.out')(pr), 0, 7); ctx.stroke(); ctx.restore(); }
+  const px = x + (1 - mv) * 70, py = y + (1 - mv) * 90, r = 30 - 6 * Math.sin(Math.PI * clamp((t - at + 0.05) / 0.25));
+  ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.beginPath(); ctx.arc(px, py, r + 22, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.beginPath(); ctx.arc(px, py, r, 0, 7); ctx.fill(); ctx.restore();
+}
+function ctaShare(t, o) {
+  const X = 90, Y = 430; ctaCard(X, Y, 900, 660);
+  ctx.fillStyle = C.line2; ctx.beginPath(); ctx.roundRect(X + 405, Y + 22, 90, 10, 5); ctx.fill();
+  ctx.fillStyle = CTA_FIELD; ctx.beginPath(); ctx.roundRect(X + 40, Y + 60, 820, 76, 38); ctx.fill();
+  ctx.strokeStyle = C.muted; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(X + 92, Y + 96, 14, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.moveTo(X + 102, Y + 106); ctx.lineTo(X + 116, Y + 120); ctx.stroke();
+  txt('Search', X + 132, Y + 108, { size: 34, w: 600, c: C.muted, align: 'left' });
+  const pk = ease('back.out(2)')(clamp((t - o.pick) / 0.35));
+  CTA_NAMES.forEach((n, i) => {
+    const cx = X + 112 + i * 225, cy = Y + 245;
+    ctx.fillStyle = CTA_COLS[i]; ctx.beginPath(); ctx.arc(cx, cy, 70, 0, 7); ctx.fill();
+    txt(n[0], cx, cy + 19, { size: 54, w: 800 }); txt(n, cx, cy + 116, { size: 30, w: 600 });
+    if (i === 0 && pk > 0) {   // vybraný kontakt: fialový kroužek a odškrtnutí
+      ctx.save(); ctx.globalAlpha *= clamp(pk * 3); ctx.strokeStyle = C.pu; ctx.lineWidth = 7; ctx.beginPath(); ctx.arc(cx, cy, 80, 0, 7); ctx.stroke();
+      ctx.translate(cx + 54, cy + 52); ctx.scale(pk, pk); ctx.fillStyle = C.pu; ctx.beginPath(); ctx.arc(0, 0, 26, 0, 7); ctx.fill(); ctaCheck(0, 0, 1); ctx.restore();
+    }
+  });
+  txt('Write a message…', X + 40, Y + 468, { size: 32, w: 600, c: C.muted, align: 'left' }); ctx.fillStyle = C.line2; ctx.fillRect(X + 40, Y + 488, 820, 3);
+  const sent = t >= o.tap + 0.15;
+  ctx.save(); ctaPress(t, o.tap, X + 450, Y + 576);
+  ctx.fillStyle = sent ? CTA_FIELD : C.pu; ctx.beginPath(); ctx.roundRect(X + 40, Y + 528, 820, 96, 48); ctx.fill();
+  if (sent) { ctaCheck(X + 376, Y + 576, 1.1); txt('Sent', X + 410, Y + 590, { size: 40, w: 800, align: 'left' }); } else txt('Send', X + 450, Y + 590, { size: 40, w: 800 });
+  ctx.restore();
+  ctaTap(t, o.tap, X + 610, Y + 576);
+}
+function ctaProfile(t, o) {
+  const X = 90, Y = 520; ctaCard(X, Y, 900, 380);
+  ctx.fillStyle = C.bg; ctx.beginPath(); ctx.arc(X + 120, Y + 120, 74, 0, 7); ctx.fill(); ctx.strokeStyle = C.pu; ctx.lineWidth = 5; ctx.stroke();
+  rich([['watt', C.ink], ['IF', C.pu]], X + 120, Y + 131, { size: 26, w: 800, f: F.U, ls: -1 });
+  left([['watt', C.ink], ['IF', C.pu]], X + 225, Y + 112, { size: 52, w: 800, f: F.U, ls: -2 });
+  txt('Cycling aero · free speed', X + 226, Y + 162, { size: 31, w: 600, c: C.muted, align: 'left' });
+  const fol = t >= o.ftap + 0.15;
+  ctx.save(); ctaPress(t, o.ftap, X + 240, Y + 273);
+  ctx.fillStyle = fol ? CTA_FIELD : C.pu; ctx.beginPath(); ctx.roundRect(X + 40, Y + 230, 400, 86, 22); ctx.fill();
+  if (fol) { txt('Following', X + 222, Y + 287, { size: 36, w: 800 }); ctx.strokeStyle = C.ink; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(X + 318, Y + 266); ctx.lineTo(X + 328, Y + 276); ctx.lineTo(X + 338, Y + 266); ctx.stroke(); }
+  else txt('Follow', X + 240, Y + 287, { size: 36, w: 800 });
+  ctx.restore();
+  ctx.fillStyle = CTA_FIELD; ctx.beginPath(); ctx.roundRect(X + 460, Y + 230, 400, 86, 22); ctx.fill(); txt('Message', X + 660, Y + 287, { size: 36, w: 800 });
+  ctaTap(t, o.ftap, X + 392, Y + 273);
+}
+// ---------- /KONEC VIDEA ----------

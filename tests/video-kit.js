@@ -23,7 +23,9 @@ function check(dir, name) {
   let words = 0;
   for (const k of keys) {
     const l = sc.lines[k];
-    words += l.say.trim().split(/\s+/).length;
+    // závěrečná výzva „pošli kamarádovi a sleduj“ (věta cta, autor 22. 11. 2026) se do délky obsahu nepočítá, sama má nejvýš 20 slov
+    if (k === "cta") { if (l.say.trim().split(/\s+/).length > 20) bad.push("cta: výzva na konci má víc než 20 slov"); }
+    else words += l.say.trim().split(/\s+/).length;
     if (/\d/.test(l.say)) bad.push(`${k}: v "say" je číslice (hlas potřebuje čísla slovy)`);
     for (const c of l.chunks) {
       const text = Array.isArray(c) ? c[0] : c, anchor = Array.isArray(c) ? c[1] : text.split(/\s+/)[0].replace(/[^A-Za-z']/g, "");
@@ -58,8 +60,9 @@ function check(dir, name) {
   ok(`[${name}] používá jen připravená proudění`, Object.keys(t.FLOWS).every(n => ["rider", "cyl", "drop"].includes(n)), Object.keys(t.FLOWS).join(", "));
   ok(`[${name}] scény nepoužívají náhodu ani skutečný čas`, !/Math\.random|Date\.now|new Date/.test(code));
   // výjimka od 17. 11. 2026: úvodní nápis wattIF, když ho popis videa zapne (style.hook); jinde název aplikace ani logo ne
-  const codeNoHook = code;   // nápis se zapíná hodnotou hook: 'watt', takže celý název se v kódu nevyskytuje
-  ok(`[${name}] video nezmiňuje aplikaci (kromě zapnutého úvodního nápisu wattIF)`, !/aero pozice|wattif|logoImg/i.test(codeNoHook + JSON.stringify(sc.lines)));
+  // výjimka od 22. 11. 2026: karta profilu v závěrečné výzvě (oddíl KONEC VIDEA v series/ride.js) smí ukázat název a malé logo
+  const codeNoHook = code.replace(/\/\/ ---------- KONEC VIDEA[\s\S]*?\/\/ ---------- \/KONEC VIDEA ----------/, "");   // nápis se zapíná hodnotou hook: 'watt', takže celý název se v kódu nevyskytuje
+  ok(`[${name}] video nezmiňuje aplikaci (kromě zapnutého úvodního nápisu wattIF a karty profilu na konci)`, !/aero pozice|wattif|logoImg/i.test(codeNoHook + JSON.stringify(sc.lines)));
 }
 
 check(KIT, "aktuální video");
@@ -99,6 +102,8 @@ for (const ex of fs.readdirSync(path.join(KIT, "examples"))) check(path.join(KIT
       // oprava 22. 11. 2026: nadpis přes dva akty se při švihu kamery usekl o okraj; nadpisy jsou po aktech a mizí s aktem (actIO),
       // ve venkovní krajině se stíracím pruhem švihá scéna vždy zleva (odkrytý okraj je pod pruhem)
       if (spec.style && spec.style.ui === "classic") ok(`[${name}] nadpisy po aktech mizí s aktem a švih kamery nechá odkrytý okraj pod pruhem`, /const hs = o\.heads && a && o\.heads\[a\.id\]/.test(out.scenes) && /actIO\(t, a\); ctx\.save\(\); ctx\.globalAlpha \*= io\.a; heads\(t, hs, io\.dy\)/.test(out.scenes) && /OUTDOOR\(\) && st\.overlay === 'wipe' \? -1/.test(out.scenes) && !/heads: \[/.test(out.scenes.slice(out.scenes.indexOf("classicUI(t, a, {"))));
+      // autor 22. 11. 2026: na konci „pošli kamarádovi a sleduj“ (varianta 1, karty přes krajinu): poslední akt cta, věta s Send this a follow
+      if (Object.values(spec.scenes).some(x => typeof x.draw === "function" && /ctaCards\(t, /.test(String(x.draw)))) ok(`[${name}] konec videa: pošli kamarádovi a sleduj (karty ctaCards)`, spec.acts[spec.acts.length - 1][0] === "cta" && /^Send this .*follow/i.test(spec.lines.cta.say) && /function ctaCards/.test(out.scenes) && /ctaCards\(t, \{ share: T\('cta:0'\)/.test(out.scenes) && /function ctaProfile/.test(out.scenes), spec.lines.cta && spec.lines.cta.say);
       // série „What if“ (a její zkouška stylů) začíná slovy What if; jiné série (ride) mají vlastní háček
       const whatIf = ["what-if", "styl-test"].includes(series);
       ok(`[${name}] název je jedinečný` + (whatIf ? ` a video začíná slovy „What if“` : ""), !titles.has(spec.title) && (!whatIf || /^What if /.test(out.script.lines[out.script.acts[0].lines[0]].say)), spec.title);
