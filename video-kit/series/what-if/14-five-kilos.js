@@ -17,7 +17,7 @@ const ride = function (t, a) {
   tag('250 W · −5 kg', T('flat:0'), T('same$'), 'pu');
   // texty z původního videa (nadpisy scén rows, text a rider)
   classicUI(t, a, {
-    hook: { line: 'hook', cy: 440, items: [{ whatIf: true, i: 0, size: 140 }, { t: 'you lost', i: 1, size: 56 }, { t: '5 kilos?', i: 2, big: true, size: 120 }, { t: 'How much faster?', i: 3, size: 56 }] },
+    hook: { line: 'hook', cy: 440, items: [{ whatIf: true, i: 0, size: 140 }, { t: 'you lost', i: 1, size: 56 }, { t: '5 kilos?', i: 2, big: true, size: 120, gap: 18 }, { t: 'How much faster?', i: 3, size: 56 }] },
     heads: {
       compare: [{ at: 'flat:0', label: 'FLAT · 40 KM', big: '12 s', bigAt: 'flat:2', c: 'ink', sub: 'faster with −5 kg', subAt: 'flat:2' }, { at: 'climb:0', label: 'CLIMB 8% · 10 KM', big: '2:40', bigAt: 'climb:2', sub: 'faster with −5 kg', subAt: 'climb:2' }, { at: 'same:2', big: '13×', sub: 'the gain on the climb' }],
       why: [{ at: 'why:0', title: 'On the flat', big: 'you fight air', bigAt: 'why:1', c: 'ink' }, { at: 'why:4', title: 'Uphill', big: 'you fight gravity', bigAt: 'why:5' }],

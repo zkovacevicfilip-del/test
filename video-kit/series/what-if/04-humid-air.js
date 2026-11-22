@@ -14,7 +14,7 @@ const ride = function (t, a) {
   tag('250 W · 40.7 km/h', T('race:1'), T('race$'), 'pu');
   // texty z původního videa (nadpisy scén rows, race a rider)
   classicUI(t, a, {
-    hook: { line: 'hook', cy: 440, items: [{ whatIf: true, i: 0, size: 140 }, { t: 'humid air', i: 1, size: 56 }, { t: "isn't heavier,", i: 2, size: 56 }, { t: 'but lighter?', i: 4, big: true, size: 110 }] },
+    hook: { line: 'hook', cy: 440, items: [{ whatIf: true, i: 0, size: 140 }, { t: 'humid air', i: 1, size: 56 }, { t: "isn't heavier,", i: 2, size: 56, gap: 18 }, { t: 'but lighter?', i: 4, big: true, size: 110 }] },
     heads: {
       vapor: [{ at: 'true:1', title: 'Water vapor', big: 'is lighter', bigAt: 'true:2' }, { at: 'dens:2', big: '−1.6%', sub: 'less dense when fully humid' }],
       race: [{ at: 'race:0', big: '40 km', c: 'ink', sub: 'same rider · same power', subAt: 'race:1' }, { at: 'race:2', big: '18 s', sub: 'faster in humid air' }],

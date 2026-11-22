@@ -13,7 +13,7 @@ const ride = function (t, a) {
   tag('40 km/h · 250 W', T('need:0'), T('need:2') - 0.1, null, 46);
   // texty z původního videa (nadpisy scén bars, flow a rider)
   classicUI(t, a, {
-    hook: { line: 'hook', cy: 440, items: [{ whatIf: true, i: 0, size: 140 }, { t: 'you wanted to ride', i: 1, size: 56 }, { t: '100 km/h', i: 2, big: true, size: 120 }, { t: 'on a flat road?', i: 3, size: 56 }] },
+    hook: { line: 'hook', cy: 440, items: [{ whatIf: true, i: 0, size: 140 }, { t: 'you wanted to ride', i: 1, size: 56, gap: 12 }, { t: '100 km/h', i: 2, big: true, size: 120 }, { t: 'on a flat road?', i: 3, size: 56 }] },
     heads: {
       need: [{ at: 'need:0', label: 'ROAD BIKE · FLAT ROAD', big: '3,400 W', bigAt: 'need:2', sub: 'no human can hold that', subAt: 'need:3' }],
       record: [{ at: 'record:1', label: 'HUMAN-POWERED RECORD', big: '144 km/h', bigAt: 'record:2' }, { at: 'how:1', label: 'THE TRICK', big: 'a smooth shell', bigAt: 'how:2', sub: 'shaped like a teardrop', subAt: 'how:4' }],
