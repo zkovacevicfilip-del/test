@@ -30,9 +30,11 @@ const ride = function (t, a) {
   // šipka větru: vždy zprava doleva
   const wa = clamp((t - T('setup:0')) / 0.3) * (1 - ctaK) * (1 - turn);
   if (wa > 0) { const y = 610, ph = (t * 1.6) % 1, out = OUTDOOR(); ctx.save(); ctx.globalAlpha *= wa; if (out) { ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 10; } ctx.scale(-1, 1); for (let i = 0; i < 3; i++) { const x = 900 - ((ph + i / 3) % 1) * 760; ctx.globalAlpha = wa * Math.sin(Math.PI * ((ph + i / 3) % 1)); arrow(-x, y, 150, out ? '#ffffff' : C.pu, 1); } ctx.restore(); if (out) { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 12; } txt('WIND 20 km/h', 540, 555, { size: 30, w: 800, c: out ? '#ffffff' : C.muted, ls: 4, a: wa }); if (out) ctx.restore(); }
-  // obě stopky zůstanou vidět až do součtu: nahoře (dole jsou titulky), tam nad zpět
-  bigNum(t, tOut, T('total:0') - 0.15, clockAt(tOut, tOut + 1.6, 2730), 'OUT', 330, 330, { size: 88, c: C.ink, uc: C.pu });
-  bigNum(t, tBack + 0.3, T('total:0') - 0.15, clockAt(tBack + 0.3, tBack + 1.6, 1400), 'BACK', 330, 440, { size: 88, c: C.ink, uc: C.pu });
+  // obě stopky nahoře (dole jsou titulky), tam nad zpět; zmizí ještě před švihem kamery do součtu (tClk),
+  // jinak je švih posune mimo obraz. Zpětné stopky proto doběhnou na 23:20 rychleji.
+  const tClk = T('back$') - 0.1;
+  bigNum(t, tOut, tClk, clockAt(tOut, tOut + 1.6, 2730), 'OUT', 330, 330, { size: 88, c: C.ink, uc: C.pu });
+  bigNum(t, tBack + 0.1, tClk, clockAt(tBack + 0.1, tBack + 0.8, 1400), 'BACK', 330, 440, { size: 88, c: C.ink, uc: C.pu });
   ctaCards(t, { share: T('cta:0'), pick: T('cta:1'), tap: T('cta:2') + 0.5, follow: T('cta:4'), ftap: T('cta:5') });
 };
 module.exports = {

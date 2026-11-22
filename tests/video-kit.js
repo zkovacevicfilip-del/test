@@ -112,6 +112,10 @@ for (const ex of fs.readdirSync(path.join(KIT, "examples"))) check(path.join(KIT
     }
   }
 }
+// headwind: stopky OUT/BACK zmizí dřív, než švih kamery přejde do součtu (jinak je posune mimo obraz, render hlásil PŘETÉKÁ),
+// a zpětné stopky do té doby doběhnou na 23:20
+{ const hw = fs.readFileSync(path.join(KIT, "series/ride/03-headwind.js"), "utf8");
+  ok("headwind: stopky doběhnou a zmizí před švihem kamery do dalšího aktu", /const tClk = T\('back\$'\) - 0\.1;/.test(hw) && (hw.match(/bigNum\(t, [^,]+, tClk, clockAt\(/g) || []).length === 2 && /clockAt\(tBack \+ 0\.1, tBack \+ 0\.8, 1400\)/.test(hw) && !/T\('total:0'\) - 0\.15/.test(hw)); }
 ok("motor a nástroje sady jsou na místě", ["engine/engine.js", "engine/render.js", "engine/index.html", "engine/vendor/gsap.min.js", "engine/vendor/LICENSE-gsap.txt",
   "engine/vendor/three.module.js", "engine/vendor/three.core.js", "engine/vendor/LICENSE-three.txt", "engine/vendor/MarchingCubes.js", "engine/vendor/RoomEnvironment.js", "engine/rider3d.mjs", "engine/three-boot.mjs",
   "engine/models/cyclist.json", "engine/models/cyclist.bin", "engine/models/LICENSE-makehuman-CC0.md", "tools/makehuman-cyclist.py", "tools/kokoro-page.js", "series/ride.js", "tools/tts.py", "tools/align.py", "tools/timeline.py",
