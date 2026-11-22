@@ -1,33 +1,39 @@
 // Formát „ride“: jeden časovkář (3D, MakeHuman) sjíždí bez šlapání, nejdřív vzpřímeně na základním řídítku, pak skrčeně
-// v nástavcích. Náš hlas (Liamovi došly kredity). Autor 21. 11. 2026: ve videu jen jeden jezdec.
-const ride = function (t) {
+// v nástavcích. Hlas Liam. Autor 21. 11. 2026: ve videu jen jeden jezdec. Od 22. 11. 2026 texty jako v původní šabloně
+// (nadpisy nahoře, titulky dole), ujíždějící asfalt a na konci „pošli kamarádovi a sleduj“ (karty přes krajinu).
+const ride = function (t, a) {
   // pohled kamery, silnice se sklonem a jezdec (popis musí být uvnitř funkce, do scenes.js se přenáší jen ona)
   const VIEW = { cam: { pos: [300, 380, 1250], look: [0, 175, -60], fov: 40 }, road: { lanes: [-260], z0: -700, z1: 900 }, riders: { A: { kit: 'purple', z: 60 } } };
   const T = r => TR(r), tStop = T('hook:0') + 0.9, tDown = T('setup:0'), tCta = T('cta:0');
   // šlapání do konce první věty, pak kliky vodorovně a jen se jede
   const stop = Math.PI * Math.ceil(9.4 * tStop / Math.PI), crank = Math.min(t * 9.4, stop);
   const slope = -8 * tw(t, tDown, 1.2, E.io);   // náklon silnice v obraze (6 % = 3,4°, pro názornost víc)
-  const pose = 2 * tw(t, T('tuck:0'), 1.0, E.io), low = pose / 2, ctaK = tw(t, tCta + 0.6, 0.8, E.quint);
+  const pose = 2 * tw(t, T('tuck:0'), 1.0, E.io), low = pose / 2;
   const dist = t * 430 + 300 * tw(t, tDown, 3, E.io) * (t - tDown) + 160 * tw(t, T('tuck:0'), 2, E.io) * (t - T('tuck:0'));
-  const st = { dist, slope, a: 1 - ctaK * 0.62, riders: { A: { x: 0, pose, crank, wheel: dist / 71 } } };
-  scene3d(VIEW, st, () => air3d('A', t, 620 + 300 * tw(t, tDown, 2, E.io) + 140 * low, lerp(1, 0.35, low), pose, 0.95 * (1 - ctaK)));
+  const st = { dist, slope, riders: { A: { x: 0, pose, crank, wheel: dist / 71 } } };
+  scene3d(VIEW, st, () => air3d('A', t, 620 + 300 * tw(t, tDown, 2, E.io) + 140 * low, lerp(1, 0.35, low), pose, 0.95));
   const tag = (s, at, out, c, size) => tag3d('A', pose, s, t, at, out, { c, size });
-  tag('0 W', T('hook:0'), T('setup:0'), 'pu', 44);
   tag('CdA 0.36', T('he:0'), T('he:2') - 0.1); tag('52.5 km/h', T('he:2'), T('tuck:0') - 0.1, null, 46);
   tag('CdA 0.21', T('tuck:0'), T('tuck:2') - 0.1, 'pu'); tag('68.7 km/h', T('tuck:2'), tCta - 0.1, 'pu', 46);
-  statAt(t, T('setup:0'), T('he:0') - 0.15, 'DESCENT, NO PEDALING', '−6 % · 3 km', C.ink);
-  statAt(t, T('tuck:2'), T('result:0') - 0.15, 'SITTING UP → TUCKED', '52 → 69 km/h', C.ink);
-  statAt(t, T('result:0'), T('why:0') - 0.15, 'ON 3 KM, FOR FREE', '49 s faster');
-  statAt(t, T('why:0'), tCta - 0.15, 'SAME GRAVITY, DIFFERENT AIR', '0.36 vs 0.21', C.ink);
-  ctaEnd(t, T('cta:1'), T('cta:2'), 'Follow for more free speed');
+  classicUI(t, a, {
+    hook: { line: 'hook', cy: 450, items: [{ t: '0 watts', i: 0, big: true, size: 110, c: 'ink' }, { t: '6% downhill', i: 1, size: 64 }, { t: 'How much faster', i: 2, size: 56 }, { t: 'just by tucking?', i: 3, big: true, size: 84 }] },
+    heads: {
+      setup: [{ at: 'setup:0', label: 'DESCENT · NO PEDALING', big: '−6% · 3 km', c: 'ink' }],
+      stance: [{ at: 'he:0', title: 'Sitting up', c: 'ink' }, { at: 'tuck:0', label: 'TUCKED', big: '69 km/h', bigAt: 'tuck:2', sub: 'instead of 52 km/h', subAt: 'tuck:2' }],
+      result: [{ at: 'result:0', label: 'ON 3 KM, FOR FREE', big: '49 s', bigAt: 'result:3', sub: 'faster', subAt: 'result:3' }],
+      why: [{ at: 'why:0', title: 'Same gravity', big: 'different air', bigAt: 'why:2' }],
+      cta: [{ at: 'cta:0', title: 'Tuck only', big: 'on clear roads', bigAt: 'cta:1', out: 'cta:2-0.35' }]
+    }
+  });
+  ctaCards(t, { share: T('cta:2'), pick: T('cta:2') + 0.45, tap: T('cta:3') + 0.35, follow: T('cta:4'), ftap: T('cta:4') + 0.6 });
 };
 module.exports = {
   title: 'ride-descent',
   about: 'Jeden časovkář sjíždí 6 % na 3 km bez šlapání. Vzpřímeně na základním řídítku (CdA 0,36) 52,5 km/h, skrčeně v aero nástavcích (CdA 0,21) 68,7 km/h. Skrčeně je dole asi o 49 s dřív.',
-  style: { captions: 'top', look: 'golden' },
+  style: { look: 'golden', ui: 'classic', camera: 'whip', overlay: 'wipe' },
   acts: [['hook', 'hook'], ['setup', 'setup'], ['stance', 'he', 'tuck'], ['result', 'result'], ['why', 'why'], ['cta', 'cta']],
   lines: {
-    hook: { say: 'Zero watts, six percent downhill. How much faster is he, just by tucking?',
+    hook: { say: 'Zero watts, six percent downhill. How much faster is he, just by tucking?', captions: false,
       chunks: [['0 watts,', 'ZERO'], ['6% downhill.', 'SIX'], 'How much faster is he,', 'just by tucking?'] },
     setup: { say: 'A six percent descent, three kilometers long.',
       chunks: [['A 6% descent,', 'A|SIX'], ['3 km long.', 'THREE']] },
