@@ -172,7 +172,13 @@ window.renderFrame = f => {
   // kamera (nepovinné): CAMERA(t) vrací {x, y, s, r}; pohybuje scénou, titulky zůstávají v klidu
   ctx.save();
   if (typeof CAMERA === 'function') { const c = CAMERA(t) || {}; ctx.translate(540 + (c.x || 0), 905 + (c.y || 0)); ctx.rotate(c.r || 0); ctx.scale((c.s || 1) * (c.sx == null ? 1 : c.sx), (c.s || 1) * (c.sy == null ? 1 : c.sy)); ctx.translate(-540, -905); }
-  for (const a of TL.acts) if (t >= a.start && t < a.end) SCENES[a.id](t, a);
+  for (const a of TL.acts) if (t >= a.start && t < a.end) {
+    // swipe (kamera vrací swipe a x > 0): vlevo vedle nového aktu se ještě kreslí celý předchozí akt (o viditelnou šířku 900),
+    // aby odjíždějící obraz vypadal přesně jako před přechodem
+    const c = typeof CAMERA === 'function' ? CAMERA(t) || {} : {}, pa = TL.acts[TL.acts.indexOf(a) - 1];
+    if (c.swipe && c.x > 0 && pa) { ctx.save(); ctx.translate(-900, 0); SCENES[pa.id](t, pa); ctx.restore(); }
+    SCENES[a.id](t, a);
+  }
   ctx.restore();
   // titulky: vlastní podoba (nepovinné), jinak dole na tmavém podkladu
   if (typeof CAPTIONS === 'function') CAPTIONS(t); else captions(t);

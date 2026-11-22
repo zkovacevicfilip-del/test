@@ -40,10 +40,10 @@ function scene3d(cfg, state, between) {
   R3.road.update(state.dist || 0); if (R3.env) R3.env.update(state.dist || 0); st.world.rotation.z = (state.slope || 0) * Math.PI / 180;
   for (const id in R3.riders) { const m = R3.riders[id], s = state.riders[id] || {}; m.root.visible = s.hide !== true; m.root.position.x = s.x || 0; m.root.rotation.y = s.dir < 0 ? Math.PI : 0; m.update(s); }
   // 3D obraz 1:1 na obrazovku (scény se kreslí ve zvětšení ZOOM kolem 540, 905, proto zpětný přepočet)
-  // swipe (cm.x > 0): vlevo vedle obrazu ještě odjíždějící krajina; cm.blur: rozmazání pohybem (obraz víckrát s posunem)
+  // cm.blur (swipe s rozmazáním): rozmazání pohybem, obraz víckrát s posunem
   const X = 540 - 540 / ZOOM, Y = 905 - 905 / ZOOM, Wv = 1080 / ZOOM, Hv = 1920 / ZOOM, b = cm.blur || 0;
   const one = x => { if (b < 1) { ctx.drawImage(st.canvas, x, Y, Wv, Hv); return; } const g = ctx.globalAlpha; for (let k = 0; k < 7; k++) { ctx.globalAlpha = g / (k + 1); ctx.drawImage(st.canvas, x + (k / 6 - 0.5) * b, Y, Wv, Hv); } ctx.globalAlpha = g; };
-  const put = () => { one(X); if (cm.x > 0) one(X - Wv); };
+  const put = () => one(X);
   // dva průchody: silnice (se stíny jezdců), pak proudnice (between), pak jezdci, aby proudnice byly nad silnicí a za jezdci
   st.world.updateMatrixWorld(true); st.render(2); put(); if (between) between(); st.render(0); put();
   // ztlumení (state.a < 1): tmavá vrstva přes celou scénu, jezdci neprůhlední

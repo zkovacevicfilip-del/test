@@ -350,8 +350,8 @@ function makeBackground(st) {
 
 // kamera z GSAP: pozastavená časová osa nad obyčejným objektem {x, y, s, r}, pro snímek se posune na čas t
 function makeCamera(st, V) {
-  let tl = null; const cam = { x: 0, y: 0, s: 1, r: 0, sx: 1, sy: 1, o: 0, p: 1, blur: 0 };
   const swipe = st.camera === 'swipe' || st.camera === 'swipe-blur';
+  let tl = null; const cam = { x: 0, y: 0, s: 1, r: 0, sx: 1, sy: 1, o: 0, p: 1, blur: 0, swipe };
   const build = () => {
     tl = gsap.timeline({ paused: true });
     TL.acts.forEach((a, i) => {
@@ -390,7 +390,7 @@ function makeCamera(st, V) {
   };
   return function (t) {
     if (!tl) build(); tl.seek(t, false);
-    // swipe: posun o celou viditelnou šířku scény (900), odjíždějící krajinu kreslí scene3d o šířku vlevo; rozmazání nejsilnější uprostřed
+    // swipe: posun o celou viditelnou šířku scény (900), předchozí akt kreslí motor o šířku vlevo; rozmazání nejsilnější uprostřed
     if (swipe) { const p = cam.p; cam.x = p > 0 && p < 1 ? 900 * (1 - p) : 0; cam.blur = st.camera === 'swipe-blur' && p > 0 && p < 1 ? 70 * 4 * p * (1 - p) : 0; }
     window.CAM = cam; return cam;
   };
