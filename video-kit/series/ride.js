@@ -42,8 +42,10 @@ function scene3d(cfg, state, between) {
   // 3D obraz 1:1 na obrazovku (scény se kreslí ve zvětšení ZOOM kolem 540, 905, proto zpětný přepočet)
   // cm.blur (swipe s rozmazáním): rozmazání pohybem, obraz víckrát s posunem
   const X = 540 - 540 / ZOOM, Y = 905 - 905 / ZOOM, Wv = 1080 / ZOOM, Hv = 1920 / ZOOM, b = cm.blur || 0;
+  // style.grade (sytější barvy, autor 22. 11. 2026): { sat, con } jako filtr jen na 3D obraz, texty zůstanou beze změny
+  const gr = typeof STYLE !== 'undefined' && STYLE.grade;
   const one = x => { if (b < 1) { ctx.drawImage(st.canvas, x, Y, Wv, Hv); return; } const g = ctx.globalAlpha; for (let k = 0; k < 7; k++) { ctx.globalAlpha = g / (k + 1); ctx.drawImage(st.canvas, x + (k / 6 - 0.5) * b, Y, Wv, Hv); } ctx.globalAlpha = g; };
-  const put = () => one(X);
+  const put = () => { if (gr) ctx.filter = `saturate(${gr.sat || 1}) contrast(${gr.con || 1})`; one(X); ctx.filter = 'none'; };
   // dva průchody: silnice (se stíny jezdců), pak proudnice (between), pak jezdci, aby proudnice byly nad silnicí a za jezdci
   st.world.updateMatrixWorld(true); st.render(2); put(); if (between) between(); st.render(0); put();
   // ztlumení (state.a < 1): tmavá vrstva přes celou scénu, jezdci neprůhlední
@@ -60,6 +62,7 @@ function scale3d(id) { const a = at3d(id, [0, 0]), b = at3d(id, [100, 0]); retur
 // štítek nad helmou 3D jezdce
 // side 'left': štítek vlevo nad hlavou se šikmou čárkou (když přímo nad hlavou překáží jiný jezdec)
 function tag3d(id, pose, text, t, at, out, o) {
+  if (typeof STYLE !== 'undefined' && STYLE.lean >= 2) return;   // méně textu: bez štítků u jezdce
   o = o || {}; const top = R3.riders[id].top(), p = at3d(id, [R3.riders[id].head().x, top + 14]);
   // u pravého okraje štítek posunout dovnitř obrazu (viditelná část scény je x 90 až 990)
   const pw = width(text, { size: o.size || 36, w: 800, f: F.I, ls: 0 }) + 52, px = Math.min(p[0], 990 - pw / 2 - 14);
@@ -207,7 +210,10 @@ function classicUI(t, a, o) {
   if (o.hook && a && a.id === 'hook') { const ex = tw(t, a.end - 0.36, 0.36); ctx.save(); ctx.globalAlpha *= 1 - ex; ctx.translate(0, -70 * ex); stack(t, o.hook, 0, null); ctx.restore(); }
   // nadpisy po aktech jako v šabloně (o.heads = { idAktu: [...] }): naskočí a zmizí s aktem (actIO), takže při švihu
   // kamery do dalšího aktu už nejsou vidět (oprava 22. 11. 2026: nadpis se při švihu usekl o okraj obrazu)
-  const hs = o.heads && a && o.heads[a.id];
+  // style.lean (méně textu, autor 22. 11. 2026): 1 = nahoře bez malých popisků a podtitulků (zůstane nadpis a velké číslo),
+  // 2 = navíc bez štítků u jezdce (tag3d), 3 = navíc bez titulků dole
+  const lean = typeof STYLE !== 'undefined' && STYLE.lean || 0, hs0 = o.heads && a && o.heads[a.id];
+  const hs = hs0 && lean ? hs0.map(h => Object.assign({}, h, { label: undefined, sub: undefined })) : hs0;
   if (hs) { const io = actIO(t, a); ctx.save(); ctx.globalAlpha *= io.a; heads(t, hs, io.dy); ctx.restore(); }
   ctx.restore();
 }

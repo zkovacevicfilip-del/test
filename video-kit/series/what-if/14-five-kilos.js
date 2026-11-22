@@ -1,5 +1,5 @@
 // Realistický formát „ride“ s texty původní šablony What if (autor 22. 11. 2026): jeden jezdec v krajině za zlaté hodinky,
-// ujíždějící asfalt, hlas Liam, nápis whatIF, nadpisy nahoře, titulky dole, jemný švih kamery (bez fialového stíracího pruhu).
+// ujíždějící asfalt, hlas Liam, nápis whatIF, nadpisy nahoře, titulky dole, plynulý průlet 3D kamery mezi akty, sytější barvy krajiny a nahoře bez malých popisků.
 // Na konci „pošli kamarádovi a sleduj“ (karty přes krajinu, karta profilu wattIF).
 const ride = function (t, a) {
   // pohled kamery, silnice a jezdec (popis musí být uvnitř funkce, do scenes.js se přenáší jen ona)
@@ -29,7 +29,7 @@ const ride = function (t, a) {
 module.exports = {
   title: 'what-if-five-kilos',
   about: 'O 5 kg méně: na rovině 12 s na 40 km, na 8% stoupání 2:40 na 10 km. Váha rozhoduje jen do kopce.',
-  style: { look: 'golden', ui: 'classic', camera: 'whip' },
+  style: { look: 'golden', ui: 'classic', camera: 'orbit', lean: 1, grade: { sat: 1.5, con: 1.12 } },
   acts: [['hook', 'hook'], ['compare', 'flat', 'climb', 'same'], ['why', 'why'], ['tip', 'tip'], ['cta', 'cta']],
   lines: {
     hook: { say: 'What if you lost five kilos? How much faster would you really be?', captions: false,

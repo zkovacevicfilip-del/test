@@ -1,5 +1,5 @@
 // Realistický formát „ride“ s texty původní šablony What if (autor 22. 11. 2026): jeden jezdec v krajině za zlaté hodinky,
-// ujíždějící asfalt, hlas Liam, nápis whatIF, nadpisy nahoře, titulky dole, jemný švih kamery (bez fialového stíracího pruhu).
+// ujíždějící asfalt, hlas Liam, nápis whatIF, nadpisy nahoře, titulky dole, plynulý průlet 3D kamery mezi akty, sytější barvy krajiny a nahoře bez malých popisků.
 // Na konci „pošli kamarádovi a sleduj“ (karty přes krajinu, karta profilu wattIF).
 const ride = function (t, a) {
   // pohled kamery, silnice a jezdec (popis musí být uvnitř funkce, do scenes.js se přenáší jen ona)
@@ -26,7 +26,7 @@ const ride = function (t, a) {
 module.exports = {
   title: 'what-if-sprint-position',
   about: 'Jeden sprinter se stejnými 1000 W: vzpřímeně a široko 58,9 km/h, nízko nad řídítky 61,9 km/h. Na posledních 200 metrech je to asi 10 metrů náskoku.',
-  style: { look: 'golden', ui: 'classic', camera: 'whip' },
+  style: { look: 'golden', ui: 'classic', camera: 'orbit', lean: 1, grade: { sat: 1.5, con: 1.12 } },
   acts: [['hook', 'hook'], ['race', 'two', 'high', 'low', 'gap'], ['tip', 'why', 'tip'], ['cta', 'cta']],
   lines: {
     hook: { say: 'What if the sprint is decided by your elbows, not your legs?', captions: false,

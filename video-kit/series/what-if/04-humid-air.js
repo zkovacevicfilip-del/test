@@ -1,5 +1,5 @@
 // Realistický formát „ride“ s texty původní šablony What if (autor 22. 11. 2026): jeden jezdec v krajině za zlaté hodinky,
-// ujíždějící asfalt, hlas Liam, nápis whatIF, nadpisy nahoře, titulky dole, jemný švih kamery (bez fialového stíracího pruhu).
+// ujíždějící asfalt, hlas Liam, nápis whatIF, nadpisy nahoře, titulky dole, plynulý průlet 3D kamery mezi akty, sytější barvy krajiny a nahoře bez malých popisků.
 // Na konci „pošli kamarádovi a sleduj“ (karty přes krajinu, karta profilu wattIF).
 const ride = function (t, a) {
   // pohled kamery, silnice a jezdec (popis musí být uvnitř funkce, do scenes.js se přenáší jen ona)
@@ -26,7 +26,7 @@ const ride = function (t, a) {
 module.exports = {
   title: 'what-if-humid-air',
   about: 'Vlhký vzduch je řidší než suchý (vodní pára je lehčí), i když se v něm jede hůř kvůli chlazení těla.',
-  style: { look: 'golden', ui: 'classic', camera: 'whip' },
+  style: { look: 'golden', ui: 'classic', camera: 'orbit', lean: 1, grade: { sat: 1.5, con: 1.12 } },
   acts: [['hook', 'hook'], ['vapor', 'true', 'dens'], ['race', 'race'], ['feel', 'feel', 'tip'], ['cta', 'cta']],
   lines: {
     hook: { say: "What if humid air isn't heavier, like it feels, but lighter?", captions: false,

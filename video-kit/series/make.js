@@ -34,7 +34,7 @@ function build(spec) {
     'const STYLE = ' + ser(spec.style || {}) + ';\n' +
     'const SCENES = {}, AMBIENT = {};\nfor (const id in V) { SCENES[id] = makeScene(V[id]); AMBIENT[id] = V[id].amb == null ? 0.2 : V[id].amb; }\nconst FLOWS = makeFlows(V);\n' +
     'const CAMERA = STYLE.camera ? makeCamera(STYLE, V) : undefined;\nconst BACKGROUND = STYLE.bg ? makeBackground(STYLE) : undefined;\nconst OVERLAY = STYLE.overlay ? makeOverlay(STYLE) : undefined;\n' +
-    'const CAPTIONS = STYLE.captions === \'top\' ? topCaptions : undefined;\n';
+    'const CAPTIONS = STYLE.lean >= 3 ? () => {} : STYLE.captions === \'top\' ? topCaptions : undefined;\n';
   return { script, scenes, facts: fl };
 }
 module.exports = { build, facts, VOICE, OURS, TIMING };

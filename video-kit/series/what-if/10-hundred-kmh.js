@@ -1,5 +1,5 @@
 // Realistický formát „ride“ s texty původní šablony What if (autor 22. 11. 2026): jeden jezdec v krajině za zlaté hodinky,
-// ujíždějící asfalt, hlas Liam, nápis whatIF, nadpisy nahoře, titulky dole, jemný švih kamery (bez fialového stíracího pruhu).
+// ujíždějící asfalt, hlas Liam, nápis whatIF, nadpisy nahoře, titulky dole, plynulý průlet 3D kamery mezi akty, sytější barvy krajiny a nahoře bez malých popisků.
 // Na konci „pošli kamarádovi a sleduj“ (karty přes krajinu, karta profilu wattIF).
 const ride = function (t, a) {
   // pohled kamery, silnice a jezdec (popis musí být uvnitř funkce, do scenes.js se přenáší jen ona)
@@ -25,7 +25,7 @@ const ride = function (t, a) {
 module.exports = {
   title: 'what-if-hundred-kmh',
   about: 'Na 100 km/h po rovině by silniční kolo potřebovalo asi 3 400 W. Rekord vozidla na lidský pohon je přesto 144 km/h, díky kapotáži.',
-  style: { look: 'golden', ui: 'classic', camera: 'whip' },
+  style: { look: 'golden', ui: 'classic', camera: 'orbit', lean: 1, grade: { sat: 1.5, con: 1.12 } },
   acts: [['hook', 'hook'], ['need', 'need'], ['record', 'record', 'how'], ['tip', 'cube', 'tip'], ['cta', 'cta']],
   lines: {
     hook: { say: 'What if you wanted to ride one hundred kilometers per hour on a flat road?', captions: false,

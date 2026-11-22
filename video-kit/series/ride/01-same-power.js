@@ -28,7 +28,7 @@ const ride = function (t, a) {
 module.exports = {
   title: 'ride-same-power',
   about: 'Jeden časovkář se stejnými 250 W na časovkářském kole: vzpřímeně s rukama na základním řídítku (CdA 0,30) jede 37,8 km/h, v aero nástavcích s lokty na opěrkách (CdA 0,23) 41,1 km/h. Vzpřímeně by na stejnou rychlost potřeboval o 64 W (26 %) víc.',
-  style: { look: 'golden', ui: 'classic', camera: 'whip' },
+  style: { look: 'golden', ui: 'classic', camera: 'orbit', lean: 1, grade: { sat: 1.5, con: 1.12 } },
   acts: [['hook', 'hook'], ['stance', 'he', 'drop'], ['race', 'speeds', 'hour'], ['cost', 'cost'], ['cta', 'cta']],
   lines: {
     hook: { say: 'Same rider, same bike, same two hundred fifty watts. So how does he suddenly go faster?', captions: false,
