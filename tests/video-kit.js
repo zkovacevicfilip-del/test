@@ -119,6 +119,14 @@ for (const ex of fs.readdirSync(path.join(KIT, "examples"))) check(path.join(KIT
 // a zpětné stopky do té doby doběhnou na 23:20
 { const hw = fs.readFileSync(path.join(KIT, "series/ride/03-headwind.js"), "utf8");
   ok("headwind: stopky doběhnou a zmizí před švihem kamery do dalšího aktu", /const tClk = T\('back\$'\) - 0\.1;/.test(hw) && (hw.match(/bigNum\(t, [^,]+, tClk, clockAt\(/g) || []).length === 2 && /clockAt\(tBack \+ 0\.1, tBack \+ 0\.8, 1400\)/.test(hw) && !/T\('total:0'\) - 0\.15/.test(hw)); }
+// šablona pro nový chat (SABLONA.md, oddíl 15): styl a konec v receptu musí být stejné jako v hotových realistických videích
+{ const sab = fs.readFileSync(path.join(KIT, "SABLONA.md"), "utf8"), r15 = sab.slice(sab.indexOf("## 15. Realistický styl What if"));
+  const styl = "style: { look: 'golden', ui: 'classic', camera: 'orbit', lean: 1, grade: { sat: 1.5, con: 1.12 } }";
+  const cta = "ctaCards(t, { share: T('cta:0'), pick: T('cta:1'), tap: T('cta:2') + 0.5, follow: T('cta:4'), ftap: T('cta:5') });";
+  const vzory = ["series/what-if/10-hundred-kmh.js", "series/what-if/14-five-kilos.js", "series/what-if/13-aero-on-climbs.js"];
+  const classic = ["what-if", "ride"].flatMap(d => fs.readdirSync(path.join(KIT, "series", d)).map(f => path.join(KIT, "series", d, f))).filter(f => /ui: 'classic'/.test(fs.readFileSync(f, "utf8")));
+  ok("šablona, oddíl 15: recept má stejný styl a konec jako hotová videa a vzory existují", r15.length > 2000 && r15.includes(styl) && r15.includes(cta) && /oddíl 15/.test(sab.slice(0, sab.indexOf("## 1."))) &&
+    vzory.every(f => fs.existsSync(path.join(KIT, f)) && fs.readFileSync(path.join(KIT, f), "utf8").includes(cta)) && classic.length === 9 && classic.every(f => fs.readFileSync(f, "utf8").includes(styl)), classic.length); }
 ok("motor a nástroje sady jsou na místě", ["engine/engine.js", "engine/render.js", "engine/index.html", "engine/vendor/gsap.min.js", "engine/vendor/LICENSE-gsap.txt",
   "engine/vendor/three.module.js", "engine/vendor/three.core.js", "engine/vendor/LICENSE-three.txt", "engine/vendor/MarchingCubes.js", "engine/vendor/RoomEnvironment.js", "engine/rider3d.mjs", "engine/three-boot.mjs",
   "engine/models/cyclist.json", "engine/models/cyclist.bin", "engine/models/LICENSE-makehuman-CC0.md", "tools/makehuman-cyclist.py", "tools/kokoro-page.js", "series/ride.js", "tools/tts.py", "tools/align.py", "tools/timeline.py",

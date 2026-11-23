@@ -17,6 +17,16 @@ Téma: <o čem má video být>
 Nic dalšího není potřeba. Model má před renderem ukázat scénář a náhledové archy.
 Pro krátké video (asi 30 s) připiš „krátká verze“ a platí oddíl 11.
 
+**Realistický styl What if (jezdec v krajině, stav 23. 11. 2026)** – vlož tohle:
+
+```
+Přečti video-kit/SABLONA.md, oddíl 15, a přesně podle něj vyrob nové video
+v realistickém stylu What if. Vzor: video-kit/series/what-if/10-hundred-kmh.js
+Téma: <o čem má video být>
+Úvodní věta (hook): <„What if …?“, nebo „navrhni 3 a vyber nejlepší“>
+Závěr: Send this to the friend who <zvyk k tématu>. And follow for more free speed.
+```
+
 ## 1. Co je pevně dané (neměnit, pokud o to autor výslovně neřekne)
 
 | Věc | Hodnota |
@@ -400,3 +410,82 @@ Podle dvou vzorových reels (animovaní jezdci na silnici, fialové proudnice, �
 - **Ujíždějící asfalt** (autor 22. 11. 2026): textura asfaltu (kamínky, skvrny, záplaty, spáry) i trávy se posouvá o ujetou vzdálenost `dist`, takže silnice pod jezdcem ubíhá. Videa vyrenderovaná před touto změnou mají asfalt stojící.
 - **Konec videa „pošli kamarádovi a sleduj“** (autor 22. 11. 2026, varianta 1 „karty přes krajinu“ podle vzorového reelu, zatím `what-if/13-aero-on-climbs`): poslední akt `['cta', 'cta']` s větou „Send this to the friend who … And follow for more free speed.“ (do délky obsahu se nepočítá, nejvýš 20 slov) a ve funkci scény `ctaCards(t, { share, pick, tap, follow, ftap })`. Jezdec jede dál, přes krajinu vyskočí panel sdílení (kontakty, vybere se Alex, klepnutí prstem na Send → Sent) a pak karta profilu wattIF (klepnutí na Follow → Following). Kód je v `series/ride.js` v oddílu KONEC VIDEA.
 - **Hlas:** od 22. 11. 2026 znovu Liam (nový klíč ElevenLabs uložený v prostředí přes formulář). Klíč nemá oprávnění číst stav účtu (`/v1/user/subscription` vrací 401 missing_permissions), převod textu na řeč funguje.
+
+## 15. Realistický styl What if: přesný recept (stav 23. 11. 2026)
+
+Takhle vypadá posledních 9 videí: what-if `hundred-kmh`, `humid-air`, `five-kilos`, `aero-on-climbs`, `sprint-position`,
+`weather-pressure` a ride `same-power`, `descent`, `headwind`. Nové video v tomhle stylu = nový popis ve `series/what-if/`
+opsaný ze vzoru. Vzory: `series/what-if/10-hundred-kmh.js` (rovina, nejjednodušší), `series/what-if/14-five-kilos.js`
+(kopec), `series/what-if/13-aero-on-climbs.js` (vyšlo na Instagramu). Nic z motoru se pro nové video nemění.
+
+### Pevně dané (neměnit, pokud autor neřekne)
+
+| Věc | Hodnota |
+|---|---|
+| Styl | `style: { look: 'golden', ui: 'classic', camera: 'orbit', lean: 1, grade: { sat: 1.5, con: 1.12 } }` přesně takhle |
+| Scéna | jeden jezdec `kit: 'purple'`, `VIEW` beze změny ze vzoru, všechny akty `{ type: 'free', amb: 0.12, draw: ride }` |
+| Délka | 28 až 33 s, 5 aktů: `hook`, 2 až 3 akty obsahu, poslední `['cta', 'cta']` |
+| Úvod | věta „What if …?“ s `captions: false`; `classicUI` hook `cy: 440`: `whatIf` 140, řádky 56, jedno velké slovo nebo číslo (`big`) 104 až 120, u řádku nad ním `gap: 12` až `18` |
+| Nadpisy | `heads` po aktech. `lean: 1` skryje `label` a `sub`, takže smysl musí nést `title` + `big`, nebo samotné `big` |
+| Štítky | `tag3d` u helmy nejvýš 1 až 2 za video, nikdy v úvodu, zmizí před koncem aktu |
+| Přechody a barvy | zařídí styl sám: průlet 3D kamery kolem jezdce mezi akty (1,4 s), sytější krajina, texty v paletě |
+| Závěr | „Send this to the friend who <zvyk k tématu>. And follow for more free speed.“, 6 titulků: `'Send this'`, `'to the friend'`, 2 kousky se zvykem, `['And follow', 'AND']`, `'for more free speed.'`; kreslí `ctaCards` (kód níže) |
+| Hlas | Liam (ElevenLabs, klíč dodá proxy prostředí). Věta beze změny se znovu neplatí, nový závěr stojí asi 80 až 90 znaků |
+
+### Kostra popisu (opiš do `series/what-if/<číslo>-<název>.js` a změň texty a časy)
+
+```js
+const ride = function (t, a) {
+  const VIEW = { cam: { pos: [300, 380, 1250], look: [0, 175, -60], fov: 40 }, road: { lanes: [-260], z0: -700, z1: 900 }, riders: { A: { kit: 'purple', z: 60 } } };
+  const T = r => TR(r);
+  const pose = tw(t, T('tip:2'), 1.0, E.io), aero = clamp(pose);   // 0 vzpřímeně → 1 aero nástavce
+  const dist = t * lerp(530, 560, aero), st = { dist, riders: { A: { x: 0, pose, crank: t * 9.4, wheel: dist / 71 } } };
+  scene3d(VIEW, st, () => air3d('A', t, lerp(760, 800, aero), lerp(1, 0.35, aero), pose, 0.95));
+  const tag = (s, at, out, c, size) => tag3d('A', pose, s, t, at, out, { c, size });
+  tag('40 km/h · 250 W', T('one:0'), T('one:2') - 0.1, null, 46);
+  classicUI(t, a, {
+    hook: { line: 'hook', cy: 440, items: [{ whatIf: true, i: 0, size: 140 }, { t: '<řádek>', i: 1, size: 56, gap: 12 }, { t: '<VELKÉ>', i: 2, big: true, size: 120 }, { t: '<řádek>', i: 3, size: 56 }] },
+    heads: {
+      one: [{ at: 'one:0', big: '<číslo>', bigAt: 'one:2' }],
+      tip: [{ at: 'tip:0', title: '<nadpis>', big: '<pointa>', bigAt: 'tip:1' }]
+    }
+  });
+  ctaCards(t, { share: T('cta:0'), pick: T('cta:1'), tap: T('cta:2') + 0.5, follow: T('cta:4'), ftap: T('cta:5') });
+};
+module.exports = {
+  title: 'what-if-<název>',
+  about: '<česky, o čem video je a hlavní čísla>',
+  style: { look: 'golden', ui: 'classic', camera: 'orbit', lean: 1, grade: { sat: 1.5, con: 1.12 } },
+  acts: [['hook', 'hook'], ['one', 'one'], ['tip', 'tip'], ['cta', 'cta']],
+  lines: {
+    hook: { say: 'What if …?', captions: false, chunks: ['What if', '…', ['…', 'KOTVA'], '…'] },
+    one: { say: '… (čísla slovy)', chunks: ['…', ['… 250 W …', 'KOTVA'], '…'] },
+    tip: { say: '…', chunks: ['…'] },
+    cta: { say: 'Send this to the friend who … And follow for more free speed.',
+      chunks: ['Send this', 'to the friend', '…', '…', ['And follow', 'AND'], 'for more free speed.'] }
+  },
+  scenes: { hook: { type: 'free', amb: 0.12, draw: ride }, one: { type: 'free', amb: 0.12, draw: ride }, tip: { type: 'free', amb: 0.12, draw: ride }, cta: { type: 'free', amb: 0.12, draw: ride } },
+  facts: P => [['<popis čísla>', P.kmh(250), 40, 0.5]]
+};
+```
+
+Kopec: `st.slope` (stupně, 8 % = 7) a ujetá dráha jako součet rychlostí, ruce `grip: 'base'` (opiš ze `14-five-kilos.js`).
+
+### Postup (každý krok ověřit, než se jde dál)
+
+1. Scénář (věty `say` anglicky, čísla slovy, `chunks` s kotvami) ukázat autorovi.
+2. `node tests/video-kit.js` musí projít.
+3. `bash video-kit/series/run.sh video-kit/series/what-if/<soubor>.js voice` (namluví jen nové věty).
+4. `… preview` a prohlédnout `video-kit/work/kits/<title>/work/stills/sheet-*.jpg`; v logu nesmí být „PŘETÉKÁ“.
+5. `… render` spustit na pozadí s časovým limitem 2 h (video trvá asi 30 min), vždy jen jedno video. Hotové video
+   z `video-kit/work/out/<title>.mp4` hned poslat autorovi, pak spustit další.
+6. Z videa vytáhnout 8 snímků (úvod, nadpisy, karty na konci) a prohlédnout, `npm test`, nahrát na `main`.
+
+### Na co pozor (opravovalo se ručně)
+
+- Stopky, barometr a jiné prvky mimo nadpisy musí zmizet dřív, než skončí akt.
+- Písmo Unbounded nemá „→“, Inter nemá „✓“ (fajfky se kreslí čarou).
+- `title` + `big` + `sub` v jednom nadpisu se překrývají.
+- Číslo na obrazovce musí sedět s hlasem (v humid-air je nahoře −1.6 %, hlas říká 1.5 %).
+- Skutečné fotky, videa ani hotová MP4 nepatří do repozitáře; `video-kit/work/` se necommituje.
+
