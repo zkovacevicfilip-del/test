@@ -270,8 +270,9 @@ function popFX(t, at, p, d) {
   for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 + 0.3, r0 = d * (0.7 + 0.9 * e), r1 = r0 + d * 0.35 * (1 - u); ctx.beginPath(); ctx.moveTo(p[0] + Math.cos(a) * r0, p[1] + Math.sin(a) * r0); ctx.lineTo(p[0] + Math.cos(a) * r1, p[1] + Math.sin(a) * r1); ctx.stroke(); }
   ctx.restore();
 }
-// výměna helmy v čase at: silniční se rychle zmenší, časovkářská naskočí s překmitem → [silniční, časovkářská] pro stav jezdce hs
-const helmSwap = (t, at) => { const u = clamp((t - at) / 0.25); return [1 - u * u, tw(t, at + 0.18, 0.55, E.back)]; };
+// výměna helmy v čase at → [silniční, časovkářská] pro stav jezdce hs. Helmy se prohodí v jednom snímku (autor 24. 11. 2026:
+// „nenechávej mu holou hlavu“), časovkářská jen „poskočí“: naskočí o 18 % větší a rychle se usadí, nikdy není menší než hlava
+const helmSwap = (t, at) => { if (t < at) return [1, 0]; const u = clamp((t - at) / 0.35); return [0, 1 + 0.18 * (1 - u) * (1 - u)]; };
 
 // ---------- KONEC VIDEA: pošli kamarádovi + sleduj ----------
 // Varianta 1 „karty přes krajinu“ (autor 22. 11. 2026 podle vzorového reelu): jezdec jede dál, přes krajinu vyskočí panel
