@@ -41,7 +41,17 @@ const server = http.createServer((req, res) => {
       // asfalt a tráva ujíždějí s jezdcem (posun textury o ujetou vzdálenost)
       const ro = K.makeRoad({ outdoor: true }), env = K.makeOutdoor({}, K.LOOKS.golden); ro.update(0); env.update(0);
       const a0 = ro.asphalt.material.map.offset.x, g0 = env.grass.offset.x; ro.update(450); env.update(400); const a1 = ro.asphalt.material.map.offset.x, g1 = env.grass.offset.x;
-      return { a0, a1, g0, g1, n0, top0, top2, head0: [head0.x, head0.y], roadOnly, palms, w0, w1, roadLayers, bones: skinned ? skinned.skeleton.bones.length : 0, verts: H.meta.vertices, kits: Object.keys(K.KITS) };
+      // video „3 tipy“ (24. 11. 2026): silniční helma → časovkářská, volný dres → kombinéza, ramena k sobě zmenší plochu zepředu
+      const m2 = K.makeRider("purple", { road: "#F2F2EF", sleeve: 0.66, pre: { suit: "#EDECE8", suit2: "#16171A", sleeve: 0.44, loose: 1 } });
+      m.update({ pose: 1 }); const def = { tt: m.helmets.tt.visible, road: m.helmets.road.visible, swap: m.cloth.uSwap.value, loose: m.cloth.uLoose.value };
+      m2.update({ pose: 1, hs: [1, 0] }); const h1 = { road: m2.helmets.road.visible && m2.helmets.road.children.length === 2, tt: m2.helmets.tt.visible };
+      m2.update({ pose: 1, hs: [0, 1], swap: 0.5 }); const h2 = { road: m2.helmets.road.visible, tt: m2.helmets.tt.visible, swap: m2.cloth.uSwap.value };
+      const sw0 = K.makeRider("purple", { pre: { suit: "#EDECE8" } }).cloth.uSwap.value;
+      // plocha zepředu: kamera před jezdcem, počet pixelů jezdce v poloze 1 a s hlavou dolů a rameny k sobě
+      st.cam.position.set(1200, 175, 0); st.cam.lookAt(0, 175, 0);
+      const front = o => { m.update(o); st.world.updateMatrixWorld(true); st.render(0); return scan(); };
+      const fa0 = front({ pose: 1, shrug: 0 }), fa1 = front({ pose: 1.7, shrug: 1 });
+      return { def, h1, h2, sw0, fa0, fa1, a0, a1, g0, g1, n0, top0, top2, head0: [head0.x, head0.y], roadOnly, palms, w0, w1, roadLayers, bones: skinned ? skinned.skeleton.bones.length : 0, verts: H.meta.vertices, kits: Object.keys(K.KITS) };
     });
     ok("model člověka (MakeHuman) se načte: 163 kostí, přes 13 000 bodů", r.bones === 163 && r.verts > 13000, r.bones + " / " + r.verts);
     ok("jezdec se vykreslí bez chyb (WebGL bez grafické karty)", errs.length === 0 && r.n0 > 3000, errs.join("; ") + " / bodů " + r.n0);
@@ -56,6 +66,10 @@ const server = http.createServer((req, res) => {
     // oprava 22. 11. 2026 (autor): asfalt pod jezdcem se nehýbal
     ok("asfalt ujíždí podle vzdálenosti (450 jednotek = půl dlaždice textury)", Math.abs(r.a1 - r.a0 - 0.5) < 1e-6, r.a0 + " → " + r.a1);
     ok("tráva u silnice ujíždí taky", Math.abs(r.g1 - r.g0 - 0.75) < 1e-6, r.g0 + " → " + r.g1);
+    ok("bez nastavení má jezdec jen časovkářskou helmu a kombinézu jako dřív", r.def.tt && !r.def.road && r.def.swap === 1 && r.def.loose === 0, JSON.stringify(r.def));
+    ok("silniční helma s brýlemi se ukáže a schová podle hs, časovkářská naopak", r.h1.road && !r.h1.tt && !r.h2.road && r.h2.tt, JSON.stringify([r.h1, r.h2]));
+    ok("oblečení před (volný dres) začíná na přechodu 0 a jde nastavit (swap 0,5)", r.sw0 === 0 && r.h2.swap === 0.5, r.sw0 + " / " + r.h2.swap);
+    ok("hlava dolů a ramena k sobě zmenší plochu jezdce zepředu aspoň o 5 %", r.fa1 < r.fa0 * 0.95 && r.fa1 > r.fa0 * 0.5, r.fa0 + " → " + r.fa1);
     ok("dresy: bílý, fialový, černý", ["white", "purple", "black"].every(k => r.kits.includes(k)), r.kits.join(", "));
   } finally { await br.close(); server.close(); }
   if (fails) { console.log(`\n${fails} test(ů) selhalo`); process.exit(1); } else console.log("\n3D jezdci: vše v pořádku");

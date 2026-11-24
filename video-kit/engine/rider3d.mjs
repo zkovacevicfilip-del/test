@@ -103,6 +103,42 @@ function helmetMesh(main, stripe) {
   mc.update(); mc.scale.set((box[3] - box[0]) / 2, (box[4] - box[1]) / 2, (box[5] - box[2]) / 2); mc.position.set((box[0] + box[3]) / 2, (box[1] + box[4]) / 2, (box[2] + box[5]) / 2);
   mc.castShadow = true; return mc;
 }
+// silniční helma (video „3 tipy“): kulatější a kratší skořepina bez hledí, spodní hrana vpředu nad obočím a vzadu nízko,
+// pět podélných větracích drážek nahoře (tmavé), tmavý spodní lem. Pole se počítá jednou.
+const sstep = (a, b, v) => { const k = clamp((v - a) / (b - a)); return k * k * (3 - 2 * k); };
+function roadHelmetMesh(main) {
+  const n = 96, box = [-40, -14, -28, 36, 34, 28], mat = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.05, clearcoat: 0.8, clearcoatRoughness: 0.12 });
+  const mc = new MarchingCubes(n, mat, false, true, 120000); mc.isolation = 0;
+  const sx = (box[3] - box[0]) / n, sy = (box[4] - box[1]) / n, sz = (box[5] - box[2]) / n, col = c => new THREE.Color(c).convertSRGBToLinear();
+  const cMain = col(main), cDark = col('#121316');
+  const shell = ellipsoid([-2, 6, 0], [33, 23.5, 23.6], 0.05), back = roundCone([-18, 2, 0], [-31, -5, 0], 12, 7);
+  const edge = x => lerp(-8, 4, clamp((x + 30) / 60)), zs = [-13.5, -6.8, 0, 6.8, 13.5];
+  for (let k = 0; k < n; k++) for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const x = box[0] + i * sx, y = box[1] + j * sy, z = box[2] + k * sz, q = k * n * n + j * n + i;
+    let d = smin(shell(x, y, z), back(x, y, z), 6);
+    d = smax(d, edge(x) - y, 2);                                   // spodní hrana
+    let w = 0; for (const zc of zs) w = Math.max(w, sstep(2.3, 1.2, Math.abs(z - zc)) * sstep(-21, -15, x) * sstep(26, 20, x) * sstep(7, 12, y));
+    d += 2.4 * w;                                                  // drážky
+    mc.field[q] = -d;
+    const c = y < edge(x) + 1.5 || w > 0.45 ? cDark : cMain;
+    mc.palette[q * 3] = c.r; mc.palette[q * 3 + 1] = c.g; mc.palette[q * 3 + 2] = c.b;
+  }
+  mc.update(); mc.scale.set((box[3] - box[0]) / 2, (box[4] - box[1]) / 2, (box[5] - box[2]) / 2); mc.position.set((box[0] + box[3]) / 2, (box[1] + box[4]) / 2, (box[2] + box[5]) / 2);
+  mc.castShadow = true; return mc;
+}
+// sluneční brýle k silniční helmě: tenký zrcadlový pruh přes oči (na stejné ploše jako hledí časovkářské helmy)
+function glassesMesh(material) {
+  const n = 80, box = [8, -12, -26, 40, 2, 26], mc = new MarchingCubes(n, material, false, false, 60000); mc.isolation = 0;
+  const sx = (box[3] - box[0]) / n, sy = (box[4] - box[1]) / n, sz = (box[5] - box[2]) / n, E = ellipsoid([-1, 4, 0], [34.9, 25.3, 22.6], -0.05);
+  for (let k = 0; k < n; k++) for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const x = box[0] + i * sx, y = box[1] + j * sy, z = box[2] + k * sz;
+    let d = Math.abs(E(x, y, z)) - 0.8;
+    d = smax(d, y + 1, 1); d = smax(d, -8.5 - y, 1); d = smax(d, 16 - x, 1.5);
+    mc.field[k * n * n + j * n + i] = -d;
+  }
+  mc.update(); mc.scale.set((box[3] - box[0]) / 2, (box[4] - box[1]) / 2, (box[5] - box[2]) / 2); mc.position.set((box[0] + box[3]) / 2, (box[1] + box[4]) / 2, (box[2] + box[5]) / 2);
+  return mc;
+}
 // hledí: tenká skořepina těsně na helmě; horní hrana vpředu výš a za schůdkem níž, zadní hrana daleko na boku,
 // dole sahá kousek pod lem helmy
 function visorMesh(material) {
@@ -195,10 +231,14 @@ export function makeRider(kitName, over) {
     const ped = add(new THREE.Mesh(new THREE.BoxGeometry(18, 3.5, 14), mat.carbon2), c); ped.position.set(BIKE.crank, 0, 6 * s); return c; });
   // ---- helma, boty ----
   const helmet = new THREE.Group(); root.add(helmet);
-  const light = ['#e4e3de', '#f2f2ef'].includes(K.helmet.toLowerCase());
-  helmet.add(helmetMesh(K.helmet, light ? '#3557D6' : '#F2F2EF'));
+  const light = ['#e4e3de', '#f2f2ef'].includes(K.helmet.toLowerCase()), tt = new THREE.Group(); helmet.add(tt);
+  tt.add(helmetMesh(K.helmet, light ? '#3557D6' : '#F2F2EF'));
   // hledí: kouřově šedé, zrcadlové, obepíná obličej od okraje helmy po polovinu nosu
-  helmet.add(visorMesh(mat.visor));
+  tt.add(visorMesh(mat.visor));
+  // silniční helma s větracími drážkami a sluneční brýle (K.road = barva helmy; video „3 tipy“: na začátku silniční,
+  // pak „pop“ na časovkářskou). Bez K.road se nestaví, ostatní videa mají jen časovkářskou.
+  const road = new THREE.Group(); road.visible = false; helmet.add(road);
+  if (K.road) { road.add(roadHelmetMesh(K.road)); road.add(glassesMesh(M('#15161c', { roughness: 0.06, metalness: 0.7, clearcoat: 1, envMapIntensity: 2 }))); }
   // tretry: protáhlá bota, podrážka, fialový pásek (sedí na kosti chodidla)
   const shoes = ['R', 'L'].map(() => { const g = new THREE.Group(); root.add(g);
     const b = add(new THREE.Mesh(new THREE.SphereGeometry(1, 40, 24), mat.shoe), g); b.scale.set(31, 10.5, 8.6); b.position.set(16, -3, 0);
@@ -210,13 +250,18 @@ export function makeRider(kitName, over) {
     rear.rotation.z = -(o.wheel || 0); spinF.rotation.z = -(o.wheel || 0);
     cranks[0].rotation.z = -cr; cranks[1].rotation.z = -(cr + Math.PI);   // šlapání po směru hodin (kolo jede doprava)
     cranks.forEach(c => c.children[1].rotation.z = -c.rotation.z);   // pedály drží vodorovně
-    const head = H.pose(root, pose, cr, o.grip);
+    const head = H.pose(root, pose, cr, o.grip, o.shrug || 0);
     helmet.position.copy(head.center); helmet.quaternion.copy(head.q);
+    // helmy: o.hs = [silniční, časovkářská] jako velikost 0 až 1 (0 = schovaná); bez o.hs jen časovkářská
+    const hs = o.hs || [0, 1]; [road, tt].forEach((g, i) => { g.visible = hs[i] > 0.002 && (i === 1 || !!K.road); g.scale.setScalar(Math.max(hs[i], 0.002)); });
+    // oblečení: o.swap 0 až 1 (přechod z A na B), o.t čas pro vlání volného dresu
+    if (o.swap != null) H.U.uSwap.value = o.swap;
+    H.U.uTime.value = o.t || 0;
     head.feet.forEach((f, i) => { shoes[i].position.copy(f.pos); shoes[i].quaternion.copy(f.q); });
   }
   update({ pose: 0 });
   // top: nejvyšší bod helmy nad zemí (po posledním update), head: střed helmy
-  return { root, update, top: () => helmet.position.y + 26, head: () => helmet.position.clone() };
+  return { root, update, top: () => helmet.position.y + 26, head: () => helmet.position.clone(), helmets: { road, tt }, cloth: H.U };
 }
 
 // ---------- člověk z MakeHuman ----------
@@ -243,24 +288,29 @@ function makeHuman(K) {
   const geo = new THREE.BufferGeometry(); for (const a of ['position', 'normal', 'skinIndex', 'skinWeight']) geo.setAttribute(a, HUMAN.geometry.getAttribute(a));
   geo.setIndex(HUMAN.geometry.index);
   const mat = new THREE.MeshPhysicalMaterial({ roughness: 0.5, sheen: 0.3, sheenRoughness: 0.5, sheenColor: new THREE.Color('#8c8a96') });
-  const J = n => new THREE.Vector3(...meta.bones.find(b => b.name === n).head), suit = col(K.suit);
+  const J = n => new THREE.Vector3(...meta.bones.find(b => b.name === n).head), suit = col(K.suit), pre = K.pre || {};
+  // oblečení „před“ (A: K.pre, třeba volný bílý dres a černé kraťasy) a „po“ (B: barvy kitu, kombinéza). Přechod jde
+  // svítící linkou shora dolů (uSwap 0 → 1, video „3 tipy“ 24. 11. 2026); dres A může být volný a vlát (uLoose).
+  // Bez K.pre je všechno B, tedy stejné jako dřív.
+  const suitA = pre.suit ? col(pre.suit) : suit;
   const U = { uSkin: col(K.skin), uSuit: suit, uShorts: col(K.suit2), uSock: col('#F2F2EF'), uHem: suit.clone().multiplyScalar(0.55), uGrip: col('#2a2b30'),
+    uSuitA: suitA, uShortsA: col(pre.suit2 || K.suit2), uHemA: suitA.clone().multiplyScalar(0.55), uSleeveA: pre.sleeve ?? 0.56, uSleeveB: K.sleeve ?? 0.56,
+    uSwap: pre.suit ? 0 : 1, uLoose: pre.loose ?? 0, uTime: 0, uTopY: J('head').y + 2.0, uBotY: J('foot.R').y - 0.5,
     uS: J('upperarm01.R'), uE: J('lowerarm01.R'), uH: J('upperleg01.R'), uK: J('lowerleg01.R'), uA: J('foot.R'), uNeck: J('neck01'), uWaistY: J('spine04').y + 0.42 };
-  mat.onBeforeCompile = sh => {
-    for (const k in U) sh.uniforms[k] = { value: U[k] };
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vRest;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvRest = position;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-varying vec3 vRest;
-uniform vec3 uSkin, uSuit, uShorts, uSock, uHem, uGrip, uS, uE, uH, uK, uA, uNeck;
-uniform float uWaistY;
+  const Uv = {}; for (const k in U) Uv[k] = { value: U[k] };
+  const REG = `uniform vec3 uS, uE, uH, uK, uA, uNeck;
+uniform float uWaistY, uSleeveA, uSleeveB, uSwap, uTopY, uBotY;
 float segT(vec3 p, vec3 a, vec3 b) { vec3 d = b - a; return dot(p - a, d) / dot(d, d); }
 float segR(vec3 p, vec3 a, vec3 b) { vec3 d = b - a; return length(p - a - d * clamp(dot(p - a, d) / dot(d, d), 0.0, 1.0)); }
+// výška linky přechodu A → B (klidová poloha) a jestli je bod už v novém oblečení
+float swapY() { return mix(uTopY, uBotY, uSwap); }
+bool isB(vec3 p) { return p.y > swapY(); }
 // 0 kůže, 1 dres, 2 kraťasy, 3 ponožky, 4 lem dresu, 5 lem kraťasů (klidová poloha modelu, jednotky dm, pravá strana x < 0)
 int clothRegion(vec3 p) {
   vec3 q = vec3(-abs(p.x), p.y, p.z);
   if (q.x < -2.7) return 0;                                         // předloktí a ruce daleko od těla
-  float ta = segT(q, uS, uE);
-  if (q.x < uS.x + 0.5 && segR(q, uS, uE) < 0.85 && ta > -0.2) return ta < 0.56 ? 1 : ta < 0.6 ? 4 : 0;   // rukáv
+  float ta = segT(q, uS, uE), sl = isB(p) ? uSleeveB : uSleeveA;   // délka rukávu: dres kratší, kombinéza delší
+  if (q.x < uS.x + 0.5 && segR(q, uS, uE) < 0.85 && ta > -0.2) return ta < sl ? 1 : ta < sl + 0.04 ? 4 : 0;   // rukáv
   float front = smoothstep(-0.2, 0.9, p.z - uNeck.z), neckY = uNeck.y - 0.08 - 0.32 * front;
   if (abs(p.x) < 1.2 && p.y > neckY) return p.y < neckY + 0.07 ? 4 : 0;     // výstřih a lem límce
   if (p.y < uH.y + 0.15) {                                          // nohy
@@ -270,10 +320,26 @@ int clothRegion(vec3 p) {
   }
   if (p.y < uWaistY) return 2;                                      // kraťasy (pas a hýždě)
   return p.y < uWaistY + 0.06 ? 4 : 1;                              // lem dresu v pase, dres
-}`).replace('#include <color_fragment>', `#include <color_fragment>
-int rg = clothRegion(vRest);
-diffuseColor.rgb = rg == 0 ? uSkin : rg == 1 ? uSuit : rg == 2 ? uShorts : rg == 3 ? uSock : rg == 4 ? uHem : uGrip;`).replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
-roughnessFactor = rg == 0 ? 0.56 : rg == 2 ? 0.34 : rg == 3 ? 0.8 : 0.46;`);
+}`;
+  mat.onBeforeCompile = sh => {
+    for (const k in Uv) sh.uniforms[k] = Uv[k];
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vRest;\nuniform float uLoose, uTime;\n' + REG).replace('#include <begin_vertex>', `#include <begin_vertex>
+vRest = position;
+// volný dres (jen oblečení A): látka se vyboulí po normále a vlaje, nejvíc dole na zádech
+if (uLoose > 0.0 && !isB(position)) { int r0 = clothRegion(position); if (r0 == 1 || r0 == 4) {
+  float back = smoothstep(0.2, -0.6, position.z - uNeck.z), low = smoothstep(uWaistY + 2.2, uWaistY, position.y);
+  transformed += objectNormal * uLoose * (0.07 + 0.09 * low + 0.05 * back) * (1.0 + 0.45 * sin(uTime * 17.0 + position.y * 7.0 + position.x * 5.0)); } }`);
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+varying vec3 vRest;
+uniform vec3 uSkin, uSuit, uShorts, uSock, uHem, uGrip, uSuitA, uShortsA, uHemA;
+uniform float uLoose;
+` + REG).replace('#include <color_fragment>', `#include <color_fragment>
+int rg = clothRegion(vRest); bool nb = isB(vRest);
+diffuseColor.rgb = rg == 0 ? uSkin : rg == 1 ? (nb ? uSuit : uSuitA) : rg == 2 ? (nb ? uShorts : uShortsA) : rg == 3 ? uSock : rg == 4 ? (nb ? uHem : uHemA) : uGrip;
+// svítící linka přechodu (jen na oblečení)
+float ed = 1.0 - smoothstep(0.0, 0.22, abs(vRest.y - swapY()));
+if (uSwap > 0.001 && uSwap < 0.999 && rg != 0) diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.93, 1.0), ed);`).replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+roughnessFactor = rg == 0 ? 0.56 : rg == 2 ? 0.34 : rg == 3 ? 0.8 : (rg == 1 && !nb && uLoose > 0.0) ? 0.62 : 0.46;`);
   };
   const mesh = new THREE.SkinnedMesh(geo, mat); mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false;
   const bones = meta.bones.map(b => { const x = new THREE.Bone(); x.name = b.name; return x; }), by = {}, rest = {};
@@ -301,7 +367,7 @@ roughnessFactor = rg == 0 ? 0.56 : rg == 2 ? 0.34 : rg == 3 ? 0.8 : 0.46;`);
     const p = pole.clone().sub(n.clone().multiplyScalar(pole.dot(n))).normalize(); return A.clone().add(n.multiplyScalar(a)).add(p.multiplyScalar(h));
   };
   const wpos = (riderRoot, n) => riderRoot.worldToLocal(by[n].getWorldPosition(new THREE.Vector3()));
-  function pose(riderRoot, p, crank, grip) {
+  function pose(riderRoot, p, crank, grip, shrug = 0) {
     const P = poseAt(p), tr = P.torso * deg;
     for (const b of bones) b.quaternion.identity();
     // pánev a záda: pánev překlopená dopředu, záda mírně kulatá (níž strměji), ramena svěšená
@@ -315,6 +381,8 @@ roughnessFactor = rg == 0 ? 0.56 : rg == 2 ? 0.34 : rg == 3 ? 0.8 : 0.46;`);
     // hlava hledí dopředu; v časovkářské poloze skloněná (oči koukají zpod hledí), helma leží ocasem na zádech
     const fa = -(5 + 60 * P.tilt) * deg, fwd = toModel(pitch(fa)).normalize(), up = toModel(pitch(fa + Math.PI / 2)).normalize(), right = new THREE.Vector3().crossVectors(up, fwd);
     const qh = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, fwd)); by.head.quaternion.copy(wq(by.head).invert().multiply(qh));
+    // ramena k sobě (shrug 0 až 1, video „3 tipy“): klíční kosti se stočí dopředu, ramena se přiblíží a zúží postavu zepředu
+    if (shrug > 0) for (const [s, sz] of [['R', 1], ['L', -1]]) { const a = 0.38 * shrug; aim('clavicle.' + s, new THREE.Vector3(Math.sin(a), 0.16, sz * Math.cos(a))); }
     riderRoot.updateMatrixWorld(true);
     // paže: v poloze 0 ruce na základním řídítku (dvoukloubová úloha), od polohy 1 lokty skoro svisle pod rameny
     // a předloktí dopředu po nástavcích; mezi tím plynulý přechod
@@ -323,7 +391,7 @@ roughnessFactor = rg == 0 ? 0.56 : rg == 2 ? 0.34 : rg == 3 ? 0.8 : 0.46;`);
       const S = wpos(riderRoot, 'upperarm01.' + s), G = new THREE.Vector3(GRIP[0], GRIP[1], 21 * sz);
       const reach = Math.min(S.distanceTo(G), LA[0] + LA[1] - 1), W0 = S.clone().add(G.clone().sub(S).normalize().multiplyScalar(reach));
       const E0 = ik3(S, W0, LA[0], LA[1], new THREE.Vector3(-0.2, -1, 0.5 * sz));
-      const E1 = S.clone().add(new THREE.Vector3(0.12, -1, -0.16 * sz).normalize().multiplyScalar(LA[0])), W1 = E1.clone().add(new THREE.Vector3(1, 0.22, -0.13 * sz).normalize().multiplyScalar(LA[1]));   // předloktí mírně nahoru, ruce u sebe
+      const E1 = S.clone().add(new THREE.Vector3(0.12, -1, -(0.16 + 0.12 * shrug) * sz).normalize().multiplyScalar(LA[0])), W1 = E1.clone().add(new THREE.Vector3(1, 0.22, -(0.13 + 0.05 * shrug) * sz).normalize().multiplyScalar(LA[1]));   // předloktí mírně nahoru, ruce u sebe
       const E = E0.clone().lerp(E1, kTT), W = W0.clone().lerp(W1, kTT); arms[s] = { E, W };
       aim('upperarm01.' + s, E.clone().sub(S)); aim('upperarm02.' + s, E.clone().sub(S));
       riderRoot.updateMatrixWorld(true);
@@ -370,7 +438,7 @@ roughnessFactor = rg == 0 ? 0.56 : rg == 2 ? 0.34 : rg == 3 ? 0.8 : 0.46;`);
   function fit(riderRoot) { pose(riderRoot, 1, 0); const t1 = last.R; pose(riderRoot, 0, 0); const t0 = last.R;
     const P = (a, b) => ({ c: [a.x, a.y, Math.abs(a.z)], a: [b.x, b.y, b.z * Math.sign(a.z || 1)] });   // pravá strana (z > 0), levá zrcadlově
     return { pad: [t1.E.x, t1.E.y - 9], tip: P(t1.fist, t1.axis), grip: P(t0.fist, t0.axis) }; }
-  return { group, pose, by, fit };
+  return { group, pose, by, fit, U: Uv };
 }
 
 // světlo a obloha podle vzhledu: look 'studio' (tmavé pozadí, fialové zadní světlo; původní), 'day' (letní den), 'golden' (zlatá

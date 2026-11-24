@@ -35,6 +35,7 @@ function scene3d(cfg, state, between) {
   }
   const st = R3.st, cm = window.CAM || {};
   // kamera styl 'orbit': 3D kamera objede bod pohledu kolem svislé osy o úhel cm.o (plynulý pohyb do strany)
+  if (cfg.cam.fov && st.cam.fov !== cfg.cam.fov) { st.cam.fov = cfg.cam.fov; st.cam.updateProjectionMatrix(); }
   { const P = cfg.cam.pos, Lk = cfg.cam.look, o = cm.o || 0, dx = P[0] - Lk[0], dz = P[2] - Lk[2], co = Math.cos(o), so = Math.sin(o);
     st.cam.position.set(Lk[0] + dx * co + dz * so, P[1], Lk[2] - dx * so + dz * co); st.cam.lookAt(...Lk); }
   R3.road.update(state.dist || 0); if (R3.env) R3.env.update(state.dist || 0); st.world.rotation.z = (state.slope || 0) * Math.PI / 180;
@@ -47,7 +48,31 @@ function scene3d(cfg, state, between) {
   const one = x => { if (b < 1) { ctx.drawImage(st.canvas, x, Y, Wv, Hv); return; } const g = ctx.globalAlpha; for (let k = 0; k < 7; k++) { ctx.globalAlpha = g / (k + 1); ctx.drawImage(st.canvas, x + (k / 6 - 0.5) * b, Y, Wv, Hv); } ctx.globalAlpha = g; };
   const put = () => { if (gr) ctx.filter = `saturate(${gr.sat || 1}) contrast(${gr.con || 1})`; one(X); ctx.filter = 'none'; };
   // dva průchody: silnice (se stíny jezdců), pak proudnice (between), pak jezdci, aby proudnice byly nad silnicí a za jezdci
+  // video „3 tipy“: plocha jezdce zepředu. state.sil = { id, k: síla 0 až 1, ghost: stav jezdce „předtím“ }: jezdec se nejdřív
+  // vykreslí v poloze předtím do zvláštního plátna, pak ve skutečné poloze; ušetřená plocha (předtím minus teď) se vyšrafuje
+  const sil = state.sil && state.sil.k > 0.001 ? state.sil : null, cv = () => { const c = document.createElement('canvas'); c.width = st.canvas.width; c.height = st.canvas.height; return c; };
+  if (sil) {
+    R3.g1 = R3.g1 || cv(); R3.g2 = R3.g2 || cv(); const m = R3.riders[sil.id], g = R3.g1.getContext('2d');
+    m.update(Object.assign({}, state.riders[sil.id], sil.ghost)); st.world.updateMatrixWorld(true); st.render(0);
+    g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, R3.g1.width, R3.g1.height); g.drawImage(st.canvas, 0, 0); m.update(state.riders[sil.id]);
+  }
   st.world.updateMatrixWorld(true); st.render(2); put(); if (between) between(); st.render(0); put();
+  if (sil) {
+    const g1 = R3.g1.getContext('2d'), g2 = R3.g2.getContext('2d'), W2 = R3.g1.width, H2 = R3.g1.height;
+    g2.globalCompositeOperation = 'source-over'; g2.clearRect(0, 0, W2, H2); g2.drawImage(st.canvas, 0, 0);
+    if (!R3.hatch) { const c = document.createElement('canvas'); c.width = c.height = 28; const h = c.getContext('2d'); h.fillStyle = 'rgba(139,61,255,0.55)'; h.fillRect(0, 0, 28, 28);
+      h.strokeStyle = 'rgba(236,226,255,0.95)'; h.lineWidth = 6; for (const o of [-28, 0, 28]) { h.beginPath(); h.moveTo(o, 28); h.lineTo(o + 28, 0); h.stroke(); } R3.hatch = g1.createPattern(c, 'repeat'); }
+    // bílý obrys polohy předtím: maska posunutá do osmi stran minus maska samotná
+    R3.g3 = R3.g3 || cv(); const g3 = R3.g3.getContext('2d');
+    g3.globalCompositeOperation = 'source-over'; g3.clearRect(0, 0, W2, H2);
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-0.7, -0.7], [0.7, -0.7], [-0.7, 0.7], [0.7, 0.7]]) g3.drawImage(R3.g1, dx * 5, dy * 5);
+    g3.globalCompositeOperation = 'destination-out'; g3.drawImage(R3.g1, 0, 0);
+    g3.globalCompositeOperation = 'source-in'; g3.fillStyle = '#ffffff'; g3.fillRect(0, 0, W2, H2);
+    g1.globalCompositeOperation = 'destination-out'; g1.drawImage(R3.g2, 0, 0);                    // předtím minus teď
+    g1.globalCompositeOperation = 'source-in'; g1.fillStyle = R3.hatch; g1.fillRect(0, 0, W2, H2);
+    g2.globalCompositeOperation = 'source-in'; g2.fillStyle = '#8B3DFF'; g2.fillRect(0, 0, W2, H2);   // plocha teď: fialový nádech
+    const ga = ctx.globalAlpha; ctx.save(); ctx.globalAlpha = ga * 0.32 * sil.k; ctx.drawImage(R3.g2, X, Y, Wv, Hv); ctx.globalAlpha = ga * sil.k; ctx.drawImage(R3.g1, X, Y, Wv, Hv); ctx.globalAlpha = ga * 0.9 * sil.k; ctx.drawImage(R3.g3, X, Y, Wv, Hv); ctx.restore();
+  }
   // ztlumení (state.a < 1): tmavá vrstva přes celou scénu, jezdci neprůhlední
   if (state.a != null && state.a < 1) { ctx.save(); ctx.globalAlpha = 1 - state.a; ctx.fillStyle = C.bg; ctx.fillRect(X, Y, 1080 / ZOOM, 1920 / ZOOM); ctx.restore(); }
 }
@@ -214,9 +239,39 @@ function classicUI(t, a, o) {
   // 2 = navíc bez štítků u jezdce (tag3d), 3 = navíc bez titulků dole
   const lean = typeof STYLE !== 'undefined' && STYLE.lean || 0, hs0 = o.heads && a && o.heads[a.id];
   const hs = hs0 && lean ? hs0.map(h => Object.assign({}, h, { label: undefined, sub: undefined })) : hs0;
+  if (o.tips) tipsBar(t, o.tips);   // video „3 tipy“: ukazatel postupu nahoře
   if (hs) { const io = actIO(t, a); ctx.save(); ctx.globalAlpha *= io.a; heads(t, hs, io.dy); ctx.restore(); }
   ctx.restore();
 }
+
+// ---------- VIDEO „3 TIPY“ (autor 24. 11. 2026) ----------
+// ukazatel postupu (varianta 3, autor 24. 11. 2026): tři dílky nahoře, každý se plní během svého tipu, poslední fialový.
+// o.at = začátky tipů, o.end = konec posledního tipu (pak ukazatel zmizí, přijdou karty)
+function tipsBar(t, o) {
+  const at = o.at, n = at.length, end = o.end, fade = 1 - tw(t, end - 0.35, 0.35); if (fade <= 0) return;
+  const X0 = 150, X1 = 930, gap = 16, w = (X1 - X0 - gap * (n - 1)) / n, y = 208;
+  ctx.save(); ctx.globalAlpha *= fade * clamp(t / 0.4);
+  for (let i = 0; i < n; i++) {
+    const x = X0 + i * (w + gap), f = clamp((t - at[i]) / ((i + 1 < n ? at[i + 1] : end) - at[i]));
+    ctx.fillStyle = 'rgba(228,227,222,0.3)'; ctx.beginPath(); ctx.roundRect(x, y, w, 10, 5); ctx.fill();
+    if (f > 0) { ctx.fillStyle = i === n - 1 ? C.pu : C.ink; ctx.beginPath(); ctx.roundRect(x, y, Math.max(10, w * f), 10, 5); ctx.fill(); }
+  }
+  ctx.restore();
+}
+// „pop“ při výměně helmy nebo dresu: záblesk, rozpínající se fialový kruh a bílé jiskry kolem bodu p (ve scéně), d = velikost
+function popFX(t, at, p, d) {
+  const u = (t - at) / 0.7; if (u < 0 || u > 1) return;
+  const e = 1 - Math.pow(1 - u, 3);
+  ctx.save();
+  if (u < 0.25) { const g = ctx.createRadialGradient(p[0], p[1], 0, p[0], p[1], d * 1.4); g.addColorStop(0, `rgba(255,255,255,${0.85 * (1 - u / 0.25)})`); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p[0], p[1], d * 1.4, 0, 7); ctx.fill(); }
+  ctx.globalAlpha *= 1 - u; ctx.strokeStyle = C.pu; ctx.lineWidth = 8 * (1 - u) + 2; ctx.shadowColor = 'rgba(139,61,255,0.9)'; ctx.shadowBlur = 16;
+  ctx.beginPath(); ctx.arc(p[0], p[1], d * (0.5 + 1.1 * e), 0, 7); ctx.stroke();
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.shadowColor = 'rgba(255,255,255,0.8)';
+  for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 + 0.3, r0 = d * (0.7 + 0.9 * e), r1 = r0 + d * 0.35 * (1 - u); ctx.beginPath(); ctx.moveTo(p[0] + Math.cos(a) * r0, p[1] + Math.sin(a) * r0); ctx.lineTo(p[0] + Math.cos(a) * r1, p[1] + Math.sin(a) * r1); ctx.stroke(); }
+  ctx.restore();
+}
+// výměna helmy v čase at: silniční se rychle zmenší, časovkářská naskočí s překmitem → [silniční, časovkářská] pro stav jezdce hs
+const helmSwap = (t, at) => { const u = clamp((t - at) / 0.25); return [1 - u * u, tw(t, at + 0.18, 0.55, E.back)]; };
 
 // ---------- KONEC VIDEA: pošli kamarádovi + sleduj ----------
 // Varianta 1 „karty přes krajinu“ (autor 22. 11. 2026 podle vzorového reelu): jezdec jede dál, přes krajinu vyskočí panel

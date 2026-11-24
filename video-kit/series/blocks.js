@@ -24,11 +24,11 @@ const hookWord = () => ((typeof STYLE === 'object' && STYLE && STYLE.hook === 'w
 function whatIf(t, tin, y, size) { const p = popS(t, tin, null, 0.7); rich([[hookWord(), C.ink], ['IF', C.pu]], 540, y, { size: size || 170, w: 800, f: F.U, a: p.a, s: p.s, ls: -5 }); }
 
 // ---------- sloupec textů na střed (hook a textové akty) ----------
-// items: { whatIf } | { t, i | at, dt, size, c, big, plain, gap, count }
+// items: { whatIf } | { mark: [[text, barva], ...] } | { t, i | at, dt, size, c, big, plain, gap, count }
 function stack(t, s, dy, outT) {
   const its = s.items.map(it => {
-    const base = it.whatIf ? { size: it.size || 170, w: 800, f: F.U, ls: -5 } : it.big ? { size: it.size || 200, w: 800, f: F.U, ls: -6 } : it.plain ? { size: it.size || 52, w: 700 } : { size: it.size || 64, w: 700, f: F.U, ls: -2 };
-    return { it, fo: fit(it.whatIf ? hookWord() + 'IF' : fin(it.t, it.count), base, it.whatIf || it.big ? 780 : 860) };
+    const base = it.whatIf || it.mark ? { size: it.size || 170, w: 800, f: F.U, ls: -5 } : it.big ? { size: it.size || 200, w: 800, f: F.U, ls: -6 } : it.plain ? { size: it.size || 52, w: 700 } : { size: it.size || 64, w: 700, f: F.U, ls: -2 };
+    return { it, fo: fit(it.whatIf ? hookWord() + 'IF' : it.mark ? it.mark.map(m => m[0]).join('') : fin(it.t, it.count), base, it.whatIf || it.mark || it.big ? 780 : 860) };
   });
   let H = 0;
   its.forEach((x, k) => { x.cap = x.fo.size * 0.74; x.gap = k < its.length - 1 ? Math.max(40, 0.34 * Math.max(x.fo.size, its[k + 1].fo.size)) + (x.it.gap || 0) : 0; H += x.cap + x.gap; });
@@ -36,6 +36,8 @@ function stack(t, s, dy, outT) {
   its.forEach(x => {
     const it = x.it, at = (it.at ? TR(it.at) : cs(s.line, it.i)) + (it.dt || 0); y += x.cap; const yy = y + dy; y += x.gap;
     if (it.whatIf) whatIf(t, at, yy, x.fo.size);
+    // nápis ve stylu loga z více barev (třeba „3 TIPS“): mark = [[text, barva], ...], barva 'ink' | 'pu' | 'muted'
+    else if (it.mark) { const p = popS(t, at, null, 0.7); rich(it.mark.map(m => [m[0], COL(m[1])]), 540, yy, Object.assign({}, x.fo, { a: p.a, s: p.s })); }
     else if (it.big) { const p = STY().text ? { a: clamp((t - at) / 0.05), s: 1, dy: 0 } : popS(t, at, outT, 0.7); fxText(live(it.t, it.count, t, at), 540, yy + p.dy, Object.assign({}, x.fo, { c: COL(it.c || 'pu'), a: p.a, s: p.s }), at, 'big', t); }
     else { const p = STY().text ? { a: clamp((t - at) / 0.05), dy: 0 } : pop(t, at, outT); fxText(it.t, 540, yy + p.dy, Object.assign({}, x.fo, { c: COL(it.c), a: p.a }), at, 'title', t); }
   });
@@ -356,7 +358,8 @@ function makeCamera(st, V) {
     tl = gsap.timeline({ paused: true });
     TL.acts.forEach((a, i) => {
       // plynulý pohyb do strany (autor 22. 11. 2026: ne cuknutí): 3D kamera objede jezdce do nového úhlu (o = úhel v radiánech)
-      const orb = k => k === 0 ? 0 : k % 2 ? -0.24 : 0.2;
+      // vlastní úhly po aktech (style.orbit = [úhel aktu 0, 1, …]), třeba pohled zepředu u tipu 3 ve videu „3 tipy“
+      const orb = k => Array.isArray(st.orbit) ? st.orbit[k] || 0 : k === 0 ? 0 : k % 2 ? -0.24 : 0.2;
       if (st.camera === 'orbit' && i > 0) tl.fromTo(cam, { o: orb(i - 1) }, { o: orb(i), duration: 1.4, ease: 'power2.inOut', immediateRender: false }, a.start - 0.5);
       // swipe: krajina plynule odjede doleva a nový akt přijede zprava (p = postup 0 až 1)
       if (swipe && i > 0) tl.fromTo(cam, { p: 0 }, { p: 1, duration: 0.7, ease: 'power2.inOut', immediateRender: false }, a.start);

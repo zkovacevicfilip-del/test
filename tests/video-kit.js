@@ -127,6 +127,14 @@ for (const ex of fs.readdirSync(path.join(KIT, "examples"))) check(path.join(KIT
   const classic = ["what-if", "ride"].flatMap(d => fs.readdirSync(path.join(KIT, "series", d)).map(f => path.join(KIT, "series", d, f))).filter(f => /ui: 'classic'/.test(fs.readFileSync(f, "utf8")));
   ok("šablona, oddíl 15: recept má stejný styl a konec jako hotová videa a vzory existují", r15.length > 2000 && r15.includes(styl) && r15.includes(cta) && /oddíl 15/.test(sab.slice(0, sab.indexOf("## 1."))) &&
     vzory.every(f => fs.existsSync(path.join(KIT, f)) && fs.readFileSync(path.join(KIT, f), "utf8").includes(cta)) && classic.length === 9 && classic.every(f => fs.readFileSync(f, "utf8").includes(styl)), classic.length); }
+// video „3 tipy“ (autor 24. 11. 2026): úvod slibuje 3 tipy a že trojka je nejdůležitější, tipy jdou od nejmenší úspory k největší
+// a trojka je víc než první dva dohromady (kvůli dokoukanosti); nahoře ukazatel postupu
+for (const f of fs.readdirSync(path.join(KIT, "series/tips")).filter(f => f.endsWith(".js"))) {
+  const src = fs.readFileSync(path.join(KIT, "series/tips", f), "utf8"), spec = require(path.join(KIT, "series/tips", f)), fx = spec.facts(require(path.join(KIT, "series/physics.js"))).slice(0, 3).map(x => x[1]);
+  ok(`[tips/${f}] úvod: 3 tipy a trojka nejdůležitější; tipy od nejmenšího k největšímu, trojka víc než 1 + 2; ukazatel postupu`,
+    /^Three tips\b/.test(spec.lines.hook.say) && /Number three is the most important/.test(spec.lines.hook.say) && spec.acts.map(a => a[0]).join() === "hook,one,two,three,cta" &&
+    fx[0] < fx[1] && fx[1] < fx[2] && fx[2] > fx[0] + fx[1] && /tips: \{ at: \[T\('one:0'\), T\('two:0'\), T\('three:0'\)\]/.test(src) && /function tipsBar/.test(fs.readFileSync(path.join(KIT, "series/ride.js"), "utf8")), fx.map(x => x.toFixed(1)).join(" < "));
+}
 ok("motor a nástroje sady jsou na místě", ["engine/engine.js", "engine/render.js", "engine/index.html", "engine/vendor/gsap.min.js", "engine/vendor/LICENSE-gsap.txt",
   "engine/vendor/three.module.js", "engine/vendor/three.core.js", "engine/vendor/LICENSE-three.txt", "engine/vendor/MarchingCubes.js", "engine/vendor/RoomEnvironment.js", "engine/rider3d.mjs", "engine/three-boot.mjs",
   "engine/models/cyclist.json", "engine/models/cyclist.bin", "engine/models/LICENSE-makehuman-CC0.md", "tools/makehuman-cyclist.py", "tools/kokoro-page.js", "series/ride.js", "tools/tts.py", "tools/align.py", "tools/timeline.py",
