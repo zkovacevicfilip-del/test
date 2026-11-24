@@ -33,7 +33,8 @@ const ride = function (t, a) {
     },
     tips: { at: [T('one:0'), T('two:0'), T('three:0')], end: T('cta:0') }
   });
-  ctaCards(t, { share: T('cta:0'), pick: T('cta:1'), tap: T('cta:2') + 0.5, follow: T('cta:3'), ftap: T('cta:4') });
+  // krátká závěrečná věta: karty o kousek dřív, aby „Sent“ i „Following“ byly vidět aspoň půl vteřiny
+  ctaCards(t, { share: T('cta:0') - 0.15, pick: T('cta:1') + 0.1, tap: T('cta:2') + 0.15, follow: T('cta:3') + 0.1, ftap: T('cta:4') + 0.2 });
 };
 module.exports = {
   title: 'tips-time-trial',
