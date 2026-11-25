@@ -526,3 +526,17 @@ ramena k sobě −2:18 na 40 km při 250 W).
   `ctaCards` posunout o kousek dřív (viz vzor), jinak je „Sent“ vidět jen zlomek vteřiny.
 - **Postup a kontrola:** jako oddíl 15. Před hlasem `run.sh … dry` a prohlédnout klíčové snímky (výměny, pohled zepředu, karty).
 
+### Prvky podle reference RunLive (stav 25. 11. 2026, vzory `tips/01-time-trial.js` a `tips/02-vo2max.js`)
+
+- **Odznak kapitoly** (volba autora: plný kruh): `chapterBadge(t, { v: 1, at: [T('one:0'), T('two:0'), T('three:0')], names: [...], dur: 1.9 })`
+  naskočí na začátku každého tipu s číslem a názvem, po 1,9 s zmizí a vrátí, jak moc je vidět (na schování karty).
+- **Datová karta** (volba autora: vodorovné pruhy): `dataCard(t, { v: 2, title, from, to, hide: <odznak>, items: [{ name, head, value, at, grow }] })`;
+  hodnota se dopočítá s hlasem od `grow`. Volitelně: `fmt: 'pct'` (procenta místo času), u položky `recipe` (recept tréninku
+  pod nadpisem), `src` (zdroj čísla malým písmem dole), `week: ['E','H','E','R','H','E','E']` + `weekAt` (plán týdne),
+  u karty `compare: { at, label }` (čára „1 + 2“). Čísla v kartě musí sedět s `facts` (hlídá test).
+- **Titulky po slovech** (volba autora: dole se zvýrazněným slovem): ve stylu `words: { v: 2 }`.
+- **Zvuk:** u popisu `sfx: [{ at: 'one:0', kind: 'pop' }, …]` (druhy `pop`, `ding`, `click`, `impact`, `shimmer`, `riser`;
+  riser končí v čase `at`) a `bed: 1` (jemný rytmus pod hlasem, pod hlasem se ztiší; `bed: 2` přidá akordy, autor je nechce).
+  Hudbu s licencí (třeba Runaway) jde přidat jen v aplikaci Instagram, do souboru ji nevkládáme; pak použít verzi bez rytmu.
+- **Čísla ze studií** (VO2 max): `facts` vrací hodnoty ze studie (bez výpočtu) a `sources` celé citace; karta říká „in studies“,
+  protože studie mají různé skupiny sportovců. Nevymýšlet: každé číslo ověřit ve zdroji.
