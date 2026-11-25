@@ -23,7 +23,7 @@ function facts(spec) {
 }
 function build(spec) {
   const script = { title: spec.title, format: 'short', layout: spec.style && spec.style.captions === 'top' ? 'top' : undefined, voice: (spec.voice || process.env.VOICE) === 'ours' ? OURS : VOICE, timing: TIMING,
-    acts: spec.acts.map(a => ({ id: a[0], lines: a.slice(1) })), lines: spec.lines };
+    acts: spec.acts.map(a => ({ id: a[0], lines: a.slice(1) })), lines: spec.lines, sfx: spec.sfx, bed: spec.bed };
   const fl = facts(spec), blocks = fs.readFileSync(path.join(__dirname, 'blocks.js'), 'utf8') + '\n' + fs.readFileSync(path.join(__dirname, 'ride.js'), 'utf8');
   const head = ["'use strict';", '// SCÉNY krátkého videa „' + spec.title + '“. ' + (spec.about || ''),
     '// Soubor je vyrobený z popisu v series/ (node series/make.js), neupravuj ho ručně.',
@@ -34,7 +34,7 @@ function build(spec) {
     'const STYLE = ' + ser(spec.style || {}) + ';\n' +
     'const SCENES = {}, AMBIENT = {};\nfor (const id in V) { SCENES[id] = makeScene(V[id]); AMBIENT[id] = V[id].amb == null ? 0.2 : V[id].amb; }\nconst FLOWS = makeFlows(V);\n' +
     'const CAMERA = STYLE.camera ? makeCamera(STYLE, V) : undefined;\nconst BACKGROUND = STYLE.bg ? makeBackground(STYLE) : undefined;\nconst OVERLAY = STYLE.overlay ? makeOverlay(STYLE) : undefined;\n' +
-    'const CAPTIONS = STYLE.lean >= 3 ? () => {} : STYLE.captions === \'top\' ? topCaptions : undefined;\n';
+    'const CAPTIONS = STYLE.lean >= 3 ? () => {} : STYLE.words ? (t => wordCaps(t, STYLE.words)) : STYLE.captions === \'top\' ? topCaptions : undefined;\n';
   return { script, scenes, facts: fl };
 }
 module.exports = { build, facts, VOICE, OURS, TIMING };

@@ -274,6 +274,93 @@ function popFX(t, at, p, d) {
 // „nenechávej mu holou hlavu“), časovkářská jen „poskočí“: naskočí o 18 % větší a rychle se usadí, nikdy není menší než hlava
 const helmSwap = (t, at) => { if (t < at) return [1, 0]; const u = clamp((t - at) / 0.35); return [0, 1 + 0.18 * (1 - u) * (1 - u)]; };
 
+// ---------- PRVKY PODLE REFERENCE (RunLive, autor 25. 11. 2026): titulky po slovech, odznak kapitoly, datová karta ----------
+// časy slov uvnitř titulku: rozpočítané podle délky slov (titulky mají nejvýš 6 slov, hlas říká čísla slovy, proto ne z ASR)
+function chunkWords(c) {
+  const ws = c.text.split(/\s+/).filter(Boolean), len = ws.map(w => Math.max(2, w.length)), tot = len.reduce((a, b) => a + b, 0);
+  let acc = 0; return ws.map((w, i) => { const s = c.start + (c.end - c.start) * acc / tot; acc += len[i]; return { w, s, e: c.start + (c.end - c.start) * acc / tot }; });
+}
+const KEYW = w => (w.toUpperCase().replace(/[^A-Z0-9:+−.%-]/g, ''));
+// titulky po slovech (STYLE.words = { v, keys: ['SLOVO', …] }): v 1 = věta se staví nahoře, klíčová slova fialově a VELKÁ,
+// v 2 = dole po kouscích jako dřív, ale právě řečené slovo ve fialovém rámečku, v 3 = jedno velké slovo dole
+function wordCaps(t, o) {
+  const keys = new Set((o.keys || []).map(KEYW)), isKey = w => keys.has(KEYW(w)) || /\d/.test(w);
+  for (const k in L) {
+    const l = L[k]; if (l.captions === false) continue;
+    if (o.v === 1) {
+      if (t < l.chunks[0].start || t > l.end + 0.35) continue;
+      const ws = l.chunks.flatMap(chunkWords).filter(x => t >= x.s), fo = { size: 44, w: 700 }, fk = { size: 44, w: 800 }, lines = [[]]; let lw = 0;
+      for (const x of ws) { const tx = isKey(x.w) ? x.w.toUpperCase() : x.w, w = width(tx + ' ', isKey(x.w) ? fk : fo); if (lw + w > 820 && lines[lines.length - 1].length) { lines.push([]); lw = 0; } lines[lines.length - 1].push({ tx, key: isKey(x.w), s: x.s, w }); lw += w; }
+      const show = lines.slice(-2), a = 1 - tw(t, l.end + 0.1, 0.25);
+      show.forEach((ln, j) => { const tot = ln.reduce((q, x) => q + x.w, 0); let x0 = 540 - tot / 2; const y = 300 + j * 56;
+        ln.forEach(x => { const k2 = tw(t, x.s, 0.18); txt(x.tx, x0, y + (1 - k2) * 10, Object.assign({}, x.key ? fk : fo, { align: 'left', c: x.key ? C.pu : C.ink, a: a * clamp((t - x.s) / 0.08) })); x0 += x.w; }); });
+      return;
+    }
+    for (const c of l.chunks) if (t >= c.start && t < c.end) {
+      const ws = chunkWords(c), cur = ws.find(x => t >= x.s && t < x.e) || ws[ws.length - 1];
+      if (o.v === 3) { const k2 = tw(t, cur.s, 0.16, E.back), fo = fit(cur.w.toUpperCase(), { size: 96, w: 800, f: F.U, ls: -2 }, 800);
+        txt(cur.w.toUpperCase(), 540, 1440, Object.assign({}, fo, { c: isKey(cur.w) ? C.pu : C.ink, s: lerp(0.8, 1, k2) })); return; }
+      const fo = { size: 58, w: 800 }, gap = width(' ', fo), tot = ws.reduce((q, x) => q + width(x.w, fo), 0) + gap * (ws.length - 1); let x0 = 540 - tot / 2; const y = 1468;
+      ctx.save(); ctx.globalAlpha = clamp((t - c.start) / 0.07); ctx.fillStyle = 'rgba(23,25,27,0.78)'; ctx.beginPath(); ctx.roundRect(540 - tot / 2 - 30, y - 62, tot + 60, 88, 22); ctx.fill();
+      ws.forEach(x => { const w = width(x.w, fo); if (x === cur) { ctx.fillStyle = C.pu; ctx.beginPath(); ctx.roundRect(x0 - 8, y - 52, w + 16, 68, 14); ctx.fill(); } txt(x.w, x0, y, Object.assign({}, fo, { align: 'left' })); x0 += w + gap; });
+      ctx.restore(); return;
+    }
+  }
+}
+// odznak kapitoly (o = { v, at: [začátky tipů], names: [...], dur }): v 1 = plný fialový kruh s číslem, v 2 = svítící obrys,
+// v 3 = fialová pilulka „TIP 1“; pod tím název tipu. Naskočí s překmitem a po o.dur zmizí (pak přijde datová karta)
+function chapterBadge(t, o) {
+  const i = o.at.reduce((k, x, j) => t >= x ? j : k, -1); if (i < 0) return 0;
+  const p = popS(t, o.at[i], o.at[i] + (o.dur || 1.9), 0.55); if (p.a <= 0) return 0;
+  ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(540, 500 + p.dy); ctx.scale(p.s, p.s); ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 3;
+  if (o.v === 3) { const lab = 'TIP ' + (i + 1), w = width(lab, { size: 46, w: 800, f: F.U }) + 64; ctx.fillStyle = C.pu; ctx.beginPath(); ctx.roundRect(-w / 2, -80, w, 92, 46); ctx.fill(); txt(lab, 0, -18, { size: 46, w: 800, f: F.U, c: '#ffffff' }); }
+  else {
+    ctx.shadowColor = 'rgba(139,61,255,0.85)'; ctx.shadowBlur = 40; ctx.beginPath(); ctx.arc(0, -40, 92, 0, 7);
+    if (o.v === 1) { ctx.fillStyle = C.pu; ctx.fill(); } else { ctx.lineWidth = 12; ctx.strokeStyle = C.pu; ctx.stroke(); ctx.fillStyle = 'rgba(23,25,27,0.55)'; ctx.fill(); }
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 22; txt(String(i + 1), 0, 4, { size: 128, w: 800, f: F.U, c: '#ffffff' });
+  }
+  txt(o.names[i], 0, 150, fit(o.names[i], { size: 72, w: 800, f: F.U, ls: -2, c: C.ink }, 820));
+  ctx.restore(); return p.a;
+}
+// datová karta (o = { v, title, items: [{ name, value, show, at, grow }], compare: { at, label }, from, to, hide }): sloupce rostou
+// s hlasem (počítadlo hodnoty), aktuální fialově; v 1 = tmavá karta se svislými sloupci, v 2 = vodorovné pruhy, v 3 = bez karty
+function dataCard(t, o) {
+  const a0 = clamp((t - o.from) / 0.35) * (1 - tw(t, o.to - 0.35, 0.35)) * (1 - (o.hide || 0)); if (a0 <= 0) return;
+  const max = Math.max(...o.items.map(x => x.value)), cur = o.items.reduce((k, x, j) => t >= x.at ? j : k, -1);
+  const X0 = 140, X1 = 940, Y0 = 380, Y1 = 710;
+  ctx.save(); ctx.globalAlpha *= a0;
+  if (o.v !== 3) { ctx.fillStyle = 'rgba(23,25,27,0.8)'; ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(X0, Y0, X1 - X0, Y1 - Y0, 28); ctx.fill(); ctx.stroke(); }
+  // nadpis karty: název právě probíraného tipu (x.head), pod ním šedě co karta ukazuje (o.title)
+  const hd = cur >= 0 && o.items[cur].head; if (hd) txt(hd, 540, Y0 + 48, fit(hd, { size: 34, w: 800, f: F.U, ls: -1, c: C.ink }, 720));
+  txt(o.title, 540, Y0 + (hd ? 84 : 44), { size: 22, w: 700, ls: 3, c: C.muted });
+  const clock = s => '−' + Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
+  o.items.forEach((x, j) => {
+    if (t < x.at) return; const g = tw(t, x.grow, 0.8, E.quint), v = x.value * g, on = j === cur, col = on ? C.pu : 'rgba(228,227,222,0.55)';
+    const la = clamp((t - x.at) / 0.25);
+    if (o.v === 2) {
+      const y = Y0 + 140 + j * 62, bx = 400, bw = 360 * v / max;
+      txt(x.name, X0 + 34, y + 11, { size: 30, w: 800, align: 'left', c: on ? C.ink : C.muted, a: la });
+      ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.beginPath(); ctx.roundRect(bx, y - 17, 360, 34, 17); ctx.fill();
+      if (bw > 1) { ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(bx, y - 17, Math.max(34, bw), 34, 17); ctx.fill(); }
+      if (g > 0) txt(clock(v), X1 - 30, y + 13, { size: 34, w: 800, f: F.U, align: 'right', c: on ? C.ink : C.muted });
+    } else {
+      const cx = 300 + j * 240, base = Y1 - 52, h = 150 * v / max;
+      txt(x.name, cx, base + 36, { size: 26, w: 800, ls: 2, c: on ? C.ink : C.muted, a: la });
+      ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.beginPath(); ctx.roundRect(cx - 62, base - 150, 124, 150, 14); ctx.fill();
+      if (h > 1) { ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(cx - 62, base - h, 124, h, 14); ctx.fill(); }
+      if (g > 0) txt(clock(v), cx, Math.max(Y0 + 136, base - h - 16), { size: 36, w: 800, f: F.U, c: on ? (h > 140 ? '#ffffff' : C.ink) : C.muted });
+    }
+  });
+  // porovnání: přerušovaná čára „1 + 2“ u posledního sloupce (víc než první dva dohromady)
+  if (o.compare && t >= o.compare.at) {
+    const k = tw(t, o.compare.at, 0.5), sum = o.items.slice(0, -1).reduce((q, x) => q + x.value, 0);
+    ctx.globalAlpha *= k; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4; ctx.setLineDash([10, 8]);
+    if (o.v === 2) { const y = Y0 + 140 + (o.items.length - 1) * 62, x = 400 + 360 * sum / max; ctx.beginPath(); ctx.moveTo(x, y - 28); ctx.lineTo(x, y + 28); ctx.stroke(); ctx.setLineDash([]); txt(o.compare.label, x, y + 52, { size: 24, w: 800, c: '#ffffff' }); }
+    else { const cx = 300 + (o.items.length - 1) * 240, base = Y1 - 52, y = base - 150 * sum / max; ctx.beginPath(); ctx.moveTo(cx - 76, y); ctx.lineTo(cx + 76, y); ctx.stroke(); ctx.setLineDash([]); txt(o.compare.label, cx - 88, y + 9, { size: 26, w: 800, align: 'right', c: '#ffffff' }); }
+  }
+  ctx.restore();
+}
+
 // ---------- KONEC VIDEA: pošli kamarádovi + sleduj ----------
 // Varianta 1 „karty přes krajinu“ (autor 22. 11. 2026 podle vzorového reelu): jezdec jede dál, přes krajinu vyskočí panel
 // sdílení (kontakty, zpráva, Send → Sent) a pak karta profilu (Follow → Following). Karta profilu je jediné místo s názvem
