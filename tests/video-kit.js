@@ -160,6 +160,8 @@ ok("stránka motoru nemá skript přímo v HTML", !/<script(?![^>]*\bsrc=)[^>]*>
   if (py) {
     const r = spawnSync(py, [path.join(__dirname, "tts-trim.py"), path.join(KIT, "tools/tts.py")], { encoding: "utf8" });
     ok("hlas: ořez odstraní ticho i osamocené cvaknutí na konci věty, slova nechá", r.status === 0, (r.stdout + r.stderr).trim());
+    const g = spawnSync(py, [path.join(__dirname, "audio-gain.py"), path.join(KIT, "tools/audio.py")], { encoding: "utf8" });
+    ok("zvuk: gain u věty zesílí úvod aspoň o 3 dB, špičky nepřerostou ostatní věty, ty zůstanou stejně hlasité", g.status === 0, (g.stdout + g.stderr).trim());
   } else console.log("- test ořezu hlasu přeskočen (chybí python s numpy, spusť bash video-kit/build.sh setup)");
 }
 

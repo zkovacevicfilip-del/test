@@ -126,19 +126,6 @@ function roadHelmetMesh(main) {
   mc.update(); mc.scale.set((box[3] - box[0]) / 2, (box[4] - box[1]) / 2, (box[5] - box[2]) / 2); mc.position.set((box[0] + box[3]) / 2, (box[1] + box[4]) / 2, (box[2] + box[5]) / 2);
   mc.castShadow = true; return mc;
 }
-// sluneční brýle k silniční helmě: tenký zrcadlový pruh přes oči (na stejné ploše jako hledí časovkářské helmy)
-function glassesMesh(material) {
-  const n = 80, box = [8, -12, -26, 40, 2, 26], mc = new MarchingCubes(n, material, false, false, 60000); mc.isolation = 0;
-  const sx = (box[3] - box[0]) / n, sy = (box[4] - box[1]) / n, sz = (box[5] - box[2]) / n, E = ellipsoid([-1, 4, 0], [34.9, 25.3, 22.6], -0.05);
-  for (let k = 0; k < n; k++) for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
-    const x = box[0] + i * sx, y = box[1] + j * sy, z = box[2] + k * sz;
-    let d = Math.abs(E(x, y, z)) - 0.8;
-    d = smax(d, y + 1, 1); d = smax(d, -8.5 - y, 1); d = smax(d, 16 - x, 1.5);
-    mc.field[k * n * n + j * n + i] = -d;
-  }
-  mc.update(); mc.scale.set((box[3] - box[0]) / 2, (box[4] - box[1]) / 2, (box[5] - box[2]) / 2); mc.position.set((box[0] + box[3]) / 2, (box[1] + box[4]) / 2, (box[2] + box[5]) / 2);
-  return mc;
-}
 // hledí: tenká skořepina těsně na helmě; horní hrana vpředu výš a za schůdkem níž, zadní hrana daleko na boku,
 // dole sahá kousek pod lem helmy
 function visorMesh(material) {
@@ -235,10 +222,10 @@ export function makeRider(kitName, over) {
   tt.add(helmetMesh(K.helmet, light ? '#3557D6' : '#F2F2EF'));
   // hledí: kouřově šedé, zrcadlové, obepíná obličej od okraje helmy po polovinu nosu
   tt.add(visorMesh(mat.visor));
-  // silniční helma s větracími drážkami a sluneční brýle (K.road = barva helmy; video „3 tipy“: na začátku silniční,
+  // silniční helma s větracími drážkami (K.road = barva helmy; video „3 tipy“: na začátku silniční,
   // pak „pop“ na časovkářskou). Bez K.road se nestaví, ostatní videa mají jen časovkářskou.
   const road = new THREE.Group(); road.visible = false; helmet.add(road);
-  if (K.road) { road.add(roadHelmetMesh(K.road)); road.add(glassesMesh(M('#15161c', { roughness: 0.06, metalness: 0.7, clearcoat: 1, envMapIntensity: 2 }))); }
+  if (K.road) road.add(roadHelmetMesh(K.road));
   // tretry: protáhlá bota, podrážka, fialový pásek (sedí na kosti chodidla)
   const shoes = ['R', 'L'].map(() => { const g = new THREE.Group(); root.add(g);
     const b = add(new THREE.Mesh(new THREE.SphereGeometry(1, 40, 24), mat.shoe), g); b.scale.set(31, 10.5, 8.6); b.position.set(16, -3, 0);
@@ -295,11 +282,11 @@ function makeHuman(K) {
   const suitA = pre.suit ? col(pre.suit) : suit;
   const U = { uSkin: col(K.skin), uSuit: suit, uShorts: col(K.suit2), uSock: col('#F2F2EF'), uHem: suit.clone().multiplyScalar(0.55), uGrip: col('#2a2b30'),
     uSuitA: suitA, uShortsA: col(pre.suit2 || K.suit2), uHemA: suitA.clone().multiplyScalar(0.55), uSleeveA: pre.sleeve ?? 0.56, uSleeveB: K.sleeve ?? 0.56,
-    uSwap: pre.suit ? 0 : 1, uLoose: pre.loose ?? 0, uTime: 0, uTopY: J('head').y + 2.0, uBotY: J('foot.R').y - 0.5,
+    uSwap: pre.suit ? 0 : 1, uLoose: pre.loose ?? 0, uTime: 0, uShortsLen: K.shortsLen ?? 0.7, uTopY: J('head').y + 2.0, uBotY: J('foot.R').y - 0.5,
     uS: J('upperarm01.R'), uE: J('lowerarm01.R'), uH: J('upperleg01.R'), uK: J('lowerleg01.R'), uA: J('foot.R'), uNeck: J('neck01'), uWaistY: J('spine04').y + 0.42 };
   const Uv = {}; for (const k in U) Uv[k] = { value: U[k] };
   const REG = `uniform vec3 uS, uE, uH, uK, uA, uNeck;
-uniform float uWaistY, uSleeveA, uSleeveB, uSwap, uTopY, uBotY;
+uniform float uWaistY, uSleeveA, uSleeveB, uSwap, uTopY, uBotY, uShortsLen;
 float segT(vec3 p, vec3 a, vec3 b) { vec3 d = b - a; return dot(p - a, d) / dot(d, d); }
 float segR(vec3 p, vec3 a, vec3 b) { vec3 d = b - a; return length(p - a - d * clamp(dot(p - a, d) / dot(d, d), 0.0, 1.0)); }
 // výška linky přechodu A → B (klidová poloha) a jestli je bod už v novém oblečení
@@ -315,7 +302,7 @@ int clothRegion(vec3 p) {
   if (abs(p.x) < 1.2 && p.y > neckY) return p.y < neckY + 0.07 ? 4 : 0;     // výstřih a lem límce
   if (p.y < uH.y + 0.15) {                                          // nohy
     float tl = segT(q, uH, uK);
-    if (tl < 0.7) return 2; if (tl < 0.75) return 5;
+    if (tl < uShortsLen) return 2; if (tl < uShortsLen + 0.05) return 5;
     return segT(q, uK, uA) > 0.83 ? 3 : 0;
   }
   if (p.y < uWaistY) return 2;                                      // kraťasy (pas a hýždě)
@@ -382,7 +369,12 @@ roughnessFactor = rg == 0 ? 0.56 : rg == 2 ? 0.34 : rg == 3 ? 0.8 : (rg == 1 && 
     const fa = -(5 + 60 * P.tilt) * deg, fwd = toModel(pitch(fa)).normalize(), up = toModel(pitch(fa + Math.PI / 2)).normalize(), right = new THREE.Vector3().crossVectors(up, fwd);
     const qh = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, fwd)); by.head.quaternion.copy(wq(by.head).invert().multiply(qh));
     // ramena k sobě (shrug 0 až 1, video „3 tipy“): klíční kosti se stočí dopředu, ramena se přiblíží a zúží postavu zepředu
-    if (shrug > 0) for (const [s, sz] of [['R', 1], ['L', -1]]) { const a = 0.38 * shrug; aim('clavicle.' + s, new THREE.Vector3(Math.sin(a), 0.16, sz * Math.cos(a))); }
+    // plynule od nuly: při shrug → 0 se nic nemění (oprava 25. 11. 2026, ramena dřív na začátku skočila)
+    // (k současnému natočení kosti se přičte jen otočení kolem svislé osy, bez změny pootočení kolem vlastní osy)
+    if (shrug > 0) for (const [s, sz] of [['R', 1], ['L', -1]]) {
+      const b = by['clavicle.' + s], w = wq(b), q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), sz * 0.5 * shrug).multiply(w);
+      b.quaternion.copy(w.clone().invert().multiply(q));
+    }
     riderRoot.updateMatrixWorld(true);
     // paže: v poloze 0 ruce na základním řídítku (dvoukloubová úloha), od polohy 1 lokty skoro svisle pod rameny
     // a předloktí dopředu po nástavcích; mezi tím plynulý přechod
@@ -392,6 +384,10 @@ roughnessFactor = rg == 0 ? 0.56 : rg == 2 ? 0.34 : rg == 3 ? 0.8 : (rg == 1 && 
       const reach = Math.min(S.distanceTo(G), LA[0] + LA[1] - 1), W0 = S.clone().add(G.clone().sub(S).normalize().multiplyScalar(reach));
       const E0 = ik3(S, W0, LA[0], LA[1], new THREE.Vector3(-0.2, -1, 0.5 * sz));
       const E1 = S.clone().add(new THREE.Vector3(0.12, -1, -(0.16 + 0.12 * shrug) * sz).normalize().multiplyScalar(LA[0])), W1 = E1.clone().add(new THREE.Vector3(1, 0.22, -(0.13 + 0.05 * shrug) * sz).normalize().multiplyScalar(LA[1]));   // předloktí mírně nahoru, ruce u sebe
+      // níž než poloha 1 (hlava dolů) nebo s rameny k sobě: zápěstí zůstanou na nástavcích (tam, kde byla v poloze 1),
+      // loket se dopočítá (dvoukloubová úloha), ruce tedy drží řídítka a nelevitují (oprava 25. 11. 2026)
+      const hold = HOLD && kTT > 0 ? clamp(Math.max(p - 1, 0) / 0.12 + shrug * 8) : 0;
+      if (hold > 0) { const Wt = HOLD[s].clone(), Et = ik3(S, Wt, LA[0], LA[1], new THREE.Vector3(0.1, -1, -(0.25 + 0.3 * shrug) * sz)); E1.lerp(Et, hold); W1.lerp(Wt, hold); }
       const E = E0.clone().lerp(E1, kTT), W = W0.clone().lerp(W1, kTT); arms[s] = { E, W };
       aim('upperarm01.' + s, E.clone().sub(S)); aim('upperarm02.' + s, E.clone().sub(S));
       riderRoot.updateMatrixWorld(true);
@@ -433,9 +429,9 @@ roughnessFactor = rg == 0 ? 0.56 : rg == 2 ? 0.34 : rg == 3 ? 0.8 : (rg == 1 && 
     last = arms;
     return { center, q, feet };
   }
-  let last = null;
+  let last = null, HOLD = null;
   // poloha loktů a rukou v polohách 1 a 0 → kam dát opěrky, nástavce a základní řídítko
-  function fit(riderRoot) { pose(riderRoot, 1, 0); const t1 = last.R; pose(riderRoot, 0, 0); const t0 = last.R;
+  function fit(riderRoot) { pose(riderRoot, 1, 0); const t1 = last.R; HOLD = { R: last.R.W.clone(), L: last.L.W.clone() }; pose(riderRoot, 0, 0); const t0 = last.R;
     const P = (a, b) => ({ c: [a.x, a.y, Math.abs(a.z)], a: [b.x, b.y, b.z * Math.sign(a.z || 1)] });   // pravá strana (z > 0), levá zrcadlově
     return { pad: [t1.E.x, t1.E.y - 9], tip: P(t1.fist, t1.axis), grip: P(t0.fist, t0.axis) }; }
   return { group, pose, by, fit, U: Uv };
