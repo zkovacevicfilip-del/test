@@ -276,6 +276,8 @@ function makeHuman(K) {
   geo.setIndex(HUMAN.geometry.index);
   const mat = new THREE.MeshPhysicalMaterial({ roughness: 0.5, sheen: 0.3, sheenRoughness: 0.5, sheenColor: new THREE.Color('#8c8a96') });
   const J = n => new THREE.Vector3(...meta.bones.find(b => b.name === n).head), suit = col(K.suit), pre = K.pre || {};
+  // K.gripIn: o kolik víc stočit předloktí dovnitř, aby držátka nástavců byla blíž u sebe (video „3 tipy“, autor 25. 11. 2026)
+  const GIN = K.gripIn || 0;
   // oblečení „před“ (A: K.pre, třeba volný bílý dres a černé kraťasy) a „po“ (B: barvy kitu, kombinéza). Přechod jde
   // svítící linkou shora dolů (uSwap 0 → 1, video „3 tipy“ 24. 11. 2026); dres A může být volný a vlát (uLoose).
   // Bez K.pre je všechno B, tedy stejné jako dřív.
@@ -383,7 +385,7 @@ roughnessFactor = rg == 0 ? 0.56 : rg == 2 ? 0.34 : rg == 3 ? 0.8 : (rg == 1 && 
       const S = wpos(riderRoot, 'upperarm01.' + s), G = new THREE.Vector3(GRIP[0], GRIP[1], 21 * sz);
       const reach = Math.min(S.distanceTo(G), LA[0] + LA[1] - 1), W0 = S.clone().add(G.clone().sub(S).normalize().multiplyScalar(reach));
       const E0 = ik3(S, W0, LA[0], LA[1], new THREE.Vector3(-0.2, -1, 0.5 * sz));
-      const E1 = S.clone().add(new THREE.Vector3(0.12, -1, -(0.16 + 0.12 * shrug) * sz).normalize().multiplyScalar(LA[0])), W1 = E1.clone().add(new THREE.Vector3(1, 0.22, -(0.13 + 0.05 * shrug) * sz).normalize().multiplyScalar(LA[1]));   // předloktí mírně nahoru, ruce u sebe
+      const E1 = S.clone().add(new THREE.Vector3(0.12, -1, -(0.16 + 0.12 * shrug) * sz).normalize().multiplyScalar(LA[0])), W1 = E1.clone().add(new THREE.Vector3(1, 0.22, -(0.13 + GIN + 0.05 * shrug) * sz).normalize().multiplyScalar(LA[1]));   // předloktí mírně nahoru, ruce u sebe
       // níž než poloha 1 (hlava dolů) nebo s rameny k sobě: zápěstí zůstanou na nástavcích (tam, kde byla v poloze 1),
       // loket se dopočítá (dvoukloubová úloha), ruce tedy drží řídítka a nelevitují (oprava 25. 11. 2026)
       const hold = HOLD && kTT > 0 ? clamp(Math.max(p - 1, 0) / 0.12 + shrug * 8) : 0;

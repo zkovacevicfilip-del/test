@@ -7,11 +7,12 @@
 // když dá hlavu dolů a ramena k sobě. Na konci „pošli kamarádovi a sleduj“ (karty přes krajinu, karta profilu wattIF).
 const ride = function (t, a) {
   // pohled kamery, dlouhá silnice (kamera zepředu vidí daleko) a jezdec: silniční helma, volný bílý dres → kombinéza;
-  // kraťasy skoro ke kolenům (shortsLen 0,86), jinak pod zadkem u sedla vykukovalo holé stehno (oprava 25. 11. 2026)
+  // kraťasy skoro ke kolenům (shortsLen 0,86), jinak pod zadkem u sedla vykukovalo holé stehno (oprava 25. 11. 2026);
+  // držátka nástavců blíž u sebe (gripIn 0,22: pěsti asi 13 cm od sebe místo 23,5 cm, autor 25. 11. 2026)
   // u tipu 3 (kamera zepředu, f → 1) kamera přijede blíž a níž, aby byla postava velká a plocha zepředu dobře vidět
   const cam = window.CAM || {}, front = clamp(((cam.o || 0) - 0.3) / 0.6), k = lerp(1, 0.55, front), Lk = [0, lerp(175, 160, front), lerp(-60, 40, front)];
   const VIEW = { cam: { pos: [Lk[0] + 300 * k, lerp(380, 250, front), Lk[2] + 1310 * k], look: Lk, fov: 40 }, road: { lanes: [-260], z0: -700, z1: 900, len: 40000 },
-    riders: { A: { kit: 'purple', z: 60, over: { road: '#F2F2EF', sleeve: 0.66, shortsLen: 0.86, pre: { suit: '#EDECE8', suit2: '#16171A', sleeve: 0.44, loose: 1 } } } } };
+    riders: { A: { kit: 'purple', z: 60, over: { road: '#F2F2EF', sleeve: 0.66, shortsLen: 0.86, gripIn: 0.22, pre: { suit: '#EDECE8', suit2: '#16171A', sleeve: 0.44, loose: 1 } } } } };
   const T = r => TR(r), tH = T('one:4'), tS = T('two:1');
   // tip 3: hlava dolů (poloha 1 → 1,7) a ramena k sobě; plocha zepředu se ukáže, jen když kamera míří zepředu
   const pose = 1 + 0.7 * tw(t, T('three:2'), 0.9, E.io), shrug = tw(t, T('three:3'), 0.9, E.io);

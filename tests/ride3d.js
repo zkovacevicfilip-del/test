@@ -56,7 +56,10 @@ const server = http.createServer((req, res) => {
       m.update({ pose: 1 }); const wr1 = LP('wrist.R'), s0 = LP('upperarm01.R'); m.update({ pose: 1.7, shrug: 1 }); const wr2 = LP('wrist.R'), s1 = LP('upperarm01.R');
       m.update({ pose: 1, shrug: 0.02 }); const s02 = LP('upperarm01.R');
       const hold = { wrist: wr1.distanceTo(wr2), shrug: s0.distanceTo(s1), start: s0.distanceTo(s02) };
-      return { def, h1, h2, sw0, fa0, fa1, hold, a0, a1, g0, g1, n0, top0, top2, head0: [head0.x, head0.y], roadOnly, palms, w0, w1, roadLayers, bones: skinned ? skinned.skeleton.bones.length : 0, verts: H.meta.vertices, kits: Object.keys(K.KITS) };
+      // držátka nástavců blíž u sebe (gripIn): zápěstí blíž ke středu než bez nastavení
+      const m3 = K.makeRider("purple", { gripIn: 0.22 }); m3.update({ pose: 1 }); m3.root.updateMatrixWorld(true);
+      const grip = { def: Math.abs(wr1.z), narrow: Math.abs(m3.root.worldToLocal(m3.root.getObjectByName('wrist.R').getWorldPosition(new K.THREE.Vector3())).z) };
+      return { def, h1, h2, sw0, fa0, fa1, hold, grip, a0, a1, g0, g1, n0, top0, top2, head0: [head0.x, head0.y], roadOnly, palms, w0, w1, roadLayers, bones: skinned ? skinned.skeleton.bones.length : 0, verts: H.meta.vertices, kits: Object.keys(K.KITS) };
     });
     ok("model člověka (MakeHuman) se načte: 163 kostí, přes 13 000 bodů", r.bones === 163 && r.verts > 13000, r.bones + " / " + r.verts);
     ok("jezdec se vykreslí bez chyb (WebGL bez grafické karty)", errs.length === 0 && r.n0 > 3000, errs.join("; ") + " / bodů " + r.n0);
@@ -72,6 +75,7 @@ const server = http.createServer((req, res) => {
     ok("asfalt ujíždí podle vzdálenosti (450 jednotek = půl dlaždice textury)", Math.abs(r.a1 - r.a0 - 0.5) < 1e-6, r.a0 + " → " + r.a1);
     ok("tráva u silnice ujíždí taky", Math.abs(r.g1 - r.g0 - 0.75) < 1e-6, r.g0 + " → " + r.g1);
     ok("bez nastavení má jezdec jen časovkářskou helmu a kombinézu jako dřív", r.def.tt && !r.def.road && r.def.swap === 1 && r.def.loose === 0, JSON.stringify(r.def));
+    ok("gripIn přisune držátka nástavců ke středu (zápěstí aspoň o třetinu blíž, ruce se ale nepřekrývají)", r.grip.narrow < r.grip.def * 0.67 && r.grip.narrow > 8, JSON.stringify(r.grip));
     ok("ruce drží nástavce i s hlavou dole a rameny k sobě (zápěstí se pohne nejvýš o 1,5 jednotky)", r.hold.wrist < 1.5, JSON.stringify(r.hold));
     ok("ramena k sobě: plynule od začátku (při shrug 0,02 posun do 0,6 jednotky), naplno znatelně (přes 3 jednotky)", r.hold.start < 0.6 && r.hold.shrug > 3, JSON.stringify(r.hold));
     ok("silniční helma (bez brýlí) se ukáže a schová podle hs, časovkářská naopak", r.h1.road && !r.h1.tt && !r.h2.road && r.h2.tt, JSON.stringify([r.h1, r.h2]));
