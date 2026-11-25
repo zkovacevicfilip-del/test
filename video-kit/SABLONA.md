@@ -516,6 +516,9 @@ ramena k sobě −2:18 na 40 km při 250 W).
   stehno) a držátka nástavců blíž u sebe (pěsti asi 13 cm od sebe). S hlavou dolů a rameny k sobě ruce drží nástavce. Ve stavu jezdce `hs: helmSwap(t, čas)` prohodí helmy naráz s poskočením
   (hlava nikdy holá, autor 24. 11. 2026), `swap: tw(t, čas, 1.3, E.io)` změní dres svítící linkou shora dolů na kombinézu,
   `shrug` 0 až 1 stáhne ramena k sobě. `popFX(t, čas, bod, velikost)` přidá záblesk, kruh a jiskry.
+- **Pozadí:** `road: { …, scenery: 'country' }` (varianta 2 od autora 25. 11. 2026): štěrková krajnice, patníky s odrazkami,
+  dřevěný plot, balíky sena, statky v dálce, sloupy s dráty, keře a trsy trávy; asfalt ostřejší s reliéfem a ujetými stopami.
+  Další možnosti: `circuit2` (okruh s detaily), `race` (časovka se zábranami a stany), `mountain` (hory). Bez `scenery` okruh jako dřív.
 - **Pohled zepředu:** ve stylu `orbit: [0, 0.35, -0.2, 1.2, 0]` (úhel kamery po aktech; 1,2 = skoro zepředu), u tipu 3 se kamera
   přiblíží (viz `VIEW` ve vzoru, silnice `len: 40000`). Stav `sil: { id: 'A', k, ghost: { pose: 1, shrug: 0 } }` vyšrafuje
   ušetřenou plochu zepředu (předtím minus teď), přidá bílý obrys polohy předtím a fialový nádech jezdce.
