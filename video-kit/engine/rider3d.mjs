@@ -510,6 +510,76 @@ function asphaltTex(n = 512) {
   }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t;
 }
+// detaily kolem silnice podle varianty krajiny (video „3 tipy“, 25. 11. 2026); vše ujíždí s jezdcem (put = pohyblivý předmět).
+// Vzdálená strana silnice je z < z0 (tam se dívá kamera z boku), bližší strana z > z1 až za kamerou (vidět jen zepředu).
+function scenery(kind, k) {
+  const { g, put, std, rnd, z0, z1, Lx, L } = k, G = (...m) => { const q = new THREE.Group(); m.forEach(x => q.add(x)); return q; };
+  const box = (w, h, d, m, x = 0, y = h / 2, z = 0) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); return b; };
+  const cyl = (r1, r2, h, m, y = h / 2, seg = 12) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, seg), m); c.position.y = y; return c; };
+  const grassM = L.tree.map(c => std(c, 0.95)), leafG = new THREE.IcosahedronGeometry(1, 1);
+  // trsy trávy a keře podél vzdálené strany (všechny varianty kromě závodu mají aspoň trsy)
+  const tufts = (n, za, zb) => { for (let i = 0; i < n; i++) { const h = 14 + rnd() * 16, t = new THREE.Mesh(new THREE.ConeGeometry(5 + rnd() * 5, h, 5), grassM[i % 3]); t.position.y = h / 2 - 1; put(G(t), rnd() * Lx, za + rnd() * (zb - za), false); } };
+  const bushes = (n, za, zb) => { for (let i = 0; i < n; i++) { const q = new THREE.Group(), r = 26 + rnd() * 30; for (let j = 0; j < 3; j++) { const b = new THREE.Mesh(leafG, grassM[(i + j) % 3]); b.scale.set(r * (0.8 + rnd() * 0.5), r * (0.6 + rnd() * 0.3), r * (0.8 + rnd() * 0.5)); b.position.set((rnd() - 0.5) * r * 1.4, r * 0.45, (rnd() - 0.5) * r); q.add(b); } put(q, rnd() * Lx, za + rnd() * (zb - za)); } };
+  if (kind === 'circuit2') {
+    tufts(260, z0 - 40, z0 - 420); bushes(46, z0 - 160, z0 - 900);
+    // stožáry osvětlení s ramenem nad silnicí a reklamní panely (bez nápisů, fialová a bílá)
+    const pole = std('#a7abb2', 0.4), lamp = std('#e9e7df', 0.3), pu = std('#7B33F0', 0.5), wh = std('#ECEBE6', 0.6), dk = std('#2a2c31', 0.6);
+    for (let i = 0; i < Lx / 1100; i++) { const q = G(cyl(4, 6, 430, pole), box(4, 4, 90, pole, 0, 428, 45), box(30, 8, 16, lamp, 0, 422, 86)); put(q, i * 1100 + 300, z0 - 110); }
+    for (let i = 0; i < Lx / 1300; i++) { const q = G(box(260, 90, 4, i % 2 ? pu : wh, 0, 75), box(260, 10, 5, dk, 0, 125), box(6, 60, 6, dk, -110, 30), box(6, 60, 6, dk, 110, 30)); put(q, i * 1300 + 900, z0 - 140); }
+  }
+  if (kind === 'country') {
+    tufts(320, z0 - 10, z0 - 500); bushes(60, z0 - 300, z0 - 1200);
+    // patníky s odrazkami po obou stranách, dřevěný plot, balíky sena, statky, sloupy elektrického vedení s dráty
+    const wh = std('#F1F0EA', 0.5), bl = std('#1b1c1f', 0.5), refl = new THREE.MeshStandardMaterial({ color: '#ff8a1f', emissive: new THREE.Color('#a24300'), roughness: 0.3 });
+    for (const z of [z0 - 45, z1 + 45]) for (let i = 0; i < Lx / 500; i++) { const q = G(box(8, 46, 8, wh), box(8.4, 9, 8.4, bl, 0, 38), box(3, 6, 8.6, refl, 0, 30)); put(q, i * 500, z); }
+    const wood = std('#7a5a3a', 0.9), wood2 = std('#8c6a45', 0.9);
+    for (let i = 0; i < Lx / 160; i++) put(G(box(7, 70, 7, wood, 0, 35)), i * 160, z0 - 230);
+    for (const y of [28, 56]) { const r = box(Lx * 2, 5, 3, wood2, 0, y); r.position.z = z0 - 233; r.castShadow = true; g.add(r); }
+    const hay = std('#d9b45a', 0.95);
+    for (let i = 0; i < 46; i++) { const c = new THREE.Mesh(new THREE.CylinderGeometry(50, 50, 80, 20), hay); c.rotation.x = Math.PI / 2; c.position.y = 50; put(G(c), rnd() * Lx, z0 - 420 - rnd() * 1500); }
+    const wall = std('#ECE7DC', 0.8), roof = std('#9c3b2c', 0.8), barn = std('#7d2f27', 0.85);
+    for (let i = 0; i < 6; i++) {
+      const w = 300 + rnd() * 160, d = 240, h = 160;
+      const roofM = new THREE.Mesh(new THREE.ConeGeometry(d * 0.75, 150, 4), roof); roofM.rotation.y = Math.PI / 4; roofM.scale.set(w / d, 1, 1); roofM.position.y = h + 75;
+      put(G(box(w, h, d, i % 2 ? barn : wall), roofM), i * (Lx / 6) + rnd() * 900, z0 - 3000 - rnd() * 1500);
+    }
+    const pw = std('#5b4a38', 0.9);
+    for (let i = 0; i < Lx / 950; i++) put(G(cyl(5, 6, 430, pw), box(6, 6, 120, pw, 0, 410)), i * 950 + 200, z0 - 150);
+    // dráty: podél silnice všude stejné, takže stojí (neujíždějí); na ramenech sloupů vlevo, vpravo a níž uprostřed
+    const wireM = std('#2b2b2e', 0.6); for (const [y, dz] of [[414, -52], [414, 52], [396, 0]]) { const wr = box(Lx * 2, 1.6, 1.6, wireM, 0, y); wr.position.z = z0 - 150 + dz; g.add(wr); }
+  }
+  if (kind === 'race') {
+    // zábrany s plachtami (fialová a bílá, bez nápisů), kužely na středové čáře, cedule s kilometry, vlajky, stany týmů
+    const metal = std('#b9bcc2', 0.4), pu = std('#7B33F0', 0.55), wh = std('#F1F0EA', 0.6);
+    for (let i = 0; i < Lx / 200; i++) put(G(box(196, 66, 2.5, i % 2 ? pu : wh, 0, 40), box(198, 4, 4, metal, 0, 75), box(4, 74, 4, metal, -97, 37), box(4, 74, 4, metal, 97, 37), box(10, 3, 40, metal, -97, 1.5), box(10, 3, 40, metal, 97, 1.5)), i * 200, z0 - 40);
+    const cone = new THREE.MeshStandardMaterial({ color: '#ff6a1a', roughness: 0.5 }), band = std('#f4f4f0', 0.4);
+    for (let i = 0; i < Lx / 700; i++) { const c = new THREE.Mesh(new THREE.ConeGeometry(11, 42, 16), cone); c.position.y = 22; const b = new THREE.Mesh(new THREE.CylinderGeometry(6.6, 8.2, 7, 16), band); b.position.y = 22; put(G(c, b, box(26, 3, 26, cone, 0, 1.5)), i * 700 + 150, -260); }
+    const signs = [5, 10, 15, 20, 25, 30, 35];
+    signs.forEach((km, i) => {
+      const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128; const c2 = cv.getContext('2d'); c2.fillStyle = '#F1F0EA'; c2.fillRect(0, 0, 256, 128); c2.fillStyle = '#7B33F0'; c2.fillRect(0, 0, 256, 18);
+      c2.fillStyle = '#17191B'; c2.font = 'bold 70px DejaVu Sans, sans-serif'; c2.textAlign = 'center'; c2.textBaseline = 'middle'; c2.fillText(km + ' KM', 128, 74);
+      const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace; const bd = new THREE.Mesh(new THREE.PlaneGeometry(150, 75), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.6 })); bd.position.set(0, 170, 2.6);
+      put(G(bd, box(150, 75, 4, std('#2a2c31', 0.6), 0, 170), box(6, 210, 6, metal, 0, 105)), i * (Lx / signs.length) + 600, z0 - 110);
+    });
+    const flag = new THREE.MeshStandardMaterial({ color: '#7B33F0', roughness: 0.6, side: THREE.DoubleSide });
+    for (let i = 0; i < Lx / 520; i++) { const f = new THREE.Mesh(new THREE.PlaneGeometry(60, 130), flag); f.position.set(32, 300, 0); put(G(cyl(2.5, 3, 380, metal), f), i * 520 + 260, z0 - 260 - (i % 3) * 60); }
+    const roofP = std('#7B33F0', 0.6), roofW = std('#F1F0EA', 0.6);
+    for (let i = 0; i < 7; i++) { const rf = new THREE.Mesh(new THREE.ConeGeometry(212, 70, 4), i % 2 ? roofP : roofW); rf.rotation.y = Math.PI / 4; rf.position.y = 205; const legs = [[-140, -140], [140, -140], [-140, 140], [140, 140]].map(([x, z]) => { const l = cyl(3, 3, 170, metal); l.position.set(x, 85, z); return l; });
+      put(G(rf, ...legs, box(300, 20, 300, i % 2 ? roofP : roofW, 0, 162)), i * (Lx / 7) + rnd() * 600, z0 - 520 - rnd() * 300); }
+    tufts(120, z0 - 320, z0 - 700); bushes(30, z0 - 700, z0 - 1400);
+  }
+  if (kind === 'mountain') {
+    tufts(200, z0 - 90, z0 - 500);
+    // kamenná zídka za svodidly, smrky, zasněžené štíty v dálce
+    const stone = [std('#8d8a84', 0.95), std('#77746f', 0.95), std('#a19d96', 0.95)];
+    for (let i = 0; i < Lx / 60; i++) { const b = box(58, 26 + rnd() * 10, 30, stone[i % 3]); put(G(b), i * 60, z0 - 120); }
+    const pine = [std('#2f4a2a', 0.9), std('#3a5530', 0.9), std('#26402a', 0.9)], trunk = std('#4e3a2a', 0.9);
+    for (let i = 0; i < 140; i++) { const h = 320 + rnd() * 380, q = G(cyl(7, 10, h * 0.25, trunk)); for (let j = 0; j < 3; j++) { const c = new THREE.Mesh(new THREE.ConeGeometry(h * (0.32 - j * 0.07), h * 0.5, 9), pine[(i + j) % 3]); c.position.y = h * (0.3 + j * 0.22); q.add(c); } put(q, rnd() * Lx, z0 - 700 - rnd() * 5000); }
+    const rock = std('#8a8f96', 1), snow = std('#f2f4f7', 0.7);
+    for (let i = 0; i < 8; i++) { const h = 2300 + rnd() * 1500, r = 1900 + rnd() * 1200, q = new THREE.Group(); const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, 7), rock); m.position.y = h / 2 - 300; const sn = new THREE.Mesh(new THREE.ConeGeometry(r * 0.3, h * 0.3, 7), snow); sn.position.y = h - 300 - h * 0.15 + 2; q.add(m, sn); q.position.set(-12000 + i * 3400 + rnd() * 900, 0, -6200 - rnd() * 2200); g.add(q); }
+  }
+}
+
 // krajina kolem silnice (vrstva 2): tráva, červenobílé obrubníky, svodidla, stromy a kopce v oparu; vše ujíždí podle vzdálenosti
 export function makeOutdoor(o = {}, L = LOOKS.day) {
   const z0 = o.z0 ?? -650, z1 = o.z1 ?? 520, Lx = 16000, g = new THREE.Group(), moving = [];
@@ -518,17 +588,26 @@ export function makeOutdoor(o = {}, L = LOOKS.day) {
   // tráva po obou stranách
   const grassT = noiseTex(L.grass[0], L.grass[1], 256, 0.6); grassT.repeat.set(60, 30);
   for (const [za, zb] of [[z1, z1 + 6000], [z0 - 12000, z0]]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(Lx * 2, zb - za), std('#ffffff', 1)); m.material.map = grassT; m.rotation.x = -Math.PI / 2; m.position.set(0, -0.5, (za + zb) / 2); m.receiveShadow = true; g.add(m); }
+  // krajina podle o.scenery (video „3 tipy“, 25. 11. 2026): bez nastavení okruh jako dřív; 'circuit2' okruh s detaily,
+  // 'country' venkovská silnice, 'race' časovka se zábranami, 'mountain' horská silnice
+  const kind = o.scenery || 'circuit', circuit = kind === 'circuit' || kind === 'circuit2';
+  const put = (obj, x0, z, shadow = true) => { obj.position.z = z; obj.userData = { x0 }; if (shadow) obj.traverse(c => { if (c.isMesh) c.castShadow = true; }); g.add(obj); moving.push(obj); return obj; };
   // obrubníky: střídavě červené a bílé kvádry podél obou okrajů silnice
-  const P = 120, n = Math.ceil(Lx / P), kerbG = new THREE.BoxGeometry(P - 2, 6, 34);
-  const red = std('#c8322d', 0.6), white = std('#eeeeea', 0.6);
-  for (const z of [z0 - 17, z1 + 17]) for (let i = 0; i < n; i++) { const k = new THREE.Mesh(kerbG, i % 2 ? red : white); k.position.set(0, 2.5, z); k.receiveShadow = true; k.castShadow = true; k.userData = { x0: i * P }; g.add(k); moving.push(k); }
-  // svodidla za vzdáleným okrajem: sloupky a vlnitá pásnice
-  const rail = new THREE.Mesh(new THREE.BoxGeometry(Lx * 2, 16, 3), new THREE.MeshStandardMaterial({ color: '#c9ccd1', roughness: 0.35, metalness: 0.8 })); rail.position.set(0, 50, z0 - 70); rail.castShadow = true; g.add(rail);
-  const postG = new THREE.BoxGeometry(5, 58, 5), postM = std('#9aa0a8', 0.5);
-  for (let i = 0; i < Lx / 400; i++) { const ps = new THREE.Mesh(postG, postM); ps.position.set(0, 29, z0 - 74); ps.castShadow = true; ps.userData = { x0: i * 400 }; g.add(ps); moving.push(ps); }
-  // stromy: kmen a koruna ze tří koulí, náhodně v pásu za svodidly a pár stromů na bližší straně
+  if (circuit) {
+    const P = 120, n = Math.ceil(Lx / P), kerbG = new THREE.BoxGeometry(P - 2, 6, 34);
+    const red = std('#c8322d', 0.6), white = std('#eeeeea', 0.6);
+    for (const z of [z0 - 17, z1 + 17]) for (let i = 0; i < n; i++) { const k = new THREE.Mesh(kerbG, i % 2 ? red : white); k.position.set(0, 2.5, z); k.receiveShadow = true; k.castShadow = true; k.userData = { x0: i * P }; g.add(k); moving.push(k); }
+  }
+  // svodidla za vzdáleným okrajem: sloupky a vlnitá pásnice (okruh a hory)
+  if (circuit || kind === 'mountain') {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(Lx * 2, 16, 3), new THREE.MeshStandardMaterial({ color: '#c9ccd1', roughness: 0.35, metalness: 0.8 })); rail.position.set(0, 50, z0 - 70); rail.castShadow = true; g.add(rail);
+    const postG = new THREE.BoxGeometry(5, 58, 5), postM = std('#9aa0a8', 0.5);
+    for (let i = 0; i < Lx / 400; i++) { const ps = new THREE.Mesh(postG, postM); ps.position.set(0, 29, z0 - 74); ps.castShadow = true; ps.userData = { x0: i * 400 }; g.add(ps); moving.push(ps); }
+  }
+  if (kind !== 'circuit') scenery(kind, { g, put, std, rnd, z0, z1, Lx, L });
+  // stromy: kmen a koruna ze tří koulí, náhodně v pásu za svodidly a pár stromů na bližší straně (na horách smrky, viz scenery)
   const trunkM = std('#5a4430', 0.9), leafM = L.tree.map(c => std(c, 0.85)), leafG = new THREE.IcosahedronGeometry(1, 2);
-  for (let i = 0; i < 110; i++) {
+  for (let i = 0; i < (kind === 'mountain' ? 0 : 110); i++) {
     const t = new THREE.Group(), h = 260 + rnd() * 260, r = 110 + rnd() * 90;
     const tr = new THREE.Mesh(new THREE.CylinderGeometry(9, 14, h, 8), trunkM); tr.position.y = h / 2; tr.castShadow = true; t.add(tr);
     for (let j = 0; j < 3; j++) { const lf = new THREE.Mesh(leafG, leafM[(i + j) % 3]); lf.scale.set(r * (0.8 + rnd() * 0.4), r * (0.85 + rnd() * 0.35), r * (0.8 + rnd() * 0.4)); lf.position.set((rnd() - 0.5) * r * 0.9, h + (rnd() - 0.2) * r * 0.6, (rnd() - 0.5) * r * 0.8); lf.castShadow = true; t.add(lf); }
@@ -536,7 +615,7 @@ export function makeOutdoor(o = {}, L = LOOKS.day) {
     const z = z0 - 2600 - rnd() * 5200; t.position.set(0, 0, z); t.userData = { x0: rnd() * Lx }; g.add(t); moving.push(t);
   }
   // kopce: velké zploštělé koule daleko v oparu
-  for (let i = 0; i < 7; i++) { const hl = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), std(L.hill[i % 2], 1)); hl.scale.set(2600 + rnd() * 2400, 600 + rnd() * 700, 1500); hl.position.set(-9000 + i * 3000 + rnd() * 800, -150, -9000 - rnd() * 3000); g.add(hl); }
+  for (let i = 0; i < (kind === 'mountain' ? 0 : 7); i++) { const hl = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), std(L.hill[i % 2], 1)); hl.scale.set(2600 + rnd() * 2400, 600 + rnd() * 700, 1500); hl.position.set(-9000 + i * 3000 + rnd() * 800, -150, -9000 - rnd() * 3000); g.add(hl); }
   g.traverse(x => x.layers.set(2));
   // tráva ujíždí stejně jako silnice (posun textury o ujetou vzdálenost; jedna dlaždice = 2·Lx / 60)
   return { group: g, grass: grassT, update(dist) { for (const m of moving) m.position.x = ((m.userData.x0 - dist) % Lx + Lx) % Lx - Lx / 2; grassT.offset.x = (dist / (Lx * 2 / 60)) % 1; } };
@@ -546,13 +625,25 @@ export function makeOutdoor(o = {}, L = LOOKS.day) {
 export function makeRoad(o = {}) {
   const z0 = o.z0 ?? -900, z1 = o.z1 ?? 420, L = o.len || 7000, g = new THREE.Group();
   const asphalt = new THREE.Mesh(new THREE.PlaneGeometry(L, z1 - z0), new THREE.MeshStandardMaterial({ color: o.outdoor ? '#ffffff' : '#0f1012', roughness: o.outdoor ? 0.95 : 1 }));
-  if (o.outdoor) { asphalt.material.map = asphaltTex(512); asphalt.material.map.repeat.set(L / 900, (z1 - z0) / 900); }
+  if (o.outdoor) { asphalt.material.map = asphaltTex(o.scenery ? 1024 : 512); asphalt.material.map.repeat.set(L / 900, (z1 - z0) / 900);
+    // s krajinou s detaily (o.scenery): jemný reliéf kamínků a spár ze stejné textury, ať asfalt na slunci ožije
+    if (o.scenery) { asphalt.material.bumpMap = asphalt.material.map; asphalt.material.bumpScale = 1.4; asphalt.material.roughness = 0.88; } }
   asphalt.rotation.x = -Math.PI / 2; asphalt.position.z = (z0 + z1) / 2; asphalt.receiveShadow = true; g.add(asphalt);
   const white = new THREE.MeshStandardMaterial({ color: '#cfcfca', roughness: 0.7 });
   for (const z of [z0 + 30, z1 - 30]) { const e = new THREE.Mesh(new THREE.PlaneGeometry(L, 9), white); e.rotation.x = -Math.PI / 2; e.position.set(0, 0.5, z); e.receiveShadow = true; g.add(e); }
   const P = 260, n = Math.ceil(L / P) + 2, dashes = [];
   for (const z of o.lanes || []) for (let i = 0; i < n; i++) { const d = new THREE.Mesh(new THREE.PlaneGeometry(130, 8), white); d.rotation.x = -Math.PI / 2; d.position.set(0, 0.6, z); d.receiveShadow = true; d.userData.i = i; g.add(d); dashes.push(d); }
+  // s krajinou s detaily: ujeté stopy po autech (tmavší vyhlazené pruhy) a na venkově a v horách štěrková krajnice místo obrubníků
+  let shoulder = null;
+  if (o.scenery && o.outdoor) {
+    const tr = new THREE.MeshStandardMaterial({ color: '#0b0c0e', transparent: true, opacity: 0.16, roughness: 0.6, depthWrite: false });
+    for (const z of [z0 + 140, z0 + 330, -150, 120, 520, 720].filter(v => v > z0 + 60 && v < z1 - 60)) { const t = new THREE.Mesh(new THREE.PlaneGeometry(L, 80), tr); t.rotation.x = -Math.PI / 2; t.position.set(0, 0.3, z); g.add(t); }
+    if (o.scenery === 'country' || o.scenery === 'mountain') {
+      shoulder = noiseTex('#8d8578', '#5b554c', 256, 1.2); shoulder.repeat.set(L / 300, 1);
+      for (const [za, zb] of [[z0 - 70, z0], [z1, z1 + 70]]) { const sh = new THREE.Mesh(new THREE.PlaneGeometry(L, zb - za), new THREE.MeshStandardMaterial({ map: shoulder, roughness: 1 })); sh.rotation.x = -Math.PI / 2; sh.position.set(0, -0.2, (za + zb) / 2); sh.receiveShadow = true; g.add(sh); }
+    }
+  }
   g.traverse(o => o.layers.set(2));   // silnice ve vrstvě 2: kreslí se zvlášť, pod proudnice (viz ride.js)
   // asfalt ujíždí s jezdcem: posun textury (jedna dlaždice = 900 jednotek) o ujetou vzdálenost
-  return { group: g, asphalt, update(dist) { for (const d of dashes) d.position.x = ((d.userData.i * P - dist) % (n * P) + n * P) % (n * P) - L / 2; if (asphalt.material.map) asphalt.material.map.offset.x = (dist / 900) % 1; } };
+  return { group: g, asphalt, update(dist) { for (const d of dashes) d.position.x = ((d.userData.i * P - dist) % (n * P) + n * P) % (n * P) - L / 2; if (asphalt.material.map) asphalt.material.map.offset.x = (dist / 900) % 1; if (shoulder) shoulder.offset.x = (dist / 300) % 1; } };
 }
