@@ -27,6 +27,14 @@ Téma: <o čem má video být>
 Závěr: Send this to the friend who <zvyk k tématu>. And follow for more free speed.
 ```
 
+**Video „3 tipy“ (stejný vzhled, úvod „3 TIPS“, stav 25. 11. 2026)** – vlož tohle:
+
+```
+Přečti video-kit/SABLONA.md, oddíl 16, a přesně podle něj vyrob nové video „3 tipy“.
+Vzor: video-kit/series/tips/01-time-trial.js
+Téma: <třeba 3 tipy do kopce>
+```
+
 ## 1. Co je pevně dané (neměnit, pokud o to autor výslovně neřekne)
 
 | Věc | Hodnota |
@@ -488,4 +496,28 @@ Kopec: `st.slope` (stupně, 8 % = 7) a ujetá dráha jako součet rychlostí, ru
 - `title` + `big` + `sub` v jednom nadpisu se překrývají.
 - Číslo na obrazovce musí sedět s hlasem (v humid-air je nahoře −1.6 %, hlas říká 1.5 %).
 - Skutečné fotky, videa ani hotová MP4 nepatří do repozitáře; `video-kit/work/` se necommituje.
+
+## 16. Video „3 tipy“ (stav 25. 11. 2026)
+
+Stejný realistický vzhled jako oddíl 15, ale místo whatIF začíná „3 TIPS“ a slibem, že trojka je nejdůležitější (kvůli
+dokoukanosti). Vzor: `series/tips/01-time-trial.js` (3 tipy na časovku: aero helma −0:36, kombinéza −1:07, hlava dolů a
+ramena k sobě −2:18 na 40 km při 250 W).
+
+- **Scénář:** úvod „Three tips for … Number three is the most important …“ (nejvýš 16 slov, `captions: false`), akty
+  `hook`, `one`, `two`, `three`, `cta`. Tipy od nejmenšího zisku k největšímu a trojka víc než první dva dohromady
+  (hlídá to test, čísla počítá `facts`). Každý tip začíná „Tip one: …“, trojka „And number three, the big one: …“.
+- **Úvod:** sloupec `classicUI` s nápisem `{ mark: [['3 ', 'ink'], ['TIPS', 'pu']], i: 0, size: 150 }`, pod ním dva řádky
+  a velké `#3 matters most`. Během tipů nahoře `title: 'Tip 1'` + `big: '<název>'`.
+- **Ukazatel postupu** (varianta 3 od autora): `classicUI(t, a, { …, tips: { at: [T('one:0'), T('two:0'), T('three:0')], end: T('cta:0') } })`
+  nakreslí nahoře tři dílky, které se plní s každým tipem, poslední je fialový.
+- **Proměny jezdce** (vše v `riders.A`): `over: { road: '#F2F2EF', sleeve: 0.66, pre: { suit: '#EDECE8', suit2: '#16171A', sleeve: 0.44, loose: 1 } }`
+  dá silniční helmu s brýlemi a volný bílý dres. Ve stavu jezdce `hs: helmSwap(t, čas)` prohodí helmy naráz s poskočením
+  (hlava nikdy holá, autor 24. 11. 2026), `swap: tw(t, čas, 1.3, E.io)` změní dres svítící linkou shora dolů na kombinézu,
+  `shrug` 0 až 1 stáhne ramena k sobě. `popFX(t, čas, bod, velikost)` přidá záblesk, kruh a jiskry.
+- **Pohled zepředu:** ve stylu `orbit: [0, 0.35, -0.2, 1.2, 0]` (úhel kamery po aktech; 1,2 = skoro zepředu), u tipu 3 se kamera
+  přiblíží (viz `VIEW` ve vzoru, silnice `len: 40000`). Stav `sil: { id: 'A', k, ghost: { pose: 1, shrug: 0 } }` vyšrafuje
+  ušetřenou plochu zepředu (předtím minus teď), přidá bílý obrys polohy předtím a fialový nádech jezdce.
+- **Konec:** krátká věta „Send this to your <kamarád k tématu>. And follow for more free speed.“ má 5 titulků; karty
+  `ctaCards` posunout o kousek dřív (viz vzor), jinak je „Sent“ vidět jen zlomek vteřiny.
+- **Postup a kontrola:** jako oddíl 15. Před hlasem `run.sh … dry` a prohlédnout klíčové snímky (výměny, pohled zepředu, karty).
 

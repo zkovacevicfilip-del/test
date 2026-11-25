@@ -139,6 +139,10 @@ for (const f of fs.readdirSync(path.join(KIT, "series/tips")).filter(f => f.ends
   const hs = Array.from({ length: 201 }, (_, i) => sc.helmSwap(i * 0.01, 1)), bare = hs.filter(h => Math.max(h[0], h[1]) < 0.999 || (h[0] > 0 && h[1] > 0));
   ok(`[tips/${f}] výměna helmy naráz: hlava nikdy holá, silniční a časovkářská nikdy současně`, bare.length === 0 && hs[0][0] === 1 && hs[200][1] === 1, JSON.stringify(bare.slice(0, 3)));
 }
+// šablona, oddíl 16 (video „3 tipy“): vzor existuje a recept používá stejné pomůcky a nastavení jako vzor
+{ const sab = fs.readFileSync(path.join(KIT, "SABLONA.md"), "utf8"), r16 = sab.slice(sab.indexOf("## 16. Video „3 tipy“")), vz = fs.readFileSync(path.join(KIT, "series/tips/01-time-trial.js"), "utf8");
+  ok("šablona, oddíl 16: recept na „3 tipy“ sedí se vzorem", sab.includes("## 16. Video „3 tipy“") && /oddíl 16/.test(sab.slice(0, sab.indexOf("## 1."))) &&
+    ["helmSwap(t, ", "orbit: [0, 0.35, -0.2, 1.2, 0]", "tips: { at: [T('one:0'), T('two:0'), T('three:0')], end: T('cta:0') }", "ghost: { pose: 1, shrug: 0 }", "pre: { suit: '#EDECE8', suit2: '#16171A', sleeve: 0.44, loose: 1 }"].every(k => r16.includes(k) && vz.includes(k))); }
 ok("motor a nástroje sady jsou na místě", ["engine/engine.js", "engine/render.js", "engine/index.html", "engine/vendor/gsap.min.js", "engine/vendor/LICENSE-gsap.txt",
   "engine/vendor/three.module.js", "engine/vendor/three.core.js", "engine/vendor/LICENSE-three.txt", "engine/vendor/MarchingCubes.js", "engine/vendor/RoomEnvironment.js", "engine/rider3d.mjs", "engine/three-boot.mjs",
   "engine/models/cyclist.json", "engine/models/cyclist.bin", "engine/models/LICENSE-makehuman-CC0.md", "tools/makehuman-cyclist.py", "tools/kokoro-page.js", "series/ride.js", "tools/tts.py", "tools/align.py", "tools/timeline.py",
