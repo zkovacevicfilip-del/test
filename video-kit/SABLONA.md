@@ -503,15 +503,17 @@ Stejný realistický vzhled jako oddíl 15, ale místo whatIF začíná „3 TIP
 dokoukanosti). Vzor: `series/tips/01-time-trial.js` (3 tipy na časovku: aero helma −0:36, kombinéza −1:07, hlava dolů a
 ramena k sobě −2:18 na 40 km při 250 W).
 
-- **Scénář:** úvod „Three tips for … Number three is the most important …“ (nejvýš 16 slov, `captions: false`), akty
+- **Scénář:** úvod „Three tips for … Number three is the most important …“ (nejvýš 16 slov, `captions: false`, `gain: 5`
+  = úvod o 5 dB hlasitěji, autor 25. 11. 2026: byl moc pasivní), akty
   `hook`, `one`, `two`, `three`, `cta`. Tipy od nejmenšího zisku k největšímu a trojka víc než první dva dohromady
   (hlídá to test, čísla počítá `facts`). Každý tip začíná „Tip one: …“, trojka „And number three, the big one: …“.
 - **Úvod:** sloupec `classicUI` s nápisem `{ mark: [['3 ', 'ink'], ['TIPS', 'pu']], i: 0, size: 150 }`, pod ním dva řádky
   a velké `#3 matters most`. Během tipů nahoře `title: 'Tip 1'` + `big: '<název>'`.
 - **Ukazatel postupu** (varianta 3 od autora): `classicUI(t, a, { …, tips: { at: [T('one:0'), T('two:0'), T('three:0')], end: T('cta:0') } })`
   nakreslí nahoře tři dílky, které se plní s každým tipem, poslední je fialový.
-- **Proměny jezdce** (vše v `riders.A`): `over: { road: '#F2F2EF', sleeve: 0.66, pre: { suit: '#EDECE8', suit2: '#16171A', sleeve: 0.44, loose: 1 } }`
-  dá silniční helmu s brýlemi a volný bílý dres. Ve stavu jezdce `hs: helmSwap(t, čas)` prohodí helmy naráz s poskočením
+- **Proměny jezdce** (vše v `riders.A`): `over: { road: '#F2F2EF', sleeve: 0.66, shortsLen: 0.86, gripIn: 0.22, pre: { suit: '#EDECE8', suit2: '#16171A', sleeve: 0.44, loose: 1 } }`
+  dá silniční helmu (bez brýlí, autor 25. 11. 2026) a volný bílý dres; kraťasy skoro ke kolenům (jinak u sedla vykukuje holé
+  stehno) a držátka nástavců blíž u sebe (pěsti asi 13 cm od sebe). S hlavou dolů a rameny k sobě ruce drží nástavce. Ve stavu jezdce `hs: helmSwap(t, čas)` prohodí helmy naráz s poskočením
   (hlava nikdy holá, autor 24. 11. 2026), `swap: tw(t, čas, 1.3, E.io)` změní dres svítící linkou shora dolů na kombinézu,
   `shrug` 0 až 1 stáhne ramena k sobě. `popFX(t, čas, bod, velikost)` přidá záblesk, kruh a jiskry.
 - **Pohled zepředu:** ve stylu `orbit: [0, 0.35, -0.2, 1.2, 0]` (úhel kamery po aktech; 1,2 = skoro zepředu), u tipu 3 se kamera
