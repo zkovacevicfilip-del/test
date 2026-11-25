@@ -322,6 +322,8 @@ function chapterBadge(t, o) {
   txt(o.names[i], 0, 150, fit(o.names[i], { size: 72, w: 800, f: F.U, ls: -2, c: C.ink }, 820));
   ctx.restore(); return p.a;
 }
+// ušetřený čas „−m:ss“ ze zaokrouhlených celých sekund (jinak by při počítání krátce vyskočilo „−0:60“)
+function clockNeg(s) { const r = Math.round(s); return '−' + Math.floor(r / 60) + ':' + String(r % 60).padStart(2, '0'); }
 // datová karta (o = { v, title, items: [{ name, value, show, at, grow }], compare: { at, label }, from, to, hide }): sloupce rostou
 // s hlasem (počítadlo hodnoty), aktuální fialově; v 1 = tmavá karta se svislými sloupci, v 2 = vodorovné pruhy, v 3 = bez karty
 function dataCard(t, o) {
@@ -333,7 +335,7 @@ function dataCard(t, o) {
   // nadpis karty: název právě probíraného tipu (x.head), pod ním šedě co karta ukazuje (o.title)
   const hd = cur >= 0 && o.items[cur].head; if (hd) txt(hd, 540, Y0 + 48, fit(hd, { size: 34, w: 800, f: F.U, ls: -1, c: C.ink }, 720));
   txt(o.title, 540, Y0 + (hd ? 84 : 44), { size: 22, w: 700, ls: 3, c: C.muted });
-  const clock = s => '−' + Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
+  const clock = clockNeg;
   o.items.forEach((x, j) => {
     if (t < x.at) return; const g = tw(t, x.grow, 0.8, E.quint), v = x.value * g, on = j === cur, col = on ? C.pu : 'rgba(228,227,222,0.55)';
     const la = clamp((t - x.at) / 0.25);

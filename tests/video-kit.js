@@ -137,6 +137,17 @@ for (const f of fs.readdirSync(path.join(KIT, "series/tips")).filter(f => f.ends
   // výměna helmy: helmy se prohodí naráz, hlava nikdy nezůstane holá (v každém okamžiku je jedna helma aspoň v plné velikosti)
   const sc = vm.runInNewContext(require(path.join(KIT, "series/make.js")).build(spec).scenes + "\n;({ helmSwap })", { clamp: (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), tw: (t, s0, d, e) => (e || (x => x))(Math.min(1, Math.max(0, (t - s0) / d))), E: { back: x => x, io: x => x, expo: x => x } });
   const hs = Array.from({ length: 201 }, (_, i) => sc.helmSwap(i * 0.01, 1)), bare = hs.filter(h => Math.max(h[0], h[1]) < 0.999 || (h[0] > 0 && h[1] > 0));
+  // prvky podle reference (autor 25. 11. 2026): titulky dole se zvýrazněným slovem, odznak plný kruh, karta s pruhy, čísla v kartě
+  // sedí s výpočtem, zvukové efekty míří na existující titulky, podkres rytmus bez akordů; počítadlo nikdy neukáže „0:60“
+  const facts3 = spec.facts(require(path.join(KIT, "series/physics.js"))).slice(0, 3).map(x => Math.round(x[1]));
+  const vals = [...src.matchAll(/head: 'Tip \d · [^']+', value: (\d+)/g)].map(m => +m[1]);
+  const refOk = r => { const m = /^([A-Za-z0-9_]+)(?::(\d+))?(\$)?([+-]\d*\.?\d+)?$/.exec(r); return !!m && !!spec.lines[m[1]] && (m[2] == null || !!spec.lines[m[1]].chunks[+m[2]]); };
+  const ck = vm.runInNewContext(require(path.join(KIT, "series/make.js")).build(spec).scenes + "\n;({ clockNeg })", {}).clockNeg;
+  const bad60 = Array.from({ length: 2000 }, (_, i) => ck(i * 0.07)).filter(x => /:6\d$/.test(x));
+  ok(`[tips/${f}] prvky podle reference: titulky 2, odznak 1, karta 2 s čísly z výpočtu, zvuky na existující titulky, rytmus bez akordů`,
+    spec.style.words && spec.style.words.v === 2 && /chapterBadge\(t, \{ v: 1,/.test(src) && /dataCard\(t, \{ v: 2,/.test(src) && JSON.stringify(vals) === JSON.stringify(facts3) &&
+    Array.isArray(spec.sfx) && spec.sfx.length >= 10 && spec.sfx.every(e => refOk(e.at) && ["pop", "ding", "click", "impact", "shimmer", "riser"].includes(e.kind)) && spec.bed === 1 &&
+    bad60.length === 0 && ck(138) === "−2:18" && ck(59.7) === "−1:00", JSON.stringify({ vals, facts3, bad60: bad60.slice(0, 3) }));
   ok(`[tips/${f}] výměna helmy naráz: hlava nikdy holá, silniční a časovkářská nikdy současně`, bare.length === 0 && hs[0][0] === 1 && hs[200][1] === 1, JSON.stringify(bare.slice(0, 3)));
 }
 // šablona, oddíl 16 (video „3 tipy“): vzor existuje a recept používá stejné pomůcky a nastavení jako vzor
@@ -162,6 +173,8 @@ ok("stránka motoru nemá skript přímo v HTML", !/<script(?![^>]*\bsrc=)[^>]*>
     ok("hlas: ořez odstraní ticho i osamocené cvaknutí na konci věty, slova nechá", r.status === 0, (r.stdout + r.stderr).trim());
     const g = spawnSync(py, [path.join(__dirname, "audio-gain.py"), path.join(KIT, "tools/audio.py")], { encoding: "utf8" });
     ok("zvuk: gain u věty zesílí úvod aspoň o 3 dB, špičky nepřerostou ostatní věty, ty zůstanou stejně hlasité", g.status === 0, (g.stdout + g.stderr).trim());
+    const fx = spawnSync(py, [path.join(__dirname, "audio-sfx.py"), path.join(KIT, "tools/audio.py")], { encoding: "utf8" });
+    ok("zvuk: efekty zazní ve svůj čas, rytmus vyplní ticho, ale zůstane aspoň 10 dB pod hlasem a nic se neořízne", fx.status === 0, (fx.stdout + fx.stderr).trim());
   } else console.log("- test ořezu hlasu přeskočen (chybí python s numpy, spusť bash video-kit/build.sh setup)");
 }
 

@@ -12,8 +12,8 @@ const ride = function (t, a) {
   // pozadí venkov (scenery 'country', varianta 2 od autora 25. 11. 2026): krajnice, patníky, plot, seno, statky, sloupy s dráty
   // u tipu 3 (kamera zepředu, f → 1) kamera přijede blíž a níž, aby byla postava velká a plocha zepředu dobře vidět
   // (zepředu kamera míří o kus výš, takže jezdec je v obraze níž a hlava i vyšrafovaná plocha nejsou pod kartou s grafem)
-  const cam = window.CAM || {}, front = clamp(((cam.o || 0) - 0.3) / 0.6), k = lerp(1, 0.55, front), Lk = [0, lerp(175, 200, front), lerp(-60, 40, front)];
-  const VIEW = { cam: { pos: [Lk[0] + 300 * k, lerp(380, 290, front), Lk[2] + 1310 * k], look: Lk, fov: 40 }, road: { lanes: [-260], z0: -700, z1: 900, len: 40000, scenery: 'country' },
+  const cam = window.CAM || {}, front = clamp(((cam.o || 0) - 0.3) / 0.6), k = lerp(1, 0.55, front), Lk = [0, lerp(175, 210, front), lerp(-60, 40, front)];
+  const VIEW = { cam: { pos: [Lk[0] + 300 * k, lerp(380, 300, front), Lk[2] + 1310 * k], look: Lk, fov: 40 }, road: { lanes: [-260], z0: -700, z1: 900, len: 40000, scenery: 'country' },
     riders: { A: { kit: 'purple', z: 60, over: { road: '#F2F2EF', sleeve: 0.66, shortsLen: 0.86, gripIn: 0.22, pre: { suit: '#EDECE8', suit2: '#16171A', sleeve: 0.44, loose: 1 } } } } };
   const T = r => TR(r), tH = T('one:4'), tS = T('two:1');
   // tip 3: hlava dolů (poloha 1 → 1,7) a ramena k sobě; plocha zepředu se ukáže, jen když kamera míří zepředu
@@ -26,17 +26,16 @@ const ride = function (t, a) {
   const h = R3.riders.A.head();
   popFX(t, tH, at3d('A', [h.x, h.y, h.z]), 70 * scale3d('A'));
   popFX(t, tS, at3d('A', [-20, 215, 0]), 95 * scale3d('A'));
-  const tag = (s, at, out, c, size) => tag3d('A', pose, s, t, at, out, { c, size });
-  tag('−0:36', T('one:5'), T('two:0') - 0.7, 'pu', 50); tag('−1:07', T('two:3'), T('three:0') - 0.7, 'pu', 50); tag('−2:18', T('three:5'), T('cta:0') - 0.7, 'pu', 56);
   classicUI(t, a, {
     hook: { line: 'hook', cy: 440, items: [{ mark: [['3 ', 'ink'], ['TIPS', 'pu']], i: 0, size: 150 }, { t: 'for a faster', i: 1, size: 56 }, { t: 'time trial', i: 2, size: 56, gap: 14 }, { t: '#3 matters most', i: 3, big: true, size: 92 }] },
-    heads: {
-      one: [{ at: 'one:0', title: 'Tip 1', big: 'Aero helmet', bigAt: 'one:1' }],
-      two: [{ at: 'two:0', title: 'Tip 2', big: 'Skinsuit', bigAt: 'two:1' }],
-      three: [{ at: 'three:0', title: 'Tip 3', big: 'Head down', bigAt: 'three:2' }, { at: 'three:3', title: 'Tip 3', big: 'Shoulders in' }, { at: 'three:6', title: 'More than', big: 'tips 1 + 2' }]
-    },
+    heads: {},
     tips: { at: [T('one:0'), T('two:0'), T('three:0')], end: T('cta:0') }
   });
+  // prvky podle reference RunLive (autor 25. 11. 2026): odznak kapitoly 1 (plný kruh) na začátku tipu, pak datová karta 2
+  // (vodorovné pruhy, čas se dopočítá s hlasem, u trojky čára „1 + 2“); titulky dole se zvýrazněným slovem (style.words)
+  const bA = chapterBadge(t, { v: 1, at: [T('one:0'), T('two:0'), T('three:0')], names: ['Aero helmet', 'Skinsuit', 'Head down'], dur: 1.9 });
+  dataCard(t, { v: 2, title: 'TIME SAVED · 40 KM · 250 W', from: T('one:0') + 1.9, to: T('cta:0'), hide: bA, compare: { at: T('three:6'), label: '1 + 2' },
+    items: [{ name: 'HELMET', head: 'Tip 1 · Aero helmet', value: 36, at: T('one:0'), grow: T('one:5') }, { name: 'SKINSUIT', head: 'Tip 2 · Skinsuit', value: 67, at: T('two:0'), grow: T('two:3') }, { name: 'POSITION', head: 'Tip 3 · Head down', value: 138, at: T('three:0'), grow: T('three:5') }] });
   // krátká závěrečná věta: karty o kousek dřív, aby „Sent“ i „Following“ byly vidět aspoň půl vteřiny
   ctaCards(t, { share: T('cta:0') - 0.15, pick: T('cta:1') + 0.1, tap: T('cta:2') + 0.15, follow: T('cta:3') + 0.1, ftap: T('cta:4') + 0.2 });
 };
@@ -44,7 +43,7 @@ module.exports = {
   title: 'tips-time-trial',
   about: 'Tři tipy na rychlejší časovku (40 km, 250 W): aero helma −0:36, kombinéza místo volného dresu −1:07, hlava dolů a ramena k sobě −2:18, víc než první dva dohromady a zadarmo.',
   // kamera po aktech: úvod z boku, tip 1 zepředu šikmo (helma), tip 2 z boku zezadu (dres), tip 3 zepředu (plocha), konec z boku
-  style: { look: 'golden', ui: 'classic', camera: 'orbit', lean: 1, grade: { sat: 1.5, con: 1.12 }, orbit: [0, 0.35, -0.2, 1.2, 0] },
+  style: { look: 'golden', ui: 'classic', camera: 'orbit', lean: 1, grade: { sat: 1.5, con: 1.12 }, orbit: [0, 0.35, -0.2, 1.2, 0], words: { v: 2 } },
   acts: [['hook', 'hook'], ['one', 'one'], ['two', 'two'], ['three', 'three'], ['cta', 'cta']],
   lines: {
     // gain: úvod o 5 dB hlasitěji s měkkým omezením špiček (autor 25. 11. 2026: začátek byl moc pasivní)
@@ -59,6 +58,13 @@ module.exports = {
     cta: { say: 'Send this to your time trial buddy. And follow for more free speed.',
       chunks: ['Send this', 'to your', 'time trial buddy.', ['And follow', 'AND'], 'for more free speed.'] }
   },
+  // zvuk (autor 25. 11. 2026): efekty u čísel a přechodů a jemný rytmus pod hlasem (bed 1, bez akordů, ty zněly jako levná hudba)
+  sfx: [{ at: 'hook:0', kind: 'pop' }, { at: 'hook:3', kind: 'ding' },
+    { at: 'one:0', kind: 'pop' }, { at: 'one:4', kind: 'pop' }, { at: 'one:5', kind: 'ding' },
+    { at: 'two:0', kind: 'pop' }, { at: 'two:1', kind: 'shimmer' }, { at: 'two:3', kind: 'ding' },
+    { at: 'three:0', kind: 'riser' }, { at: 'three:0', kind: 'pop' }, { at: 'three:5', kind: 'impact' }, { at: 'three:6', kind: 'ding' },
+    { at: 'cta:0-0.15', kind: 'pop' }, { at: 'cta:1+0.1', kind: 'click' }, { at: 'cta:2+0.15', kind: 'click' }, { at: 'cta:3+0.1', kind: 'pop' }, { at: 'cta:4+0.2', kind: 'click' }],
+  bed: 1,
   scenes: { hook: { type: 'free', amb: 0.12, draw: ride }, one: { type: 'free', amb: 0.12, draw: ride }, two: { type: 'free', amb: 0.12, draw: ride }, three: { type: 'free', amb: 0.12, draw: ride }, cta: { type: 'free', amb: 0.12, draw: ride } },
   facts: P => {
     const T40 = c => P.time(250, 40, { cda: c }), t1 = T40(0.26) - T40(0.252), t2 = T40(0.26) - T40(0.245), t3 = T40(0.26) - T40(0.23);
