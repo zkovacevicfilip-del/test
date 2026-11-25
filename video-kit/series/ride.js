@@ -328,36 +328,53 @@ function clockNeg(s) { const r = Math.round(s); return '−' + Math.floor(r / 60
 // s hlasem (počítadlo hodnoty), aktuální fialově; v 1 = tmavá karta se svislými sloupci, v 2 = vodorovné pruhy, v 3 = bez karty
 function dataCard(t, o) {
   const a0 = clamp((t - o.from) / 0.35) * (1 - tw(t, o.to - 0.35, 0.35)) * (1 - (o.hide || 0)); if (a0 <= 0) return;
-  const max = Math.max(...o.items.map(x => x.value)), cur = o.items.reduce((k, x, j) => t >= x.at ? j : k, -1);
-  const X0 = 140, X1 = 940, Y0 = 380, Y1 = 710;
+  const max = Math.max(...o.items.map(x => x.value)), cur = o.items.reduce((k, x, j) => t >= x.at ? j : k, -1), it = cur >= 0 ? o.items[cur] : {};
+  // plán týdne u právě probíraného tipu (it.week, video o VO2 max): karta se o kousek prodlouží a řádky jsou hustší
+  const wk = o.items.some(x => x.week), hk = it.week ? tw(t, it.weekAt, 0.45, E.io) : 0;
+  const X0 = 140, X1 = 940, Y0 = 380, Y1 = 710 + 50 * hk, R0 = wk ? 122 : 140, RG = wk ? 52 : 62;
   ctx.save(); ctx.globalAlpha *= a0;
   if (o.v !== 3) { ctx.fillStyle = 'rgba(23,25,27,0.8)'; ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(X0, Y0, X1 - X0, Y1 - Y0, 28); ctx.fill(); ctx.stroke(); }
-  // nadpis karty: název právě probíraného tipu (x.head), pod ním šedě co karta ukazuje (o.title)
-  const hd = cur >= 0 && o.items[cur].head; if (hd) txt(hd, 540, Y0 + 48, fit(hd, { size: 34, w: 800, f: F.U, ls: -1, c: C.ink }, 720));
-  txt(o.title, 540, Y0 + (hd ? 84 : 44), { size: 22, w: 700, ls: 3, c: C.muted });
-  const clock = clockNeg;
+  // nadpis karty: název právě probíraného tipu (x.head), pod ním šedě recept tréninku (x.recipe), nebo co karta ukazuje (o.title)
+  const hd = it.head; if (hd) txt(hd, 540, Y0 + 48, fit(hd, { size: 34, w: 800, f: F.U, ls: -1, c: C.ink }, 720));
+  const sub = it.recipe || o.title; txt(sub, 540, Y0 + (hd ? 84 : 44), fit(sub, { size: 22, w: 700, ls: 3, c: C.muted }, 740));
+  // hodnota: čas „−m:ss“ (výchozí), nebo procenta „+7.2%“ (o.fmt = 'pct')
+  const fmtv = o.fmt === 'pct' ? (v => '+' + v.toFixed(1) + '%') : clockNeg;
   o.items.forEach((x, j) => {
     if (t < x.at) return; const g = tw(t, x.grow, 0.8, E.quint), v = x.value * g, on = j === cur, col = on ? C.pu : 'rgba(228,227,222,0.55)';
     const la = clamp((t - x.at) / 0.25);
     if (o.v === 2) {
-      const y = Y0 + 140 + j * 62, bx = 400, bw = 360 * v / max;
-      txt(x.name, X0 + 34, y + 11, { size: 30, w: 800, align: 'left', c: on ? C.ink : C.muted, a: la });
+      const y = Y0 + R0 + j * RG, bx = 400, bw = 360 * v / max;
+      txt(x.name, X0 + 34, y + 11, fit(x.name, { size: 30, w: 800, align: 'left', c: on ? C.ink : C.muted, a: la }, 220));
       ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.beginPath(); ctx.roundRect(bx, y - 17, 360, 34, 17); ctx.fill();
       if (bw > 1) { ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(bx, y - 17, Math.max(34, bw), 34, 17); ctx.fill(); }
-      if (g > 0) txt(clock(v), X1 - 30, y + 13, { size: 34, w: 800, f: F.U, align: 'right', c: on ? C.ink : C.muted });
+      if (g > 0) txt(fmtv(v), X1 - 30, y + 13, { size: 34, w: 800, f: F.U, align: 'right', c: on ? C.ink : C.muted });
     } else {
       const cx = 300 + j * 240, base = Y1 - 52, h = 150 * v / max;
       txt(x.name, cx, base + 36, { size: 26, w: 800, ls: 2, c: on ? C.ink : C.muted, a: la });
       ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.beginPath(); ctx.roundRect(cx - 62, base - 150, 124, 150, 14); ctx.fill();
       if (h > 1) { ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(cx - 62, base - h, 124, h, 14); ctx.fill(); }
-      if (g > 0) txt(clock(v), cx, Math.max(Y0 + 136, base - h - 16), { size: 36, w: 800, f: F.U, c: on ? (h > 140 ? '#ffffff' : C.ink) : C.muted });
+      if (g > 0) txt(fmtv(v), cx, Math.max(Y0 + 136, base - h - 16), { size: 36, w: 800, f: F.U, c: on ? (h > 140 ? '#ffffff' : C.ink) : C.muted });
     }
   });
+  // plán týdne: 7 koleček (E lehce, H tvrdě, R volno), naskakují postupně od it.weekAt
+  if (hk > 0) {
+    const days = 'MTWTFSS', lab = { E: 'EASY', H: 'HARD', R: 'REST' }, y = Y0 + 300, step = (X1 - X0 - 180) / 6;
+    it.week.forEach((d, i) => {
+      const p = popS(t, it.weekAt + 0.08 * i, null, 0.45); if (p.a <= 0) return; const x = X0 + 90 + i * step;
+      ctx.save(); ctx.globalAlpha *= p.a * hk; ctx.translate(x, y); ctx.scale(p.s, p.s);
+      ctx.fillStyle = d === 'H' ? C.pu : d === 'E' ? 'rgba(228,227,222,0.22)' : 'rgba(255,255,255,0.05)'; ctx.beginPath(); ctx.arc(0, 0, 23, 0, 7); ctx.fill();
+      txt(days[i], 0, 8, { size: 22, w: 800, c: d === 'H' ? '#ffffff' : d === 'E' ? C.ink : C.muted });
+      txt(lab[d], 0, 42, { size: 14, w: 800, ls: 1, c: d === 'H' ? C.pu : C.muted });
+      ctx.restore();
+    });
+  }
+  // zdroj čísla (it.src) malým písmem dole v kartě, jako v referenci
+  if (it.src) txt(it.src, 540, Y1 - 14, fit(it.src, { size: 17, w: 700, ls: 2, c: 'rgba(154,154,152,0.85)' }, 740));
   // porovnání: přerušovaná čára „1 + 2“ u posledního sloupce (víc než první dva dohromady)
   if (o.compare && t >= o.compare.at) {
     const k = tw(t, o.compare.at, 0.5), sum = o.items.slice(0, -1).reduce((q, x) => q + x.value, 0);
     ctx.globalAlpha *= k; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4; ctx.setLineDash([10, 8]);
-    if (o.v === 2) { const y = Y0 + 140 + (o.items.length - 1) * 62, x = 400 + 360 * sum / max; ctx.beginPath(); ctx.moveTo(x, y - 28); ctx.lineTo(x, y + 28); ctx.stroke(); ctx.setLineDash([]); txt(o.compare.label, x, y + 52, { size: 24, w: 800, c: '#ffffff' }); }
+    if (o.v === 2) { const y = Y0 + R0 + (o.items.length - 1) * RG, x = 400 + 360 * sum / max; ctx.beginPath(); ctx.moveTo(x, y - 28); ctx.lineTo(x, y + 28); ctx.stroke(); ctx.setLineDash([]); txt(o.compare.label, x, y + 52, { size: 24, w: 800, c: '#ffffff' }); }
     else { const cx = 300 + (o.items.length - 1) * 240, base = Y1 - 52, y = base - 150 * sum / max; ctx.beginPath(); ctx.moveTo(cx - 76, y); ctx.lineTo(cx + 76, y); ctx.stroke(); ctx.setLineDash([]); txt(o.compare.label, cx - 88, y + 9, { size: 26, w: 800, align: 'right', c: '#ffffff' }); }
   }
   ctx.restore();

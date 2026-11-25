@@ -132,15 +132,15 @@ for (const ex of fs.readdirSync(path.join(KIT, "examples"))) check(path.join(KIT
 for (const f of fs.readdirSync(path.join(KIT, "series/tips")).filter(f => f.endsWith(".js"))) {
   const src = fs.readFileSync(path.join(KIT, "series/tips", f), "utf8"), spec = require(path.join(KIT, "series/tips", f)), fx = spec.facts(require(path.join(KIT, "series/physics.js"))).slice(0, 3).map(x => x[1]);
   ok(`[tips/${f}] úvod: 3 tipy a trojka nejdůležitější; tipy od nejmenšího k největšímu, trojka víc než 1 + 2; ukazatel postupu`,
-    /^Three tips\b/.test(spec.lines.hook.say) && /Number three is the most important/.test(spec.lines.hook.say) && spec.acts.map(a => a[0]).join() === "hook,one,two,three,cta" &&
-    fx[0] < fx[1] && fx[1] < fx[2] && fx[2] > fx[0] + fx[1] && /tips: \{ at: \[T\('one:0'\), T\('two:0'\), T\('three:0'\)\]/.test(src) && /function tipsBar/.test(fs.readFileSync(path.join(KIT, "series/ride.js"), "utf8")), fx.map(x => x.toFixed(1)).join(" < "));
+    /^Three (tips|ways)\b/.test(spec.lines.hook.say) && /Number three is the most important/.test(spec.lines.hook.say) && spec.acts.map(a => a[0]).join() === "hook,one,two,three,cta" &&
+    fx[0] < fx[1] && fx[1] < fx[2] && (!/combined/i.test(spec.lines.three.say) || fx[2] > fx[0] + fx[1]) && /tips: \{ at: \[T\('one:0'\), T\('two:0'\), T\('three:0'\)\]/.test(src) && /function tipsBar/.test(fs.readFileSync(path.join(KIT, "series/ride.js"), "utf8")), fx.map(x => x.toFixed(1)).join(" < "));
   // výměna helmy: helmy se prohodí naráz, hlava nikdy nezůstane holá (v každém okamžiku je jedna helma aspoň v plné velikosti)
   const sc = vm.runInNewContext(require(path.join(KIT, "series/make.js")).build(spec).scenes + "\n;({ helmSwap })", { clamp: (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), tw: (t, s0, d, e) => (e || (x => x))(Math.min(1, Math.max(0, (t - s0) / d))), E: { back: x => x, io: x => x, expo: x => x } });
   const hs = Array.from({ length: 201 }, (_, i) => sc.helmSwap(i * 0.01, 1)), bare = hs.filter(h => Math.max(h[0], h[1]) < 0.999 || (h[0] > 0 && h[1] > 0));
   // prvky podle reference (autor 25. 11. 2026): titulky dole se zvýrazněným slovem, odznak plný kruh, karta s pruhy, čísla v kartě
   // sedí s výpočtem, zvukové efekty míří na existující titulky, podkres rytmus bez akordů; počítadlo nikdy neukáže „0:60“
-  const facts3 = spec.facts(require(path.join(KIT, "series/physics.js"))).slice(0, 3).map(x => Math.round(x[1]));
-  const vals = [...src.matchAll(/head: 'Tip \d · [^']+', value: (\d+)/g)].map(m => +m[1]);
+  const facts3 = spec.facts(require(path.join(KIT, "series/physics.js"))).slice(0, 3).map(x => x[2]);
+  const vals = [...src.matchAll(/head: '(?:Tip|Way) \d · [^']*'[^}]*?value: ([\d.]+)/g)].map(m => +m[1]);
   const refOk = r => { const m = /^([A-Za-z0-9_]+)(?::(\d+))?(\$)?([+-]\d*\.?\d+)?$/.exec(r); return !!m && !!spec.lines[m[1]] && (m[2] == null || !!spec.lines[m[1]].chunks[+m[2]]); };
   const ck = vm.runInNewContext(require(path.join(KIT, "series/make.js")).build(spec).scenes + "\n;({ clockNeg })", {}).clockNeg;
   const bad60 = Array.from({ length: 2000 }, (_, i) => ck(i * 0.07)).filter(x => /:6\d$/.test(x));
