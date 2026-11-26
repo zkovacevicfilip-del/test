@@ -540,3 +540,19 @@ ramena k sobě −2:18 na 40 km při 250 W).
   Hudbu s licencí (třeba Runaway) jde přidat jen v aplikaci Instagram, do souboru ji nevkládáme; pak použít verzi bez rytmu.
 - **Čísla ze studií** (VO2 max): `facts` vrací hodnoty ze studie (bez výpočtu) a `sources` celé citace; karta říká „in studies“,
   protože studie mají různé skupiny sportovců. Nevymýšlet: každé číslo ověřit ve zdroji.
+
+### Formát reference the.better.run: jak trénink přesně vypadá (stav 26. 11. 2026, vzor `tips/02-vo2max.js`)
+
+Každá kapitola asi 8–10 s: **odznak** 1,3 s (jméno tréninku) → **karta tréninku**, která se staví s hlasem → **karta výsledku**
+s číslem ze studie → **rychlý přechod** (karta se za 0,35 s smrskne do fialové kapky, z ní vyskočí odznak další kapitoly).
+Kamera mezi kapitolami jen pomalu dotáčí (`orbitDur: 3`, malé úhly `orbit`). Video může mít 36–40 s (limit scénáře 110 slov).
+
+- `workoutCard(t, { v: 1, y0, title, from, to, out, hide, reps, sets, hard: { label, dur, lvl }, easy: { label, dur, lvl }, line: { label, lvl }, at: { hard, easy, reps, sets, line } })`
+  ukáže štítky („20 S ALL OUT“, „10 S REST“), bloky (šířka = délka úseku, výška = tvrdost), počítadlo („×8“, se sadami „3 × 13“)
+  a přerušovanou čáru („VO2 MAX“). První tvrdý a lehký blok naskočí s hlasem, zbytek opakování u `at.reps`, další sady u `at.sets`.
+  `v: 2` = profil jako ve Zwiftu s časovou osou (autor vybral bloky `v: 1`).
+- `resultCard(t, { y0, at, out, value, fmt: 'pct' | 'ml', label, sub, src })`: velké číslo, které se dopočítá, a zdroj.
+- `cardMorph(t, T('two:0') - 0.35, y0)`: přechod kapkou; karta výsledku má `out` přesně v tom čase.
+- Hlas: opakovaná slova (four by fours, four minutes) hlídat kotvami – titulky se přiřazují ke slovům po pořadí.
+- Analýza reference: úvod 3,2 s, kapitola ~9 s (odznak 2 s, trénink 4 s, výsledek 2–3 s), přechod 0,3–0,4 s, nový prvek
+  zhruba každých 0,5 s, řeč asi 3 slova za sekundu, výzva 2,6 s.
