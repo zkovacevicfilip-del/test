@@ -360,7 +360,8 @@ function makeCamera(st, V) {
       // plynulý pohyb do strany (autor 22. 11. 2026: ne cuknutí): 3D kamera objede jezdce do nového úhlu (o = úhel v radiánech)
       // vlastní úhly po aktech (style.orbit = [úhel aktu 0, 1, …]), třeba pohled zepředu u tipu 3 ve videu „3 tipy“
       const orb = k => Array.isArray(st.orbit) ? st.orbit[k] || 0 : k === 0 ? 0 : k % 2 ? -0.24 : 0.2;
-      if (st.camera === 'orbit' && i > 0) tl.fromTo(cam, { o: orb(i - 1) }, { o: orb(i), duration: 1.4, ease: 'power2.inOut', immediateRender: false }, a.start - 0.5);
+      // style.orbitDur: pomalé jemné pootočení místo průletu (video o VO2 max: přechod dělá karta, kamera jen dotáčí)
+      if (st.camera === 'orbit' && i > 0) tl.fromTo(cam, { o: orb(i - 1) }, { o: orb(i), duration: st.orbitDur || 1.4, ease: st.orbitDur ? 'sine.inOut' : 'power2.inOut', immediateRender: false }, a.start - (st.orbitDur ? 0.3 : 0.5));
       // swipe: krajina plynule odjede doleva a nový akt přijede zprava (p = postup 0 až 1)
       if (swipe && i > 0) tl.fromTo(cam, { p: 0 }, { p: 1, duration: 0.7, ease: 'power2.inOut', immediateRender: false }, a.start);
       if (st.camera === 'whip' && i > 0) {

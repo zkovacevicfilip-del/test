@@ -36,7 +36,7 @@ function check(dir, name) {
   ok(`[${name}] titulky mají kotvu a rozumnou délku, čísla v hlase jsou slovy`, bad.length === 0, bad.join("; "));
   // krátká verze ("format": "short", asi 30 s) má jiný rozsah a hook musí být krátký a velký přímo ve scéně
   if (sc.format === "short") {
-    ok(`[${name}] krátký scénář má 55 až 90 slov (asi 25 až 33 s)`, words >= 55 && words <= 90, words + " slov");
+    ok(`[${name}] krátký scénář má 55 až 110 slov (asi 25 až 40 s; delší video autor povolil 26. 11. 2026)`, words >= 55 && words <= 110, words + " slov");
     const hook = sc.lines[keys[0]];
     // formát „ride“ (layout 'top'): hook ukazují titulky nahoře, ve scéně jsou jezdci
     ok(`[${name}] hook je první věta, má nejvýš 16 slov a text přímo ve scéně (nebo v titulcích nahoře)`,
@@ -104,7 +104,7 @@ for (const ex of fs.readdirSync(path.join(KIT, "examples"))) check(path.join(KIT
       if (spec.style && spec.style.ui === "classic") ok(`[${name}] nadpisy po aktech mizí s aktem a švih kamery nechá odkrytý okraj pod pruhem`, /hs0 = o\.heads && a && o\.heads\[a\.id\]/.test(out.scenes) && /actIO\(t, a\); ctx\.save\(\); ctx\.globalAlpha \*= io\.a; heads\(t, hs, io\.dy\)/.test(out.scenes) && /out && st\.overlay === 'wipe' \? -1/.test(out.scenes) && !/heads: \[/.test(out.scenes.slice(out.scenes.indexOf("classicUI(t, a, {"))));
       // autor 22. 11. 2026: fialový stírací pruh pryč, místo něj jemný švih (posun 60 px je menší než skrytý okraj scény 90 px)
       // autor 22. 11. 2026: fialový pruh pryč, mezi akty plynulý průlet 3D kamery (ne cuknutí), méně textu (A1) a sytější barvy (B2)
-      if (spec.style && spec.style.ui === "classic") ok(`[${name}] průlet 3D kamery, nahoře bez malých popisků, sytější barvy krajiny`, spec.style.overlay === undefined && spec.style.camera === "orbit" && spec.style.lean === 1 && spec.style.grade && spec.style.grade.sat === 1.5 && spec.style.grade.con === 1.12 && /if \(st\.camera === 'orbit' && i > 0\) tl\.fromTo\(cam, \{ o: orb\(i - 1\) \}, \{ o: orb\(i\), duration: 1\.4, ease: 'power2\.inOut'/.test(out.scenes) && /st\.cam\.position\.set\(Lk\[0\] \+ dx \* co \+ dz \* so/.test(out.scenes) && /hs0 && lean \? hs0\.map\(h => Object\.assign\(\{\}, h, \{ label: undefined, sub: undefined \}\)\)/.test(out.scenes) && /ctx\.filter = `saturate\(\$\{gr\.sat \|\| 1\}\) contrast\(\$\{gr\.con \|\| 1\}\)`; one\(X\); ctx\.filter = 'none';/.test(out.scenes), JSON.stringify(spec.style));
+      if (spec.style && spec.style.ui === "classic") ok(`[${name}] průlet 3D kamery, nahoře bez malých popisků, sytější barvy krajiny`, spec.style.overlay === undefined && spec.style.camera === "orbit" && spec.style.lean === 1 && spec.style.grade && spec.style.grade.sat === 1.5 && spec.style.grade.con === 1.12 && /if \(st\.camera === 'orbit' && i > 0\) tl\.fromTo\(cam, \{ o: orb\(i - 1\) \}, \{ o: orb\(i\), duration: st\.orbitDur \|\| 1\.4, ease: st\.orbitDur \? 'sine\.inOut' : 'power2\.inOut'/.test(out.scenes) && /st\.cam\.position\.set\(Lk\[0\] \+ dx \* co \+ dz \* so/.test(out.scenes) && /hs0 && lean \? hs0\.map\(h => Object\.assign\(\{\}, h, \{ label: undefined, sub: undefined \}\)\)/.test(out.scenes) && /ctx\.filter = `saturate\(\$\{gr\.sat \|\| 1\}\) contrast\(\$\{gr\.con \|\| 1\}\)`; one\(X\); ctx\.filter = 'none';/.test(out.scenes), JSON.stringify(spec.style));
       // autor 22. 11. 2026: na konci „pošli kamarádovi a sleduj“ (varianta 1, karty přes krajinu): poslední akt cta, věta s Send this a follow
       if (Object.values(spec.scenes).some(x => typeof x.draw === "function" && /ctaCards\(t, /.test(String(x.draw)))) ok(`[${name}] konec videa: pošli kamarádovi a sleduj (karty ctaCards)`, spec.acts[spec.acts.length - 1][0] === "cta" && /Send this .*follow/i.test(spec.lines.cta.say) && /function ctaCards/.test(out.scenes) && /ctaCards\(t, \{ share: T\('cta:\d'\)/.test(out.scenes) && /function ctaProfile/.test(out.scenes), spec.lines.cta && spec.lines.cta.say);
       // série „What if“ (a její zkouška stylů) začíná slovy What if; jiné série (ride) mají vlastní háček
@@ -132,22 +132,27 @@ for (const ex of fs.readdirSync(path.join(KIT, "examples"))) check(path.join(KIT
 for (const f of fs.readdirSync(path.join(KIT, "series/tips")).filter(f => f.endsWith(".js"))) {
   const src = fs.readFileSync(path.join(KIT, "series/tips", f), "utf8"), spec = require(path.join(KIT, "series/tips", f)), fx = spec.facts(require(path.join(KIT, "series/physics.js"))).slice(0, 3).map(x => x[1]);
   ok(`[tips/${f}] úvod: 3 tipy a trojka nejdůležitější; tipy od nejmenšího k největšímu, trojka víc než 1 + 2; ukazatel postupu`,
-    /^Three (tips|ways)\b/.test(spec.lines.hook.say) && /Number three is the most important/.test(spec.lines.hook.say) && spec.acts.map(a => a[0]).join() === "hook,one,two,three,cta" &&
-    fx[0] < fx[1] && fx[1] < fx[2] && (!/combined/i.test(spec.lines.three.say) || fx[2] > fx[0] + fx[1]) && /tips: \{ at: \[T\('one:0'\), T\('two:0'\), T\('three:0'\)\]/.test(src) && /function tipsBar/.test(fs.readFileSync(path.join(KIT, "series/ride.js"), "utf8")), fx.map(x => x.toFixed(1)).join(" < "));
+    /^Three (tips|ways|interval sessions)\b/.test(spec.lines.hook.say) && /Number three is the most important/.test(spec.lines.hook.say) && spec.acts.map(a => a[0]).join() === "hook,one,two,three,cta" &&
+    (/workoutCard\(t, /.test(src) || (fx[0] < fx[1] && fx[1] < fx[2])) && (!/combined/i.test(spec.lines.three.say) || fx[2] > fx[0] + fx[1]) && /tips: \{ at: \[T\('one:0'\), T\('two:0'\), T\('three:0'\)\]/.test(src) && /function tipsBar/.test(fs.readFileSync(path.join(KIT, "series/ride.js"), "utf8")), fx.map(x => x.toFixed(1)).join(" < "));
   // výměna helmy: helmy se prohodí naráz, hlava nikdy nezůstane holá (v každém okamžiku je jedna helma aspoň v plné velikosti)
   const sc = vm.runInNewContext(require(path.join(KIT, "series/make.js")).build(spec).scenes + "\n;({ helmSwap })", { clamp: (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), tw: (t, s0, d, e) => (e || (x => x))(Math.min(1, Math.max(0, (t - s0) / d))), E: { back: x => x, io: x => x, expo: x => x } });
   const hs = Array.from({ length: 201 }, (_, i) => sc.helmSwap(i * 0.01, 1)), bare = hs.filter(h => Math.max(h[0], h[1]) < 0.999 || (h[0] > 0 && h[1] > 0));
   // prvky podle reference (autor 25. 11. 2026): titulky dole se zvýrazněným slovem, odznak plný kruh, karta s pruhy, čísla v kartě
   // sedí s výpočtem, zvukové efekty míří na existující titulky, podkres rytmus bez akordů; počítadlo nikdy neukáže „0:60“
   const facts3 = spec.facts(require(path.join(KIT, "series/physics.js"))).slice(0, 3).map(x => x[2]);
-  const vals = [...src.matchAll(/head: '(?:Tip|Way) \d · [^']*'[^}]*?value: ([\d.]+)/g)].map(m => +m[1]);
+  const vals = /workoutCard\(t, /.test(src) ? [...src.matchAll(/resultCard\(t, \{[^}]*?value: ([\d.]+)/g)].map(m => +m[1]) : [...src.matchAll(/head: '(?:Tip|Way) \d · [^']*'[^}]*?value: ([\d.]+)/g)].map(m => +m[1]);
   const refOk = r => { const m = /^([A-Za-z0-9_]+)(?::(\d+))?(\$)?([+-]\d*\.?\d+)?$/.exec(r); return !!m && !!spec.lines[m[1]] && (m[2] == null || !!spec.lines[m[1]].chunks[+m[2]]); };
   const ck = vm.runInNewContext(require(path.join(KIT, "series/make.js")).build(spec).scenes + "\n;({ clockNeg })", {}).clockNeg;
   const bad60 = Array.from({ length: 2000 }, (_, i) => ck(i * 0.07)).filter(x => /:6\d$/.test(x));
   ok(`[tips/${f}] prvky podle reference: titulky 2, odznak 1, karta 2 s čísly z výpočtu, zvuky na existující titulky, rytmus bez akordů`,
-    spec.style.words && spec.style.words.v === 2 && /chapterBadge\(t, \{ v: 1,/.test(src) && /dataCard\(t, \{ v: 2,/.test(src) && JSON.stringify(vals) === JSON.stringify(facts3) &&
+    spec.style.words && spec.style.words.v === 2 && /chapterBadge\(t, \{ v: 1,/.test(src) && (/dataCard\(t, \{ v: 2,/.test(src) || (src.match(/workoutCard\(t, \{ v: WV,/g) || []).length === 3) && JSON.stringify(vals) === JSON.stringify(facts3) &&
     Array.isArray(spec.sfx) && spec.sfx.length >= 10 && spec.sfx.every(e => refOk(e.at) && ["pop", "ding", "click", "impact", "shimmer", "riser"].includes(e.kind)) && spec.bed === 1 &&
     bad60.length === 0 && ck(138) === "−2:18" && ck(59.7) === "−1:00", JSON.stringify({ vals, facts3, bad60: bad60.slice(0, 3) }));
+  // formát reference (autor 26. 11. 2026): u videa s kartou tréninku každá kapitola odznak → karta tréninku → karta výsledku,
+  // rychlý přechod (karta se smrskne do kapky přesně před odznakem další kapitoly), kamera jen pomalu dotáčí
+  if (/workoutCard\(t, /.test(src)) ok(`[tips/${f}] formát reference: 3 karty tréninku a výsledku, přechod kapkou před odznakem, pomalá kamera`,
+    (src.match(/resultCard\(t, /g) || []).length === 3 && /cardMorph\(t, T\('two:0'\) - 0\.35, y0\); cardMorph\(t, T\('three:0'\) - 0\.35, y0\);/.test(src) &&
+    /out: T\('two:0'\) - 0\.35/.test(src) && /out: T\('three:0'\) - 0\.35/.test(src) && spec.style.orbitDur >= 2 && /function cardMorph/.test(fs.readFileSync(path.join(KIT, "series/ride.js"), "utf8")));
   ok(`[tips/${f}] výměna helmy naráz: hlava nikdy holá, silniční a časovkářská nikdy současně`, bare.length === 0 && hs[0][0] === 1 && hs[200][1] === 1, JSON.stringify(bare.slice(0, 3)));
 }
 // šablona, oddíl 16 (video „3 tipy“): vzor existuje a recept používá stejné pomůcky a nastavení jako vzor

@@ -380,6 +380,79 @@ function dataCard(t, o) {
   ctx.restore();
 }
 
+// ---------- KARTA TRÉNINKU A KARTA VÝSLEDKU (video o VO2 max podle reference the.better.run, autor 26. 11. 2026) ----------
+// karta tréninku ukáže, jak trénink přesně vypadá: štítky „4 MIN HARD“ / „3 MIN EASY“, počítadlo opakování, bloky.
+// o = { v: 1 bloky (jako v referenci) | 2 profil jako ve Zwiftu (souvislé schody, časová osa), from, to, hide, out, title,
+//       hard: { label, dur, lvl }, easy: { label, dur, lvl }, reps, sets, at: { hard, easy, reps, line }, line: { label, lvl } }
+// Bloky naskakují s hlasem: první tvrdý u at.hard, první lehký u at.easy, ostatní opakování rychle za sebou u at.reps.
+function workoutCard(t, o) {
+  const outK = o.out != null ? tw(t, o.out, 0.25) : 0;
+  const a0 = clamp((t - o.from) / 0.3) * (1 - tw(t, o.to - 0.3, 0.3)) * (1 - (o.hide || 0)) * (1 - outK); if (a0 <= 0) return;
+  const X0 = 140, X1 = 940, Y0 = o.y0 || 380, Y1 = Y0 + 360, BX0 = X0 + 40, BX1 = X1 - 40, BY1 = Y1 - (o.v === 2 ? 64 : 40), BH = Y1 - Y0 - 150;
+  ctx.save(); ctx.globalAlpha *= a0; const sc = 1 - 0.06 * outK; ctx.translate(540, (Y0 + Y1) / 2); ctx.scale(sc, sc); ctx.translate(-540, -(Y0 + Y1) / 2);
+  ctx.fillStyle = 'rgba(23,25,27,0.84)'; ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(X0, Y0, X1 - X0, Y1 - Y0, 28); ctx.fill(); ctx.stroke();
+  txt(o.title, 540, Y0 + 48, fit(o.title, { size: 34, w: 800, f: F.U, ls: -1, c: C.ink }, 720));
+  // štítky a počítadlo
+  const chip = (lab, x, at, on) => { const p = popS(t, at, null, 0.4); if (p.a <= 0) return 0; const w = width(lab, { size: 22, w: 800, ls: 1 }) + 28;
+    ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(x + w / 2, Y0 + 88); ctx.scale(p.s, p.s); ctx.fillStyle = on ? C.pu : 'rgba(228,227,222,0.18)'; ctx.beginPath(); ctx.roundRect(-w / 2, -18, w, 36, 18); ctx.fill();
+    txt(lab, 0, 8, { size: 22, w: 800, ls: 1, c: on ? '#ffffff' : C.ink }); ctx.restore(); return w; };
+  const w1 = chip(o.hard.label, BX0, o.at.hard, true); chip(o.easy.label, BX0 + (w1 || width(o.hard.label, { size: 22, w: 800, ls: 1 }) + 28) + 12, o.at.easy, false);
+  // počítadlo: „×13“, s druhou a další sadou „3 × 13“ (od o.at.sets)
+  const rp = popS(t, o.at.reps, null, 0.5), sp = o.at.sets != null ? popS(t, o.at.sets, null, 0.5) : null, setsOn = sp && t >= o.at.sets;
+  if (rp.a > 0) { const q = setsOn ? sp : rp; ctx.save(); ctx.globalAlpha *= q.a; ctx.translate(BX1, Y0 + 92); ctx.scale(q.s, q.s); txt(setsOn ? o.sets + ' × ' + o.reps : '×' + o.reps, 0, 10, { size: 40, w: 800, f: F.U, align: 'right', c: C.pu }); ctx.restore(); }
+  // celý trénink jako řada úseků (sady × opakování × [tvrdě, lehce]), mezi sadami mezera
+  const segs = []; for (let s2 = 0; s2 < (o.sets || 1); s2++) { for (let r = 0; r < o.reps; r++) { segs.push({ k: 'h', r, s: s2 }); segs.push({ k: 'e', r, s: s2 }); } if (s2 < (o.sets || 1) - 1) segs.push({ k: 'g', s: s2 }); }
+  const dur = x => x.k === 'h' ? o.hard.dur : x.k === 'e' ? o.easy.dur : (o.gap || o.easy.dur * 3), tot = segs.reduce((q, x) => q + dur(x), 0), gapPx = o.v === 2 ? 0 : Math.max(1, Math.min(4, 300 / segs.length));
+  const k = (BX1 - BX0 - gapPx * (segs.length - 1)) / tot; let x = BX0;
+  segs.forEach((sg, i) => {
+    // první opakování s hlasem, zbytek první sady u at.reps, další sady u at.sets (bez at.sets všechno u at.reps)
+    const nS = segs.filter(q => q.s === 0).length, later = sg.s > 0 && o.at.sets != null;
+    const w = dur(sg) * k, first = sg.s === 0 && sg.r === 0, at = first ? (sg.k === 'h' ? o.at.hard : o.at.easy) : later ? o.at.sets + 0.9 * (i - nS) / Math.max(1, segs.length - nS) : o.at.reps + 0.9 * i / (o.at.sets != null ? nS : segs.length);
+    const g = tw(t, at, 0.35, E.quint);
+    if (g > 0 && sg.k !== 'g') {
+      const lvl = sg.k === 'h' ? o.hard.lvl : o.easy.lvl, h = BH * lvl * g;
+      ctx.fillStyle = sg.k === 'h' ? C.pu : 'rgba(228,227,222,0.32)';
+      if (o.v === 2) { ctx.fillRect(x, BY1 - h, w + 0.6, h); if (sg.k === 'h') { ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(x, BY1 - h, w + 0.6, 3); } }
+      else { ctx.beginPath(); ctx.roundRect(x, BY1 - h, Math.max(1.5, w), h, Math.min(8, w / 2)); ctx.fill(); }
+    } else if (g > 0 && o.v === 2) { ctx.fillStyle = 'rgba(228,227,222,0.18)'; const h = BH * o.easy.lvl * 0.6 * g; ctx.fillRect(x, BY1 - h, w + 0.6, h); }
+    x += w + gapPx;
+  });
+  if (o.v === 2) {   // časová osa profilu
+    const la = clamp((t - o.at.reps) / 0.4); ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(BX0, BY1 + 1); ctx.lineTo(BX1, BY1 + 1); ctx.stroke();
+    const mins = Math.round(tot / 60); txt('0', BX0, BY1 + 34, { size: 20, w: 700, align: 'left', c: C.muted, a: la }); txt(mins + ' MIN', BX1, BY1 + 34, { size: 20, w: 800, align: 'right', c: C.muted, a: la });
+  }
+  // přerušovaná čára (třeba „VO2 MAX“) v úrovni o.line.lvl
+  if (o.line && t >= o.at.line) {
+    const lk = tw(t, o.at.line, 0.5), y = BY1 - BH * o.line.lvl; ctx.save(); ctx.globalAlpha *= lk; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.setLineDash([9, 8]);
+    ctx.beginPath(); ctx.moveTo(BX0, y); ctx.lineTo(BX0 + (BX1 - BX0) * lk, y); ctx.stroke(); ctx.setLineDash([]); txt(o.line.label, BX1, y - 10, { size: 18, w: 800, ls: 2, align: 'right', c: '#ffffff' }); ctx.restore();
+  }
+  ctx.restore();
+}
+// rychlý přechod mezi kapitolami jako v referenci (volba autora 26. 11. 2026): karta se za 0,35 s smrskne do fialové kapky
+// přesně v místě a velikosti, ve které pak naskočí odznak další kapitoly (kruh r 92 · 0,62 kolem 540, 460)
+function cardMorph(t, t0, y0) {
+  // po smrsknutí kapka ještě 0,15 s dosvítí pod odznakem, který mezitím nabíhá (jinak by na chvilku blikla mezera)
+  const u0 = (t - t0) / 0.35; if (u0 <= 0 || u0 >= 1.43) return; const u = Math.min(1, u0), fadeK = u0 > 1 ? 1 - (u0 - 1) / 0.43 : 1;
+  const e = E.io(u), X0 = 140, X1 = 940, Y0 = y0 || 380, Y1 = Y0 + 360, cx = 540, cy = 460, r = 92 * 0.62;
+  const x0 = lerp(X0, cx - r, e), x1 = lerp(X1, cx + r, e), yA = lerp(Y0, cy - r, e), yB = lerp(Y1, cy + r, e), rad = lerp(28, r, e);
+  const col = [[23, 139], [25, 61], [27, 255]].map(c => Math.round(lerp(c[0], c[1], e)));
+  ctx.save(); ctx.globalAlpha *= fadeK; ctx.fillStyle = `rgba(${col.join(',')},${lerp(0.84, 1, e)})`; ctx.shadowColor = 'rgba(139,61,255,0.6)'; ctx.shadowBlur = 30 * e;
+  ctx.beginPath(); ctx.roundRect(x0, yA, x1 - x0, yB - yA, rad); ctx.fill(); ctx.restore();
+}
+// karta výsledku: velké číslo, které se dopočítá (o = { at, out, value, fmt: 'pct' | 'ml', label, sub, src, from })
+function resultCard(t, o) {
+  const p = popS(t, o.at, o.out, 0.55); if (p.a <= 0) return;
+  const X0 = 140, X1 = 940, Y0 = o.y0 || 380, Y1 = Y0 + 360, g = tw(t, o.at + 0.15, 0.9, E.quint), v = o.value * g;
+  const num = o.fmt === 'ml' ? '+' + v.toFixed(0) : '+' + v.toFixed(1) + '%';
+  ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(540, (Y0 + Y1) / 2 + p.dy); ctx.scale(p.s, p.s); ctx.translate(-540, -(Y0 + Y1) / 2);
+  ctx.fillStyle = 'rgba(23,25,27,0.84)'; ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(X0, Y0, X1 - X0, Y1 - Y0, 28); ctx.fill(); ctx.stroke();
+  txt(o.label, 540, Y0 + 62, { size: 28, w: 800, ls: 4, c: C.muted });
+  txt(num, 540, Y0 + 190, { size: 150, w: 800, f: F.U, ls: -4, c: C.pu });
+  txt(o.sub, 540, Y0 + 262, fit(o.sub, { size: 34, w: 800, c: C.ink }, 720));
+  if (o.src) txt(o.src, 540, Y1 - 22, fit(o.src, { size: 18, w: 700, ls: 2, c: 'rgba(154,154,152,0.85)' }, 740));
+  ctx.restore();
+}
+
 // ---------- KONEC VIDEA: pošli kamarádovi + sleduj ----------
 // Varianta 1 „karty přes krajinu“ (autor 22. 11. 2026 podle vzorového reelu): jezdec jede dál, přes krajinu vyskočí panel
 // sdílení (kontakty, zpráva, Send → Sent) a pak karta profilu (Follow → Following). Karta profilu je jediné místo s názvem
