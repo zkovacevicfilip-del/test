@@ -580,7 +580,8 @@ function n44Session(t, o) {
     if (t >= o.at.band) { const k = tw(t, o.at.band, 0.6), y = PB - PH * 0.93; ctx.save(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.setLineDash([9, 8]); ctx.beginPath(); ctx.moveTo(PX0, y); ctx.lineTo(PX0 + (PX1 - PX0) * k, y); ctx.stroke(); ctx.setLineDash([]);
       txt('90–95% HR MAX', PX1, y - 10, { size: 17, w: 800, ls: 1, align: 'right', c: '#ffffff', a: k }); ctx.restore(); }
     // plán týdne
-    if (t >= o.at.week) { const days = 'MTWTFSS', step = 104, y = G1 + 46;
+    // plán týdne na vlastní tmavé kartě (na světlé krajině by popisky nešly přečíst)
+    if (t >= o.at.week) { const days = 'MTWTFSS', step = 104, y = G1 + 52; n44Pop(t, o.at.week - 0.1, null, 540, y + 10, () => n44Box(X0, G1 + 12, X1, G1 + 112, 22));
       o.week.forEach((d, i) => { const at = o.at.week + 0.07 * i, x2 = 228 + i * step; n44Pop(t, at, null, x2, y, () => {
         const on = d === 'H', opt = d === 'h', easyGlow = !on && !opt && o.at.rest != null && t >= o.at.rest;
         ctx.fillStyle = on ? C.pu : opt ? 'rgba(139,61,255,0.45)' : easyGlow ? 'rgba(228,227,222,0.34)' : 'rgba(228,227,222,0.16)'; ctx.beginPath(); ctx.arc(x2, y, 24, 0, 7); ctx.fill();

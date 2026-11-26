@@ -1,7 +1,8 @@
 // Video „Norwegian 4×4“ (autor 26. 11. 2026): předělávka reference the.better.run (52 s) do našeho formátu – stejné grafiky
-// v našich barvách (budík VO2 MAX, mřížka 4 tréninků, 40 postaviček a štítky, sloupce „BARELY MOVED“, srdce a dvě sklenice,
+// v našich barvách (budík VO2 MAX, mřížka 4 tréninků, 40 postaviček a štítky, sloupce „NO REAL CHANGE“, srdce a dvě sklenice,
 // karta tréninku s grafem tepu a plánem týdne), realistický jezdec v krajině, hlas Liam, titulky se zvýrazněným slovem.
 // Místo rychlejšího půlmaratonu rychlejší bike split, na konci „pošli kamarádovi a sleduj“. Čísla: Helgerud et al. 2007.
+// Text hlasu je vlastní (formát a fakta podle reference, věty se nekopírují).
 const ride = function (t, a) {
   // jezdec o kus níž (kamera výš a dál), ať se nad něj vejdou velké karty
   const VIEW = { cam: { pos: [330, 425, 1380], look: [0, 215, -60], fov: 40 }, road: { lanes: [-260], z0: -700, z1: 900, len: 40000, scenery: 'country' },
@@ -21,16 +22,16 @@ const ride = function (t, a) {
   // název tréninku přímo přes ztlumený budík (pod ním už je jezdec)
   n44Pop(t, T('intro:3'), T('study:0') - 0.3, 540, 605, () => { ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 22; txt('THE NORWEGIAN', 540, 565, { size: 44, w: 800, f: F.U, ls: 2, c: C.ink }); txt('4×4', 540, 685, { size: 130, w: 800, f: F.U, ls: -4, c: C.pu }); ctx.restore(); });
   // 2) studie: 4 tréninky se stejnou prací, 40 mužů, 8 týdnů, 3× týdně
-  n44Study(t, { a: T('study:0') - 0.2, b: T('res:0') + 0.05, y0: 330, head: '4 WORKOUTS · SAME TOTAL WORK',
+  n44Study(t, { a: T('study:0') - 0.2, b: T('res:0') + 0.05, y0: 330, head: '4 GROUPS · EQUAL WORK',
     tiles: [{ name: 'LONG SLOW', sub: '70% HR MAX', at: T('study:1'), lvl: 0.3 }, { name: 'THRESHOLD', sub: '85% HR MAX', at: T('study:1') + 0.25, lvl: 0.6 },
       { name: '15/15', sub: '90–95% HR MAX', at: T('study:1') + 0.5, lvl: 0.9 }, { name: '4×4', sub: '90–95% HR MAX', at: T('study:0'), lvl: 0.9, hl: true }],
-    dots: { at: T('study:2'), n: 40 }, chips: [{ lab: '40 MEN', at: T('study:2') + 0.5 }, { lab: '8 WEEKS', at: T('study:3') }, { lab: '3× A WEEK', at: T('study:4') }, { lab: 'SAME TOTAL WORK', at: T('study:5'), hl: true }] });
+    dots: { at: T('study:2'), n: 40 }, chips: [{ lab: '40 MEN', at: T('study:2') + 0.5 }, { lab: '8 WEEKS', at: T('study:3') }, { lab: '3× A WEEK', at: T('study:4') }, { lab: 'EQUAL WORK', at: T('study:5'), hl: true }] });
   // 3) výsledky: lehce a na prahu skoro nic, 15/15 +5,5 %, 4×4 +7,2 %
   // výsledky zůstanou svítit, dokud nenaskočí srdce (jinak by +7,2 % bylo vidět jen chvilku)
   n44Results(t, { a: T('res:0') - 0.1, b: T('heart:0') + 0.45, y0: 330, head: 'VO2 MAX CHANGE · 8 WEEKS', max: 8,
     bars: [{ name: 'LONG SLOW', val: 0.4, at: T('res:0'), grow: T('res:0'), grey: true }, { name: 'THRESHOLD', val: 0.4, at: T('res:1'), grow: T('res:1'), grey: true },
       { name: '15/15', val: 5.5, at: T('res:3'), grow: T('res:4') }, { name: '4×4', val: 7.2, at: T('res:5'), grow: T('res:6') }],
-    tag: { lab: 'BARELY MOVED', at: T('res:2') }, src: 'HELGERUD ET AL. 2007 · MED SCI SPORTS EXERC' });
+    tag: { lab: 'NO REAL CHANGE', at: T('res:2') }, src: 'HELGERUD ET AL. 2007 · MED SCI SPORTS EXERC' });
   // 4) srdce: po intervalech asi o 10 % víc krve na jeden úder
   n44Heart(t, { a: T('heart:0') + 0.3, b: END('heart'), y0: 330, head: 'BLOOD PER BEAT', at: { glass: T('heart:1'), after: T('heart:2'), pct: T('heart:2') + 0.5 }, pct: '+10%',
     foot: 'STROKE VOLUME · INTERVAL GROUPS', src: 'HELGERUD ET AL. 2007' });
@@ -47,18 +48,19 @@ module.exports = {
   acts: [['hook', 'hook', 'intro'], ['study', 'study'], ['res', 'res'], ['heart', 'heart'], ['how', 'how', 'week'], ['cta', 'cta']],
   lines: {
     hook: { say: 'Want a faster bike split?', captions: false, gain: 5, chunks: [['Want a faster', 'WANT'], ['bike split?', 'BIKE']] },
-    intro: { say: "Here's a proven way to blow up your V O two max: the Norwegian four by four.",
-      chunks: [["Here's a proven way", "HERE'S|HERES|HERE"], ['to blow up', 'TO'], ['your VO2 max:', 'YOUR'], ['the Norwegian', 'THE'], ['4 by 4.', 'FOUR']] },
-    study: { say: 'Researchers tested it against three other workouts. Forty moderately trained men, eight weeks, three sessions a week, and the same total work for every group.',
-      chunks: [['Researchers tested it', 'RESEARCHERS'], ['against 3 other workouts.', 'AGAINST'], ['40 moderately trained men,', 'FORTY'], ['8 weeks,', 'EIGHT'], ['3 sessions a week,', 'THREE'], ['and the same total work', 'AND'], ['for every group.', 'FOR']] },
-    res: { say: 'Easy long sessions and threshold work? Barely moved. Fifteen fifteen intervals: plus five point five percent. The four by four: plus seven point two percent!',
-      chunks: [['Easy long sessions', 'EASY'], ['and threshold work?', 'AND'], ['Barely moved.', 'BARELY'], ['15/15 intervals:', 'FIFTEEN'], ['+5.5%.', 'PLUS'], ['The 4 by 4:', 'THE'], ['+7.2%!', 'PLUS']] },
-    heart: { say: 'And after the intervals, their heart pumped about ten percent more blood with every beat.',
-      chunks: [['And after the intervals,', 'AND'], ['their heart pumped', 'THEIR'], ['about 10% more blood', 'ABOUT'], ['with every beat.', 'WITH']] },
-    how: { say: "Here's how. Warm up for ten minutes. Then four minutes hard, at ninety to ninety-five percent of max heart rate. Three minutes easy spin. Repeat four times.",
-      chunks: [["Here's how.", "HERE'S|HERES|HERE"], ['Warm up for 10 minutes.', 'WARM'], ['Then 4 minutes hard,', 'THEN'], ['at 90 to 95%', 'AT'], ['of max heart rate.', 'OF'], ['3 minutes easy spin.', 'THREE'], ['Repeat 4 times.', 'REPEAT']] },
-    week: { say: 'Do it once or twice a week, and keep the rest of your rides easy.',
-      chunks: [['Do it once or twice', 'DO'], ['a week,', 'A'], ['and keep the rest', 'AND'], ['of your rides easy.', 'OF']] },
+    // vlastní text (fakta ze studie, formulace naše; text reference se nekopíruje)
+    intro: { say: "There's one session that boosts your V O two max fast: the Norwegian four by four.",
+      chunks: [["There's one session", "THERE'S|THERES|THERE"], ['that boosts', 'THAT'], ['your VO2 max fast:', 'YOUR'], ['the Norwegian', 'THE'], ['4 by 4.', 'FOUR']] },
+    study: { say: 'A study pitted it against three other sessions. Forty moderately fit men, eight weeks, three workouts a week, every group doing equal total work.',
+      chunks: [['A study pitted it', 'A'], ['against 3 other sessions.', 'AGAINST'], ['40 moderately fit men,', 'FORTY'], ['8 weeks,', 'EIGHT'], ['3 workouts a week,', 'THREE'], ['every group doing', 'EVERY'], ['equal total work.', 'EQUAL']] },
+    res: { say: 'Long easy sessions and threshold work? Almost no change. Fifteen fifteen intervals: up five point five percent. The four by four: up seven point two percent!',
+      chunks: [['Long easy sessions', 'LONG'], ['and threshold work?', 'AND'], ['Almost no change.', 'ALMOST'], ['15/15 intervals:', 'FIFTEEN'], ['up 5.5%.', 'UP'], ['The 4 by 4:', 'THE'], ['up 7.2%!', 'UP']] },
+    heart: { say: 'On top of that, each heartbeat pushed out about ten percent more blood.',
+      chunks: [['On top of that,', 'ON'], ['each heartbeat', 'EACH'], ['pushed out about', 'PUSHED'], ['10% more blood.', 'TEN']] },
+    how: { say: 'The session: ten minutes to warm up. Then four hard minutes at ninety to ninety-five percent of your max heart rate. Spin easy for three. Do four rounds.',
+      chunks: [['The session:', 'THE'], ['10 minutes to warm up.', 'TEN'], ['Then 4 hard minutes', 'THEN'], ['at 90 to 95%', 'AT'], ['of your max heart rate.', 'OF'], ['Spin easy for 3.', 'SPIN'], ['Do 4 rounds.', 'DO']] },
+    week: { say: 'One or two of these a week is plenty. Ride easy on the other days.',
+      chunks: [['1 or 2 of these', 'ONE'], ['a week is plenty.', 'A'], ['Ride easy', 'RIDE'], ['on the other days.', 'ON']] },
     cta: { say: 'Send this to your training buddy. And follow for more.',
       chunks: ['Send this', 'to your', 'training buddy.', ['And follow', 'AND'], 'for more.'] }
   },
