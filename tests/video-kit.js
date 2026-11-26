@@ -36,7 +36,7 @@ function check(dir, name) {
   ok(`[${name}] titulky mají kotvu a rozumnou délku, čísla v hlase jsou slovy`, bad.length === 0, bad.join("; "));
   // krátká verze ("format": "short", asi 30 s) má jiný rozsah a hook musí být krátký a velký přímo ve scéně
   if (sc.format === "short") {
-    ok(`[${name}] krátký scénář má 55 až 110 slov (asi 25 až 40 s; delší video autor povolil 26. 11. 2026)`, words >= 55 && words <= 110, words + " slov");
+    ok(`[${name}] krátký scénář má 55 až 150 slov (asi 25 až 55 s; delší video autor povolil 26. 11. 2026)`, words >= 55 && words <= 150, words + " slov");
     const hook = sc.lines[keys[0]];
     // formát „ride“ (layout 'top'): hook ukazují titulky nahoře, ve scéně jsou jezdci
     ok(`[${name}] hook je první věta, má nejvýš 16 slov a text přímo ve scéně (nebo v titulcích nahoře)`,

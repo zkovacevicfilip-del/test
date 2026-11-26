@@ -453,6 +453,141 @@ function resultCard(t, o) {
   ctx.restore();
 }
 
+// ---------- VIDEO „NORWEGIAN 4×4“ podle reference the.better.run (autor 26. 11. 2026): stejné grafiky v našich barvách ----------
+// viditelnost 0 až 1: naskočí v a (popS s překmitem), zmizí v b; vrací { a, s, dy }
+const n44Vis = (t, a, b) => popS(t, a, b == null ? null : b, 0.5);
+function n44Box(x0, y0, x1, y1, r) { ctx.fillStyle = 'rgba(23,25,27,0.84)'; ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(x0, y0, x1 - x0, y1 - y0, r || 28); ctx.fill(); ctx.stroke(); }
+function n44Pop(t, a, b, cx, cy, draw) { const p = n44Vis(t, a, b); if (p.a <= 0) return; ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(cx, cy + p.dy); ctx.scale(p.s, p.s); ctx.translate(-cx, -cy); draw(); ctx.restore(); }
+// cyklista jako piktogram (jako běžec v referenci): x, y = spodek kol uprostřed, s = velikost, low 0 vzpřímeně až 1 nízko, crank = úhel kliky
+function bikeIcon(x, y, s, col, crank, low) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s / 10, s / 10); ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const rw = [-17, -10], fw = [17, -10], bb = [-2, -10], seat = [-6, -26], bar = [12, -27];
+  for (const w of [rw, fw]) { ctx.beginPath(); ctx.arc(w[0], w[1], 10, 0, 7); ctx.stroke(); }
+  ctx.beginPath(); ctx.moveTo(rw[0], rw[1]); ctx.lineTo(bb[0], bb[1]); ctx.lineTo(seat[0], seat[1]); ctx.lineTo(rw[0], rw[1]); ctx.moveTo(bb[0], bb[1]); ctx.lineTo(bar[0] - 2, bar[1] + 3); ctx.lineTo(seat[0], seat[1]); ctx.moveTo(bar[0] - 2, bar[1] + 3); ctx.lineTo(fw[0], fw[1]); ctx.stroke();
+  const hip = [seat[0], seat[1] - 3], sh = [lerp(4, 10, low), lerp(-45, -36, low)], head = [sh[0] + lerp(3, 7, low), sh[1] - lerp(7, 4.5, low)];
+  ctx.lineWidth = 3.4; ctx.beginPath(); ctx.moveTo(hip[0], hip[1]); ctx.lineTo(sh[0], sh[1]); ctx.lineTo(bar[0], bar[1]); ctx.stroke(); ctx.beginPath(); ctx.arc(head[0], head[1], 4.4, 0, 7); ctx.fill();
+  for (const ph of [Math.PI, 0]) { const a = crank + ph, p = [bb[0] + 5 * Math.cos(a), bb[1] + 5 * Math.sin(a)], dx = p[0] - hip[0], dy = p[1] - hip[1], D = Math.min(25.5, Math.hypot(dx, dy)), aa = Math.atan2(dy, dx), k = Math.acos(D / 26);
+    const knee = [hip[0] + 13 * Math.cos(aa - k), hip[1] + 13 * Math.sin(aa - k)]; ctx.save(); if (ph) ctx.globalAlpha *= 0.5; ctx.beginPath(); ctx.moveTo(hip[0], hip[1]); ctx.lineTo(knee[0], knee[1]); ctx.lineTo(p[0], p[1]); ctx.stroke(); ctx.restore(); }
+  ctx.restore();
+}
+// budík (jako tachometr v referenci): o = { a, b, cx, cy, r, label, inner, val (0 až 1), dim }
+function n44Gauge(t, o) {
+  n44Pop(t, o.a, o.b, o.cx, o.cy, () => {
+    const a0 = Math.PI * 0.75, a1 = Math.PI * 2.25, v = clamp(o.val), av = lerp(a0, a1, v), d = 1 - 0.6 * (o.dim || 0);
+    ctx.save(); ctx.globalAlpha *= d; ctx.lineCap = 'round';
+    ctx.lineWidth = 34; ctx.strokeStyle = 'rgba(228,227,222,0.14)'; ctx.beginPath(); ctx.arc(o.cx, o.cy, o.r, a0, a1); ctx.stroke();
+    const g = ctx.createLinearGradient(o.cx - o.r, o.cy, o.cx + o.r, o.cy); g.addColorStop(0, '#5B22C9'); g.addColorStop(1, '#B07CFF');
+    ctx.strokeStyle = g; ctx.shadowColor = 'rgba(139,61,255,0.7)'; ctx.shadowBlur = 24; ctx.beginPath(); ctx.arc(o.cx, o.cy, o.r, a0, av); ctx.stroke(); ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(228,227,222,0.5)'; ctx.lineWidth = 3;
+    for (let i = 0; i <= 10; i++) { const a = lerp(a0, a1, i / 10), r1 = o.r - 30, r2 = o.r - (i % 5 ? 40 : 50); ctx.beginPath(); ctx.moveTo(o.cx + r1 * Math.cos(a), o.cy + r1 * Math.sin(a)); ctx.lineTo(o.cx + r2 * Math.cos(a), o.cy + r2 * Math.sin(a)); ctx.stroke(); }
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(o.cx, o.cy); ctx.lineTo(o.cx + (o.r - 46) * Math.cos(av), o.cy + (o.r - 46) * Math.sin(av)); ctx.stroke();
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(o.cx, o.cy, 14, 0, 7); ctx.fill();
+    txt(o.label, o.cx, o.cy - o.r - 36, { size: 24, w: 800, ls: 5, c: C.muted });
+    txt(o.inner, o.cx, o.cy + 62, { size: 34, w: 800, f: F.U, ls: 2, c: C.ink });
+    ctx.restore();
+  });
+}
+// studie: 4 tréninky v mřížce, 40 postaviček, štítky (o = { a, b, y0, head, tiles: [{ name, sub, at, hl, lvl }], dots: { at, n }, chips: [{ lab, at, hl }] })
+function n44Study(t, o) {
+  n44Pop(t, o.a, o.b, 540, o.y0 + 200, () => {
+    const X0 = 140, X1 = 940, Y0 = o.y0, Y1 = Y0 + 410; n44Box(X0, Y0, X1, Y1);
+    txt(o.head, 540, Y0 + 40, { size: 22, w: 800, ls: 4, c: C.muted });
+    o.tiles.forEach((tl, i) => {
+      const x = 160 + (i % 2) * 390, y = Y0 + 62 + Math.floor(i / 2) * 106, cx = x + 185, cy = y + 48;
+      n44Pop(t, tl.at, null, cx, cy, () => {
+        ctx.fillStyle = tl.hl ? 'rgba(139,61,255,0.22)' : 'rgba(255,255,255,0.06)'; ctx.beginPath(); ctx.roundRect(x, y, 370, 96, 18); ctx.fill();
+        if (tl.hl) { ctx.strokeStyle = C.pu; ctx.lineWidth = 3; ctx.stroke(); }
+        txt(tl.name, x + 20, y + 40, { size: 28, w: 800, f: F.U, align: 'left', c: tl.hl ? '#ffffff' : C.ink });
+        txt(tl.sub, x + 20, y + 64, { size: 15, w: 800, ls: 2, align: 'left', c: C.muted });
+        ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.beginPath(); ctx.roundRect(x + 20, y + 76, 180, 8, 4); ctx.fill();
+        ctx.fillStyle = tl.hl ? C.pu : 'rgba(228,227,222,0.6)'; ctx.beginPath(); ctx.roundRect(x + 20, y + 76, 180 * tl.lvl * tw(t, tl.at + 0.2, 0.6, E.quint), 8, 4); ctx.fill();
+        bikeIcon(x + 300, y + 82, 14, tl.hl ? C.pu : C.ink, t * (tl.hl ? 11 : 8), tl.lvl);
+      });
+    });
+    // 40 postaviček (dva řádky po 20), naskakují postupně
+    for (let i = 0; i < o.dots.n; i++) {
+      const k = clamp((t - o.dots.at - 0.6 * i / o.dots.n) / 0.15); if (k <= 0) continue;
+      const x = 180 + (i % 20) * 38, y = Y0 + 296 + Math.floor(i / 20) * 40;
+      ctx.save(); ctx.globalAlpha *= k; ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(x, y - 10, 6, 0, 7); ctx.fill(); ctx.beginPath(); ctx.roundRect(x - 8, y - 1, 16, 16, 6); ctx.fill(); ctx.restore();
+    }
+    let cx = 160; o.chips.forEach(c => { const w = width(c.lab, { size: 18, w: 800, ls: 2 }) + 26, x = cx; cx += w + 10;
+      n44Pop(t, c.at, null, x + w / 2, Y1 - 30, () => { ctx.fillStyle = c.hl ? C.pu : 'rgba(228,227,222,0.16)'; ctx.beginPath(); ctx.roundRect(x, Y1 - 48, w, 34, 17); ctx.fill(); txt(c.lab, x + w / 2, Y1 - 25, { size: 18, w: 800, ls: 2, c: c.hl ? '#ffffff' : C.ink }); }); });
+  });
+}
+// výsledky: sloupce změny VO2 max (o = { a, b, y0, head, max, bars: [{ name, val, at, grow, grey }], tag: { lab, at }, src })
+function n44Results(t, o) {
+  n44Pop(t, o.a, o.b, 540, o.y0 + 200, () => {
+    const X0 = 140, X1 = 940, Y0 = o.y0, Y1 = Y0 + 410, PB = Y1 - 76, PT = Y0 + 86, PH = PB - PT; n44Box(X0, Y0, X1, Y1);
+    txt(o.head, 540, Y0 + 40, { size: 22, w: 800, ls: 4, c: C.muted });
+    for (let g = 0; g <= 8; g += 2) { const y = PB - PH * g / o.max; ctx.strokeStyle = 'rgba(255,255,255,' + (g ? 0.07 : 0.2) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(230, y); ctx.lineTo(910, y); ctx.stroke(); txt(g ? '+' + g + '%' : '0', 214, y + 6, { size: 16, w: 700, align: 'right', c: C.muted }); }
+    const last = o.bars.reduce((k, b, j) => t >= b.at ? j : k, -1);
+    o.bars.forEach((b, j) => {
+      if (t < b.at) return; const cx = 320 + j * 170, g = tw(t, b.grow, 0.9, E.quint), v = b.val * g, h = PH * v / o.max, on = j === last && !b.grey;
+      ctx.fillStyle = b.grey ? 'rgba(228,227,222,0.35)' : on ? C.pu : 'rgba(139,61,255,0.55)'; ctx.beginPath(); ctx.roundRect(cx - 50, PB - Math.max(h, 6), 100, Math.max(h, 6), 10); ctx.fill();
+      txt(b.name, cx, PB + 30, { size: 16, w: 800, ls: 2, c: on ? C.ink : C.muted, a: clamp((t - b.at) / 0.25) });
+      if (!b.grey && g > 0) txt('+' + v.toFixed(1) + '%', cx, PB - h - 16, { size: on ? 40 : 30, w: 800, f: F.U, c: on ? C.ink : 'rgba(228,227,222,0.75)' });
+    });
+    if (o.tag) n44Pop(t, o.tag.at, null, 405, PB - 50, () => { const w = width(o.tag.lab, { size: 20, w: 800, ls: 2 }) + 30; ctx.fillStyle = 'rgba(228,227,222,0.9)'; ctx.beginPath(); ctx.roundRect(405 - w / 2, PB - 70, w, 38, 19); ctx.fill(); txt(o.tag.lab, 405, PB - 44, { size: 20, w: 800, ls: 2, c: '#17191B' }); });
+    if (o.src) txt(o.src, 540, Y1 - 18, { size: 16, w: 700, ls: 2, c: 'rgba(154,154,152,0.85)' });
+  });
+}
+// srdce a dvě sklenice krve na úder (o = { a, b, y0, head, at: { glass, after, pct }, pct, foot, src })
+function n44Heart(t, o) {
+  n44Pop(t, o.a, o.b, 540, o.y0 + 200, () => {
+    const X0 = 140, X1 = 940, Y0 = o.y0, Y1 = Y0 + 410; n44Box(X0, Y0, X1, Y1);
+    txt(o.head, 690, Y0 + 50, { size: 22, w: 800, ls: 4, c: C.muted });
+    const beat = Math.pow(Math.max(0, Math.sin((t - o.a) * Math.PI * 2 * 1.15)), 6), hx = 330, hy = Y0 + 200, s = 1.25 * (1 + 0.09 * beat);
+    ctx.save(); ctx.translate(hx, hy); ctx.scale(s, s); ctx.shadowColor = 'rgba(139,61,255,0.85)'; ctx.shadowBlur = 40 + 30 * beat; ctx.fillStyle = C.pu;
+    ctx.beginPath(); ctx.moveTo(0, 60); ctx.bezierCurveTo(-90, 0, -70, -70, 0, -32); ctx.bezierCurveTo(70, -70, 90, 0, 0, 60); ctx.fill(); ctx.restore();
+    [['BEFORE', o.at.glass, 0.68, 'rgba(228,227,222,0.6)'], ['AFTER', o.at.after, 0.68 * 1.1, C.pu]].forEach(([lab, at, f, col], j) => {
+      const x = 600 + j * 150, y = Y0 + 96, w = 104, h = 210; if (t < at) return; const k = tw(t, at, 0.9, E.quint);
+      ctx.save(); ctx.globalAlpha *= clamp((t - at) / 0.2); ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(x, y + h * (1 - f * k), w, h * f * k, 10); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + h - 10); ctx.quadraticCurveTo(x, y + h, x + 10, y + h); ctx.lineTo(x + w - 10, y + h); ctx.quadraticCurveTo(x + w, y + h, x + w, y + h - 10); ctx.lineTo(x + w, y); ctx.stroke();
+      txt(lab, x + w / 2, y + h + 30, { size: 17, w: 800, ls: 2, c: j ? C.pu : C.muted }); ctx.restore();
+    });
+    n44Pop(t, o.at.pct, null, 802, Y0 + 80, () => txt(o.pct, 802, Y0 + 92, { size: 48, w: 800, f: F.U, c: C.ink }));
+    if (o.foot && t >= o.at.after) txt(o.foot, 540, Y1 - 56, { size: 17, w: 800, ls: 2, c: C.muted, a: clamp((t - o.at.after) / 0.4) });
+    if (o.src) txt(o.src, 540, Y1 - 20, { size: 16, w: 700, ls: 2, c: 'rgba(154,154,152,0.85)' });
+  });
+}
+// trénink: horní karta (piktogram a stav), graf tepu (rozjetí, 4× tvrdě a lehce, pásmo 90–95 %), plán týdne
+// o = { a, b, y0, state: [[čas, 'WARM UP', tvrdě?], …], low (0 až 1), at: { warm, hard, band, easy, reps, week, rest }, week: ['E','H',…] }
+function n44Session(t, o) {
+  n44Pop(t, o.a, o.b, 540, o.y0 + 200, () => {
+    const X0 = 140, X1 = 940, Y0 = o.y0;
+    n44Box(X0, Y0, X1, Y0 + 110);
+    txt('THE SESSION', X0 + 30, Y0 + 44, { size: 22, w: 800, ls: 4, align: 'left', c: C.muted });
+    const st = o.state.reduce((k, s) => t >= s[0] ? s : k, o.state[0]), w = width(st[1], { size: 22, w: 800, ls: 2 }) + 34;
+    n44Pop(t, st[0], null, X1 - 30 - w / 2, Y0 + 40, () => { ctx.fillStyle = st[2] ? C.pu : 'rgba(228,227,222,0.2)'; ctx.beginPath(); ctx.roundRect(X1 - 30 - w, Y0 + 20, w, 40, 20); ctx.fill(); txt(st[1], X1 - 30 - w / 2, Y0 + 48, { size: 22, w: 800, ls: 2, c: st[2] ? '#ffffff' : C.ink }); });
+    bikeIcon(540, Y0 + 100, 22, st[2] ? C.pu : C.ink, t * lerp(8, 12, o.low), o.low);
+    // graf tepu
+    const G0 = Y0 + 124, G1 = G0 + 250, PX0 = 190, PX1 = 900, PB = G1 - 34, PT = G0 + 50, PH = PB - PT; n44Box(X0, G0, X1, G1);
+    txt('HEART RATE', X0 + 30, G0 + 38, { size: 20, w: 800, ls: 4, align: 'left', c: C.muted });
+    const segs = [{ k: 'w', d: 10 }]; for (let i = 0; i < 4; i++) { segs.push({ k: 'h', d: 4, r: i }); segs.push({ k: 'e', d: 3, r: i }); }
+    const tot = segs.reduce((q, s2) => q + s2.d, 0), kx = (PX1 - PX0) / tot; let x = PX0;
+    const lv = { w: [0.3, 0.55], h: 0.9, e: 0.55 };
+    segs.forEach((sg, i) => {
+      const at = sg.k === 'w' ? o.at.warm : sg.r === 0 ? (sg.k === 'h' ? o.at.hard : o.at.easy) : o.at.reps + 0.18 * (i - 2), g = tw(t, at, 0.5, E.quint), w2 = sg.d * kx;
+      if (g > 0) {
+        ctx.fillStyle = sg.k === 'h' ? C.pu : 'rgba(228,227,222,0.22)'; ctx.beginPath();
+        if (sg.k === 'w') { ctx.moveTo(x, PB); ctx.lineTo(x, PB - PH * lv.w[0] * g); ctx.lineTo(x + w2, PB - PH * lv.w[1] * g); ctx.lineTo(x + w2, PB); }
+        else { const h = PH * (sg.k === 'h' ? lv.h : lv.e) * g; ctx.roundRect(x + 1, PB - h, w2 - 2, h, sg.k === 'h' ? 6 : 3); }
+        ctx.fill();
+      }
+      x += w2;
+    });
+    txt('10 MIN', PX0 + 10 * kx / 2, PB + 26, { size: 15, w: 800, ls: 1, c: C.muted, a: clamp((t - o.at.warm) / 0.3) });
+    if (t >= o.at.band) { const k = tw(t, o.at.band, 0.6), y = PB - PH * 0.93; ctx.save(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.setLineDash([9, 8]); ctx.beginPath(); ctx.moveTo(PX0, y); ctx.lineTo(PX0 + (PX1 - PX0) * k, y); ctx.stroke(); ctx.setLineDash([]);
+      txt('90–95% HR MAX', PX1, y - 10, { size: 17, w: 800, ls: 1, align: 'right', c: '#ffffff', a: k }); ctx.restore(); }
+    // plán týdne
+    if (t >= o.at.week) { const days = 'MTWTFSS', step = 104, y = G1 + 46;
+      o.week.forEach((d, i) => { const at = o.at.week + 0.07 * i, x2 = 228 + i * step; n44Pop(t, at, null, x2, y, () => {
+        const on = d === 'H', opt = d === 'h', easyGlow = !on && !opt && o.at.rest != null && t >= o.at.rest;
+        ctx.fillStyle = on ? C.pu : opt ? 'rgba(139,61,255,0.45)' : easyGlow ? 'rgba(228,227,222,0.34)' : 'rgba(228,227,222,0.16)'; ctx.beginPath(); ctx.arc(x2, y, 24, 0, 7); ctx.fill();
+        txt(days[i], x2, y + 8, { size: 22, w: 800, c: on || opt ? '#ffffff' : C.ink }); txt(on || opt ? 'HARD' : 'EASY', x2, y + 46, { size: 14, w: 800, ls: 1, c: on || opt ? C.pu : C.muted }); }); }); }
+  });
+}
+
 // ---------- KONEC VIDEA: pošli kamarádovi + sleduj ----------
 // Varianta 1 „karty přes krajinu“ (autor 22. 11. 2026 podle vzorového reelu): jezdec jede dál, přes krajinu vyskočí panel
 // sdílení (kontakty, zpráva, Send → Sent) a pak karta profilu (Follow → Following). Karta profilu je jediné místo s názvem
