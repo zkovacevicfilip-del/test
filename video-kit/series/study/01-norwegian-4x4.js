@@ -70,7 +70,7 @@ module.exports = {
   variants: {
     stuck: { say: 'Stuck at the same bike split?', chunks: [['Stuck at the same', 'STUCK'], ['bike split?', 'BIKE']] },
     easy: { say: "More easy miles won't raise your ceiling.", chunks: [['More easy miles', 'MORE'], ["won't raise your ceiling.", "WON'T|WONT|WON"]] },
-    four: { say: "Four minutes, four times. That's it.", chunks: [['4 minutes, 4 times.', 'FOUR'], ["That's it.", "THAT'S|THATS|THAT"]] }
+    four: { say: 'Four minutes, four times.', chunks: [['4 minutes,', 'FOUR'], ['4 times.', 'FOUR']] }
   },
   sfx: [{ at: 'hook:0', kind: 'pop' }, { at: 'intro:1', kind: 'riser' }, { at: 'intro:3', kind: 'impact' },
     { at: 'study:0', kind: 'pop' }, { at: 'study:1', kind: 'click' }, { at: 'study:2', kind: 'shimmer' }, { at: 'study:3', kind: 'click' }, { at: 'study:4', kind: 'click' }, { at: 'study:5', kind: 'ding' },
