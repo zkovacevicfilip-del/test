@@ -13,3 +13,6 @@ Thumbs.db
 
 # Pracovní soubory výroby videí (hlas, simulace, snímky, hotová videa)
 video-kit/work/
+
+# mezipaměť Pythonu (vzniká při testech)
+__pycache__/
