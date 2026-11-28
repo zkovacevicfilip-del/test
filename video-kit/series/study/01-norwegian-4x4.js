@@ -15,7 +15,8 @@ const ride = function (t, a) {
   let dist = 0, crank = 0; for (let x = 0; x < t; x += 0.05) { const dt = Math.min(0.05, t - x), h = effort(x); dist += lerp(420, 660, h) * dt; crank += lerp(8.2, 11.4, h) * dt; }
   const h = effort(t), pose = 0.85 * h;
   scene3d(VIEW, { dist, riders: { A: { x: 0, pose, grip: 'base', crank, wheel: dist / 71 } } }, () => air3d('A', t, lerp(700, 980, h), lerp(0.9, 0.55, h), pose, 0.7 + 0.25 * h));
-  classicUI(t, a, { hook: { line: 'hook', cy: 240, items: [{ t: 'Want a faster', i: 0, size: 56 }, { t: 'bike split?', i: 1, big: true, size: 100 }] }, heads: {} });
+  // text háčku z titulků úvodní věty (varianty pro trial reels mají jiný háček, viz variants a series/variant.sh)
+  classicUI(t, a, { hook: { line: 'hook', cy: 240, items: [{ t: L.hook.chunks[0].text, i: 0, size: 56 }, { t: L.hook.chunks[1].text, i: 1, big: true, size: 100 }] }, heads: {} });
   // 1) budík VO2 MAX: ručička se rozkývá a při „blow up“ vystřelí nahoru; pak název tréninku
   const nv = 0.18 + 0.3 * st0(t, T('hook:1'), 0.8) + 0.08 * Math.sin(t * 5) * (1 - st0(t, T('intro:1'), 0.3)) + 0.4 * tw(t, T('intro:1'), 0.9, E.back);
   n44Gauge(t, { a: 0.15, b: T('study:0') - 0.3, cx: 540, cy: 595, r: 150, label: 'BIKE SPLIT', inner: 'VO2 MAX', val: nv, dim: 1.25 * st0(t, T('intro:3'), 0.4) });
@@ -63,6 +64,13 @@ module.exports = {
       chunks: [['1 or 2 of these', 'ONE'], ['a week is plenty.', 'A'], ['Ride easy', 'RIDE'], ['on the other days.', 'ON']] },
     cta: { say: 'Send this to your training buddy. And follow for more.',
       chunks: ['Send this', 'to your', 'training buddy.', ['And follow', 'AND'], 'for more.'] }
+  },
+  // varianty háčku pro trial reels (autor 28. 11. 2026): přerenderuje se jen úvod do konce aktu hook, zbytek se vezme ze
+  // základního videa (bash video-kit/series/variant.sh <popis.js> <id>); háček má 2 titulky, druhý je velký
+  variants: {
+    stuck: { say: 'Stuck at the same bike split?', chunks: [['Stuck at the same', 'STUCK'], ['bike split?', 'BIKE']] },
+    easy: { say: "More easy miles won't raise your ceiling.", chunks: [['More easy miles', 'MORE'], ["won't raise your ceiling.", "WON'T|WONT|WON"]] },
+    four: { say: "Four minutes, four times. That's it.", chunks: [['4 minutes, 4 times.', 'FOUR'], ["That's it.", "THAT'S|THATS|THAT"]] }
   },
   sfx: [{ at: 'hook:0', kind: 'pop' }, { at: 'intro:1', kind: 'riser' }, { at: 'intro:3', kind: 'impact' },
     { at: 'study:0', kind: 'pop' }, { at: 'study:1', kind: 'click' }, { at: 'study:2', kind: 'shimmer' }, { at: 'study:3', kind: 'click' }, { at: 'study:4', kind: 'click' }, { at: 'study:5', kind: 'ding' },

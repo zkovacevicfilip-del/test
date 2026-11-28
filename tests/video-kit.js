@@ -159,6 +159,13 @@ for (const f of fs.readdirSync(path.join(KIT, "series/tips")).filter(f => f.ends
 { const sab = fs.readFileSync(path.join(KIT, "SABLONA.md"), "utf8"), r16 = sab.slice(sab.indexOf("## 16. Video „3 tipy“")), vz = fs.readFileSync(path.join(KIT, "series/tips/01-time-trial.js"), "utf8");
   ok("šablona, oddíl 16: recept na „3 tipy“ sedí se vzorem", sab.includes("## 16. Video „3 tipy“") && /oddíl 16/.test(sab.slice(0, sab.indexOf("## 1."))) &&
     ["helmSwap(t, ", "orbit: [0, 0.35, -0.2, 1.2, 0]", "tips: { at: [T('one:0'), T('two:0'), T('three:0')], end: T('cta:0') }", "ghost: { pose: 1, shrug: 0 }", "pre: { suit: '#EDECE8', suit2: '#16171A', sleeve: 0.44, loose: 1 }"].every(k => r16.includes(k) && vz.includes(k))); }
+// varianty háčku (trial reels, autor 28. 11. 2026): každá má 2 titulky, nejvýš 8 slov, čísla slovy, text háčku na obrazovce
+// se bere z titulků; nástroje variant.sh a zoom.sh jsou na místě
+for (const f of ["study/01-norwegian-4x4.js"]) {
+  const spec = require(path.join(KIT, "series", f)), src = fs.readFileSync(path.join(KIT, "series", f), "utf8"), vs = Object.entries(spec.variants || {});
+  ok(`[${f}] varianty háčku: aspoň 3, 2 titulky, nejvýš 8 slov, čísla slovy, text háčku z titulků`, vs.length >= 3 && vs.every(([, v]) => v.chunks.length === 2 && v.say.split(/\s+/).length <= 8 && !/\d/.test(v.say)) &&
+    /t: L\.hook\.chunks\[0\]\.text/.test(src) && ["series/variant.sh", "series/zoom.sh", "tools/variant_timeline.py"].every(x => fs.existsSync(path.join(KIT, x))), vs.map(v => v[0]).join(", "));
+}
 ok("motor a nástroje sady jsou na místě", ["engine/engine.js", "engine/render.js", "engine/index.html", "engine/vendor/gsap.min.js", "engine/vendor/LICENSE-gsap.txt",
   "engine/vendor/three.module.js", "engine/vendor/three.core.js", "engine/vendor/LICENSE-three.txt", "engine/vendor/MarchingCubes.js", "engine/vendor/RoomEnvironment.js", "engine/rider3d.mjs", "engine/three-boot.mjs",
   "engine/models/cyclist.json", "engine/models/cyclist.bin", "engine/models/LICENSE-makehuman-CC0.md", "tools/makehuman-cyclist.py", "tools/kokoro-page.js", "series/ride.js", "tools/tts.py", "tools/align.py", "tools/timeline.py",
@@ -178,6 +185,8 @@ ok("stránka motoru nemá skript přímo v HTML", !/<script(?![^>]*\bsrc=)[^>]*>
     ok("hlas: ořez odstraní ticho i osamocené cvaknutí na konci věty, slova nechá", r.status === 0, (r.stdout + r.stderr).trim());
     const g = spawnSync(py, [path.join(__dirname, "audio-gain.py"), path.join(KIT, "tools/audio.py")], { encoding: "utf8" });
     ok("zvuk: gain u věty zesílí úvod aspoň o 3 dB, špičky nepřerostou ostatní věty, ty zůstanou stejně hlasité", g.status === 0, (g.stdout + g.stderr).trim());
+    const vt = spawnSync(py, [path.join(__dirname, "variant-timeline.py"), path.join(KIT, "tools/variant_timeline.py")], { encoding: "utf8" });
+    ok("varianty pro trial reels: háček se vejde, další věta se posune jen do volného místa, zrychlení nejvýš 1,15×", vt.status === 0, (vt.stdout + vt.stderr).trim());
     const fx = spawnSync(py, [path.join(__dirname, "audio-sfx.py"), path.join(KIT, "tools/audio.py")], { encoding: "utf8" });
     ok("zvuk: efekty zazní ve svůj čas, rytmus vyplní ticho, ale zůstane aspoň 10 dB pod hlasem a nic se neořízne", fx.status === 0, (fx.stdout + fx.stderr).trim());
   } else console.log("- test ořezu hlasu přeskočen (chybí python s numpy, spusť bash video-kit/build.sh setup)");
