@@ -556,3 +556,17 @@ Kamera mezi kapitolami jen pomalu dotáčí (`orbitDur: 3`, malé úhly `orbit`)
 - Hlas: opakovaná slova (four by fours, four minutes) hlídat kotvami – titulky se přiřazují ke slovům po pořadí.
 - Analýza reference: úvod 3,2 s, kapitola ~9 s (odznak 2 s, trénink 4 s, výsledek 2–3 s), přechod 0,3–0,4 s, nový prvek
   zhruba každých 0,5 s, řeč asi 3 slova za sekundu, výzva 2,6 s.
+
+## 17. Varianty pro trial reels (stav 28. 11. 2026, vzor `series/study/01-norwegian-4x4.js`)
+
+- **Jiný háček bez nového renderu celého videa:** v popisu videa `variants: { id: { say, chunks: [malý řádek, velký řádek] } }`
+  (nejvýš 8 slov, čísla slovy) a text háčku ve scéně brát z titulků (`L.hook.chunks[0].text`). Pak
+  `bash video-kit/series/variant.sh video-kit/series/<popis>.js <id>`: namluví jen nový háček (asi 30–40 znaků), přerenderuje
+  jen první akt (asi 190 z 1 400 snímků, 7–10 min místo 40) a zbytek vezme ze základního videa; zkontroluje napojení
+  (rozdíl snímku proti základu musí být malý). Háček se musí vejít do úvodu: druhá věta se smí posunout jen do mezery před
+  další větou, hlas se zrychlí nejvýš 1,15×; delší háček skript odmítne – zkrátit větu.
+- **Zoom bez renderu:** `bash video-kit/series/zoom.sh <video.mp4> 1.05 <výstup.mp4>` (přiblížení) nebo `0.95` (oddálení,
+  okraj vyplní rozmazaná kopie).
+- Háčky podle typů, které podle zdrojů o krátkých videích fungují: bolest a identita („Stuck at the same bike split?“),
+  proti proudu, ale podložené videem („More easy miles won't raise your ceiling.“), konkrétní jednoduchost („Four minutes,
+  four times.“). Proti proudu jen to, co video opravdu dokáže.
