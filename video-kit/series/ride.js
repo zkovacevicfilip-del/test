@@ -439,11 +439,35 @@ function cardMorph(t, t0, y0) {
   ctx.save(); ctx.globalAlpha *= fadeK; ctx.fillStyle = `rgba(${col.join(',')},${lerp(0.84, 1, e)})`; ctx.shadowColor = 'rgba(139,61,255,0.6)'; ctx.shadowBlur = 30 * e;
   ctx.beginPath(); ctx.roundRect(x0, yA, x1 - x0, yB - yA, rad); ctx.fill(); ctx.restore();
 }
+// karta chyby (video o chybách v aero pozici, 28. 11. 2026): nadpis chyby, řádek ŠPATNĚ (šedý křížek, s opravou se přeškrtne
+// a ztlumí) a řádek OPRAVA (fialová fajfka). o = { y0, title, from, to, out, hide, wrong: { label, at }, fix: { label, at } }
+function mistakeCard(t, o) {
+  const outK = o.out != null ? tw(t, o.out, 0.25) : 0;
+  const a0 = clamp((t - o.from) / 0.3) * (1 - tw(t, o.to - 0.3, 0.3)) * (1 - (o.hide || 0)) * (1 - outK); if (a0 <= 0) return;
+  const X0 = 140, X1 = 940, Y0 = o.y0 || 380, Y1 = Y0 + 300;
+  ctx.save(); ctx.globalAlpha *= a0; const sc = 1 - 0.06 * outK; ctx.translate(540, (Y0 + Y1) / 2); ctx.scale(sc, sc); ctx.translate(-540, -(Y0 + Y1) / 2);
+  ctx.fillStyle = 'rgba(23,25,27,0.84)'; ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(X0, Y0, X1 - X0, Y1 - Y0, 28); ctx.fill(); ctx.stroke();
+  txt(o.title, 540, Y0 + 52, fit(o.title, { size: 36, w: 800, f: F.U, ls: -1, c: C.ink }, 720));
+  const fixed = tw(t, o.fix.at, 0.4);
+  const row = (y, lab, at, good) => {
+    const p = popS(t, at, null, 0.45); if (p.a <= 0) return;
+    ctx.save(); ctx.globalAlpha *= p.a * (good ? 1 : 1 - 0.55 * fixed); ctx.translate(X0 + 70, y); ctx.scale(p.s, p.s);
+    ctx.fillStyle = good ? C.pu : 'rgba(228,227,222,0.2)'; ctx.beginPath(); ctx.arc(0, 0, 28, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
+    if (good) { ctx.moveTo(-12, 1); ctx.lineTo(-3, 10); ctx.lineTo(13, -9); } else { ctx.moveTo(-10, -10); ctx.lineTo(10, 10); ctx.moveTo(10, -10); ctx.lineTo(-10, 10); }
+    ctx.stroke();
+    const fo = fit(lab, { size: 34, w: 800, align: 'left', c: good ? '#ffffff' : C.ink }, 620); txt(lab, 52, 12, fo);
+    if (!good && fixed > 0) { const w = width(lab, fo); ctx.strokeStyle = 'rgba(228,227,222,0.85)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(48, 0); ctx.lineTo(48 + (w + 8) * fixed, 0); ctx.stroke(); }
+    ctx.restore();
+  };
+  row(Y0 + 140, o.wrong.label, o.wrong.at, false); row(Y0 + 230, o.fix.label, o.fix.at, true);
+  ctx.restore();
+}
 // karta výsledku: velké číslo, které se dopočítá (o = { at, out, value, fmt: 'pct' | 'ml', label, sub, src, from })
 function resultCard(t, o) {
   const p = popS(t, o.at, o.out, 0.55); if (p.a <= 0) return;
   const X0 = 140, X1 = 940, Y0 = o.y0 || 380, Y1 = Y0 + 360, g = tw(t, o.at + 0.15, 0.9, E.quint), v = o.value * g;
-  const num = o.fmt === 'ml' ? '+' + v.toFixed(0) : '+' + v.toFixed(1) + '%';
+  const num = o.fmt === 'ml' ? '+' + v.toFixed(0) : o.fmt === 'w' ? '+' + v.toFixed(0) + ' W' : '+' + v.toFixed(1) + '%';
   ctx.save(); ctx.globalAlpha *= p.a; ctx.translate(540, (Y0 + Y1) / 2 + p.dy); ctx.scale(p.s, p.s); ctx.translate(-540, -(Y0 + Y1) / 2);
   ctx.fillStyle = 'rgba(23,25,27,0.84)'; ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(X0, Y0, X1 - X0, Y1 - Y0, 28); ctx.fill(); ctx.stroke();
   txt(o.label, 540, Y0 + 62, { size: 28, w: 800, ls: 4, c: C.muted });

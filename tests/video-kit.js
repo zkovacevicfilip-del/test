@@ -132,7 +132,7 @@ for (const ex of fs.readdirSync(path.join(KIT, "examples"))) check(path.join(KIT
 for (const f of fs.readdirSync(path.join(KIT, "series/tips")).filter(f => f.endsWith(".js"))) {
   const src = fs.readFileSync(path.join(KIT, "series/tips", f), "utf8"), spec = require(path.join(KIT, "series/tips", f)), fx = spec.facts(require(path.join(KIT, "series/physics.js"))).slice(0, 3).map(x => x[1]);
   ok(`[tips/${f}] úvod: 3 tipy a trojka nejdůležitější; tipy od nejmenšího k největšímu, trojka víc než 1 + 2; ukazatel postupu`,
-    /^Three (tips|ways|interval sessions)\b/.test(spec.lines.hook.say) && /Number three is the most important/.test(spec.lines.hook.say) && spec.acts.map(a => a[0]).join() === "hook,one,two,three,cta" &&
+    /^(Three (tips|ways|interval sessions)|These three mistakes)\b/.test(spec.lines.hook.say) && /Number three is the most (important|crucial)/.test(spec.lines.hook.say + ' ' + (spec.lines.promise ? spec.lines.promise.say : '')) && spec.acts.map(a => a[0]).join() === "hook,one,two,three,cta" &&
     (/workoutCard\(t, /.test(src) || (fx[0] < fx[1] && fx[1] < fx[2])) && (!/combined/i.test(spec.lines.three.say) || fx[2] > fx[0] + fx[1]) && /tips: \{ at: \[T\('one:0'\), T\('two:0'\), T\('three:0'\)\]/.test(src) && /function tipsBar/.test(fs.readFileSync(path.join(KIT, "series/ride.js"), "utf8")), fx.map(x => x.toFixed(1)).join(" < "));
   // výměna helmy: helmy se prohodí naráz, hlava nikdy nezůstane holá (v každém okamžiku je jedna helma aspoň v plné velikosti)
   const sc = vm.runInNewContext(require(path.join(KIT, "series/make.js")).build(spec).scenes + "\n;({ helmSwap })", { clamp: (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), tw: (t, s0, d, e) => (e || (x => x))(Math.min(1, Math.max(0, (t - s0) / d))), E: { back: x => x, io: x => x, expo: x => x } });
@@ -140,17 +140,17 @@ for (const f of fs.readdirSync(path.join(KIT, "series/tips")).filter(f => f.ends
   // prvky podle reference (autor 25. 11. 2026): titulky dole se zvýrazněným slovem, odznak plný kruh, karta s pruhy, čísla v kartě
   // sedí s výpočtem, zvukové efekty míří na existující titulky, podkres rytmus bez akordů; počítadlo nikdy neukáže „0:60“
   const facts3 = spec.facts(require(path.join(KIT, "series/physics.js"))).slice(0, 3).map(x => x[2]);
-  const vals = /workoutCard\(t, /.test(src) ? [...src.matchAll(/resultCard\(t, \{[^}]*?value: ([\d.]+)/g)].map(m => +m[1]) : [...src.matchAll(/head: '(?:Tip|Way) \d · [^']*'[^}]*?value: ([\d.]+)/g)].map(m => +m[1]);
+  const vals = /workoutCard\(t, |mistakeCard\(t, /.test(src) ? [...src.matchAll(/resultCard\(t, \{[^}]*?value: ([\d.]+)/g)].map(m => +m[1]) : [...src.matchAll(/head: '(?:Tip|Way) \d · [^']*'[^}]*?value: ([\d.]+)/g)].map(m => +m[1]);
   const refOk = r => { const m = /^([A-Za-z0-9_]+)(?::(\d+))?(\$)?([+-]\d*\.?\d+)?$/.exec(r); return !!m && !!spec.lines[m[1]] && (m[2] == null || !!spec.lines[m[1]].chunks[+m[2]]); };
   const ck = vm.runInNewContext(require(path.join(KIT, "series/make.js")).build(spec).scenes + "\n;({ clockNeg })", {}).clockNeg;
   const bad60 = Array.from({ length: 2000 }, (_, i) => ck(i * 0.07)).filter(x => /:6\d$/.test(x));
   ok(`[tips/${f}] prvky podle reference: titulky 2, odznak 1, karta 2 s čísly z výpočtu, zvuky na existující titulky, rytmus bez akordů`,
-    spec.style.words && spec.style.words.v === 2 && /chapterBadge\(t, \{ v: 1,/.test(src) && (/dataCard\(t, \{ v: 2,/.test(src) || (src.match(/workoutCard\(t, \{ v: WV,/g) || []).length === 3) && JSON.stringify(vals) === JSON.stringify(facts3) &&
+    spec.style.words && spec.style.words.v === 2 && /chapterBadge\(t, \{ v: 1,/.test(src) && (/dataCard\(t, \{ v: 2,/.test(src) || (src.match(/workoutCard\(t, \{ v: WV,/g) || []).length === 3 || (src.match(/mistakeCard\(t, \{/g) || []).length === 3) && JSON.stringify(vals) === JSON.stringify(facts3) &&
     Array.isArray(spec.sfx) && spec.sfx.length >= 10 && spec.sfx.every(e => refOk(e.at) && ["pop", "ding", "click", "impact", "shimmer", "riser"].includes(e.kind)) && spec.bed === 1 &&
     bad60.length === 0 && ck(138) === "−2:18" && ck(59.7) === "−1:00", JSON.stringify({ vals, facts3, bad60: bad60.slice(0, 3) }));
   // formát reference (autor 26. 11. 2026): u videa s kartou tréninku každá kapitola odznak → karta tréninku → karta výsledku,
   // rychlý přechod (karta se smrskne do kapky přesně před odznakem další kapitoly), kamera jen pomalu dotáčí
-  if (/workoutCard\(t, /.test(src)) ok(`[tips/${f}] formát reference: 3 karty tréninku a výsledku, přechod kapkou před odznakem, pomalá kamera`,
+  if (/workoutCard\(t, |mistakeCard\(t, /.test(src)) ok(`[tips/${f}] formát reference: 3 karty tréninku a výsledku, přechod kapkou před odznakem, pomalá kamera`,
     (src.match(/resultCard\(t, /g) || []).length === 3 && /cardMorph\(t, T\('two:0'\) - 0\.35, y0\); cardMorph\(t, T\('three:0'\) - 0\.35, y0\);/.test(src) &&
     /out: T\('two:0'\) - 0\.35/.test(src) && /out: T\('three:0'\) - 0\.35/.test(src) && spec.style.orbitDur >= 2 && /function cardMorph/.test(fs.readFileSync(path.join(KIT, "series/ride.js"), "utf8")));
   ok(`[tips/${f}] výměna helmy naráz: hlava nikdy holá, silniční a časovkářská nikdy současně`, bare.length === 0 && hs[0][0] === 1 && hs[200][1] === 1, JSON.stringify(bare.slice(0, 3)));
@@ -161,10 +161,10 @@ for (const f of fs.readdirSync(path.join(KIT, "series/tips")).filter(f => f.ends
     ["helmSwap(t, ", "orbit: [0, 0.35, -0.2, 1.2, 0]", "tips: { at: [T('one:0'), T('two:0'), T('three:0')], end: T('cta:0') }", "ghost: { pose: 1, shrug: 0 }", "pre: { suit: '#EDECE8', suit2: '#16171A', sleeve: 0.44, loose: 1 }"].every(k => r16.includes(k) && vz.includes(k))); }
 // varianty háčku (trial reels, autor 28. 11. 2026): každá má 2 titulky, nejvýš 8 slov, čísla slovy, text háčku na obrazovce
 // se bere z titulků; nástroje variant.sh a zoom.sh jsou na místě
-for (const f of ["study/01-norwegian-4x4.js"]) {
+for (const f of ["study/01-norwegian-4x4.js", "tips/03-aero-mistakes.js"]) {
   const spec = require(path.join(KIT, "series", f)), src = fs.readFileSync(path.join(KIT, "series", f), "utf8"), vs = Object.entries(spec.variants || {});
-  ok(`[${f}] varianty háčku: aspoň 3, 2 titulky, nejvýš 8 slov, čísla slovy, text háčku z titulků`, vs.length >= 3 && vs.every(([, v]) => v.chunks.length === 2 && v.say.split(/\s+/).length <= 8 && !/\d/.test(v.say)) &&
-    /t: L\.hook\.chunks\[0\]\.text/.test(src) && ["series/variant.sh", "series/zoom.sh", "tools/variant_timeline.py"].every(x => fs.existsSync(path.join(KIT, x))), vs.map(v => v[0]).join(", "));
+  ok(`[${f}] varianty háčku: aspoň 2, stejně titulků jako háček, nejvýš 8 slov, čísla slovy, text háčku z titulků`, vs.length >= 2 && vs.every(([, v]) => v.chunks.length === spec.lines.hook.chunks.length && v.say.split(/\s+/).length <= 8 && !/\d/.test(v.say)) &&
+    /t: L\.hook\.chunks\[\d\]\.text/.test(src) && ["series/variant.sh", "series/zoom.sh", "tools/variant_timeline.py"].every(x => fs.existsSync(path.join(KIT, x))), vs.map(v => v[0]).join(", "));
 }
 ok("motor a nástroje sady jsou na místě", ["engine/engine.js", "engine/render.js", "engine/index.html", "engine/vendor/gsap.min.js", "engine/vendor/LICENSE-gsap.txt",
   "engine/vendor/three.module.js", "engine/vendor/three.core.js", "engine/vendor/LICENSE-three.txt", "engine/vendor/MarchingCubes.js", "engine/vendor/RoomEnvironment.js", "engine/rider3d.mjs", "engine/three-boot.mjs",

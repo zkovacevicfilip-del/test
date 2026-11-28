@@ -237,7 +237,7 @@ export function makeRider(kitName, over) {
     rear.rotation.z = -(o.wheel || 0); spinF.rotation.z = -(o.wheel || 0);
     cranks[0].rotation.z = -cr; cranks[1].rotation.z = -(cr + Math.PI);   // šlapání po směru hodin (kolo jede doprava)
     cranks.forEach(c => c.children[1].rotation.z = -c.rotation.z);   // pedály drží vodorovně
-    const head = H.pose(root, pose, cr, o.grip, o.shrug || 0);
+    const head = H.pose(root, pose, cr, o.grip, o.shrug || 0, o.look || 0);
     helmet.position.copy(head.center); helmet.quaternion.copy(head.q);
     // helmy: o.hs = [silniční, časovkářská] jako velikost 0 až 1 (0 = schovaná); bez o.hs jen časovkářská
     const hs = o.hs || [0, 1]; [road, tt].forEach((g, i) => { g.visible = hs[i] > 0.002 && (i === 1 || !!K.road); g.scale.setScalar(Math.max(hs[i], 0.002)); });
@@ -356,8 +356,9 @@ roughnessFactor = rg == 0 ? 0.56 : rg == 2 ? 0.34 : rg == 3 ? 0.8 : (rg == 1 && 
     const p = pole.clone().sub(n.clone().multiplyScalar(pole.dot(n))).normalize(); return A.clone().add(n.multiplyScalar(a)).add(p.multiplyScalar(h));
   };
   const wpos = (riderRoot, n) => riderRoot.worldToLocal(by[n].getWorldPosition(new THREE.Vector3()));
-  function pose(riderRoot, p, crank, grip, shrug = 0) {
-    const P = poseAt(p), tr = P.torso * deg;
+  function pose(riderRoot, p, crank, grip, shrug = 0, look = 0) {
+    // look: hlava se navíc skloní (koukání do cyklocomputeru, ocas helmy jde nahoru; video o chybách v aero pozici 28. 11. 2026)
+    const P = poseAt(p), tr = P.torso * deg; P.tilt += look;
     for (const b of bones) b.quaternion.identity();
     // pánev a záda: pánev překlopená dopředu, záda mírně kulatá (níž strměji), ramena svěšená
     aim('root', pitch(tr + 0.45 * (Math.PI / 2 - tr)));
